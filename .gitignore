@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.uv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+# Node (Hub web, P6)
+node_modules/
+packages/myelin-hub/web/dist/
+# MYELIN runtime
+.myelin/
+# OS / editors
+.DS_Store
+.~lock.*#
+*.swp
+# Local tooling
+.claude/settings.local.json
