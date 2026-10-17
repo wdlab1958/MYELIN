@@ -1,0 +1,4 @@
+# MYELIN runtime (index, logs) — never commit
+.myelin/
+# Obsidian workspace state
+.obsidian/workspace*.json

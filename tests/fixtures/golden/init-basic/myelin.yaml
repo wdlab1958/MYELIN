@@ -1,0 +1,15 @@
+# <Vault>/myelin.yaml — MYELIN 개인 설정 (정본 §5.3).
+# `myelin init` 이 생성, 사람이 편집한다.
+owner: {name: Brian, team: A3-AI WG, email: brian@example.org}
+language: ko
+packs: [myelin.core, brian.physical-ai]
+domains:
+  primary: D1
+  research: D3
+  growth: D4
+  extra: []
+level: 2
+llm:
+  default: claude
+  route: {confidential: local, 40_IP/**: local}
+commons: {enabled: false}
