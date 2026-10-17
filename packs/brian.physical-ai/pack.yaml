@@ -1,0 +1,53 @@
+# Reference Pack — Brian 의 4대 Domain (정본 §5.5, Rev 1.0 D1~D4)
+# "45년차 엔지니어의 지식 지형도". 후배는 이 Pack 을 설치해 Sub-MOC 구조와 /interview 질문 은행을 출발점으로 쓴다.
+pack: brian.physical-ai
+version: 1.0.0
+kind: reference
+maintainer: Brian (이원대) · WDLAB
+requires: [myelin.core>=1.0]
+description: >-
+  AI/ML/AX Platform · Embedded SW · 자율학습 Robotics · Auto Design(SolidWorks) —
+  Physical AI 를 향한 네 Domain 의 지형도와 인터뷰 질문 은행.
+domains:
+  - id: D1
+    name: AI/ML/AX Platform
+    accent: violet
+    description: LLM 엔지니어링·LLMOps·AX 방법론·AI Security·플랫폼 패턴·사업화 지식
+    sub_mocs: [LLM Engineering, LLMOps/평가, AX 방법론, AI Security, Platform Patterns, 사업화]
+    note_types: [evergreen, literature, lesson, adr, checklist, idea-ip]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [플랫폼 설계서, AI 품질진단 리포트, 특허]
+  - id: D2
+    name: Embedded SW
+    accent: cyan
+    description: 하드 실시간·안전 필수 시스템·MCU/SoC·Edge AI·HIL — 현장의 교훈
+    sub_mocs: [Hard Real-time, Safety-critical, MCU/SoC, Edge AI, HIL, Lessons from the Field]
+    note_types: [evergreen, literature, lesson, checklist, adr]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [Embedded 설계 가이드, Safety 체크리스트, 교육자료]
+  - id: D3
+    name: 자율학습 Robotics
+    accent: lime
+    description: Locomotion(RL/MPC)·Sim2Real·VLA·ROS2·HW 플랫폼·실험 로그
+    sub_mocs: [Locomotion(RL/MPC), Sim2Real, VLA, ROS2, HW Platform, Experiment Log]
+    note_types: [evergreen, literature, experiment, lesson, adr]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates/robotics
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [Dogbot 실험 보고서, Physical AI 로드맵]
+  - id: D4
+    name: Auto Design (SolidWorks)
+    accent: magenta
+    description: SolidWorks API/Macro·파라메트릭·설계 규칙 엔진·부품 라이브러리·DFM·AI×CAD
+    sub_mocs: [API/Macro, Parametric, Design Rule Engine, 부품 라이브러리, DFM, AI×CAD]
+    note_types: [evergreen, lesson, checklist, adr, idea-ip]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates/cad
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [매크로 라이브러리, 설계 규칙집, Agentic CAD PoC]

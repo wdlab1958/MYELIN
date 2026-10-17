@@ -1,0 +1,81 @@
+# /interview 질문 은행 — 암묵지 추출. 답은 lesson(또는 yields) 초안으로 00_Inbox/ai-drafts 에 생성된다.
+questions:
+  # ---- D1 AI/ML/AX Platform
+  - id: d1-llm-eval-failure
+    domain: D1
+    sub_moc: LLMOps/평가
+    prompt: 최근 LLM 평가 지표가 좋았는데 실제 사용자 체감이 나빴던 사례가 있나? 무엇이 지표에서 빠져 있었나?
+    follow_ups: [어떤 지표를 추가했나?, 그 지표는 지금도 쓰고 있나?]
+  - id: d1-ax-resistance
+    domain: D1
+    sub_moc: AX 방법론
+    prompt: AX 과제에서 현업의 저항이 가장 컸던 지점은 어디였고, 무엇이 그것을 풀었나?
+  - id: d1-ai-sec-incident
+    domain: D1
+    sub_moc: AI Security
+    prompt: 프롬프트 인젝션이나 데이터 유출 시도를 실제로 본 적이 있나? 어떤 가드레일이 막았고 어떤 것이 뚫렸나?
+    yields: lesson
+  - id: d1-platform-pattern
+    domain: D1
+    sub_moc: Platform Patterns
+    prompt: 두 번 이상 반복해서 만든 플랫폼 구성 요소가 있나? 세 번째에는 어떻게 다르게 만들겠나?
+    yields: evergreen
+  # ---- D2 Embedded SW
+  - id: d2-deadline-miss
+    domain: D2
+    sub_moc: Hard Real-time
+    prompt: 데드라인을 놓쳐 시스템이 실패한 경험을 하나 떠올려라. 원인은 설계·측정·가정 중 어디에 있었나?
+    follow_ups: [WCET 는 어떻게 측정했나?, 그 뒤 어떤 규칙을 세웠나?]
+  - id: d2-safety-review
+    domain: D2
+    sub_moc: Safety-critical
+    prompt: 안전 리뷰에서 가장 자주 지적된 항목은 무엇이었나? 그것을 체크리스트로 바꾸면 어떤 문장이 되나?
+    yields: checklist
+  - id: d2-field-lesson
+    domain: D2
+    sub_moc: Lessons from the Field
+    prompt: 현장에서만 배울 수 있었던 것 하나를 말해라. 문서나 데이터시트에는 왜 없었나?
+  - id: d2-edge-ai-tradeoff
+    domain: D2
+    sub_moc: Edge AI
+    prompt: Edge 에 모델을 올릴 때 정밀도·지연·전력 중 무엇을 포기했고 그 결정의 근거는 무엇이었나?
+    yields: adr
+  # ---- D3 자율학습 Robotics
+  - id: d3-sim2real-gap
+    domain: D3
+    sub_moc: Sim2Real
+    prompt: 시뮬레이션에서 되던 정책이 실기에서 실패한 가장 최근 사례는? 갭의 원인을 어디까지 추적했나?
+    yields: experiment
+  - id: d3-reward-hack
+    domain: D3
+    sub_moc: Locomotion(RL/MPC)
+    prompt: 보상 함수를 에이전트가 의도와 다르게 악용한 적이 있나? 어떻게 알아챘고 어떻게 고쳤나?
+  - id: d3-ros2-pitfall
+    domain: D3
+    sub_moc: ROS2
+    prompt: ROS2 에서 가장 시간을 많이 잃은 함정은 무엇이었나? (executor, QoS, 시간 동기 등)
+  - id: d3-hw-platform-choice
+    domain: D3
+    sub_moc: HW Platform
+    prompt: 로봇 HW 플랫폼을 고를 때 사후에 가장 후회한 선택 기준은 무엇인가?
+    yields: adr
+  # ---- D4 Auto Design (SolidWorks)
+  - id: d4-macro-reuse
+    domain: D4
+    sub_moc: API/Macro
+    prompt: 가장 많이 재사용한 매크로는 무엇이고, 처음 만들 때와 지금의 구조는 어떻게 다른가?
+    yields: evergreen
+  - id: d4-design-rule-origin
+    domain: D4
+    sub_moc: Design Rule Engine
+    prompt: 설계 규칙 하나를 골라라. 그 규칙은 어떤 실패에서 태어났나?
+  - id: d4-dfm-surprise
+    domain: D4
+    sub_moc: DFM
+    prompt: 제조 단계에서 되돌아온 설계 변경 중 가장 비쌌던 것은? 설계 시점에 어떤 검사가 있었으면 막았을까?
+    yields: checklist
+  - id: d4-ai-cad-idea
+    domain: D4
+    sub_moc: AI×CAD
+    prompt: CAD 작업 중 "이건 에이전트가 해도 된다" 고 느낀 순간이 있었나? 그 작업의 입력·출력·검증 기준은?
+    yields: idea-ip

@@ -1,0 +1,25 @@
+terms:
+  # D1
+  - { term: LLMOps, aliases: [LLM Ops, llmops], domain: [D1], definition: LLM 서비스의 평가·배포·관측·비용 운영 체계 }
+  - { term: AX, aliases: [AI Transformation, AI 전환], domain: [D1], definition: 업무·조직을 AI 중심으로 재설계하는 방법론 }
+  - { term: RAG, aliases: [Retrieval-Augmented Generation, 검색증강생성], domain: [D1] }
+  - { term: Guardrail, aliases: [가드레일, guardrails], domain: [D1], definition: LLM 입력·출력에 대한 정책 강제 장치 }
+  - { term: Prompt Injection, aliases: [프롬프트 인젭션, 프롬프트 주입], domain: [D1] }
+  # D2
+  - { term: WCET, aliases: [Worst-Case Execution Time, 최악 실행 시간], domain: [D2] }
+  - { term: Hard Real-time, aliases: [hard realtime, 하드 실시간], domain: [D2], definition: 데드라인 위반이 곧 실패인 시스템 }
+  - { term: HIL, aliases: [Hardware-in-the-Loop, HILS], domain: [D2] }
+  - { term: Safety-critical, aliases: [안전 필수, safety critical], domain: [D2] }
+  - { term: ISR, aliases: [Interrupt Service Routine, 인터럽트 핸들러], domain: [D2] }
+  # D3
+  - { term: Sim2Real, aliases: [sim-to-real, 시뮬레이션-실기 전이], domain: [D3] }
+  - { term: MPC, aliases: [Model Predictive Control, 모델 예측 제어], domain: [D3] }
+  - { term: VLA, aliases: [Vision-Language-Action], domain: [D3] }
+  - { term: Locomotion, aliases: [보행, 로코모션], domain: [D3] }
+  - { term: Domain Randomization, aliases: [도메인 랜덤화], domain: [D3] }
+  # D4
+  - { term: DFM, aliases: [Design for Manufacturability, 제조성 설계], domain: [D4] }
+  - { term: Parametric Design, aliases: [파라메트릭 설계, parametric], domain: [D4] }
+  - { term: Design Rule Engine, aliases: [설계 규칙 엔진, DRE], domain: [D4] }
+  - { term: SolidWorks API, aliases: [SW API, SldWorks API], domain: [D4] }
+  - { term: Agentic CAD, aliases: [AI×CAD, 에이전틱 CAD], domain: [D4] }
