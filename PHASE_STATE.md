@@ -1,11 +1,10 @@
 # PHASE_STATE
 
-current_phase: P1
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P2
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0 완료(`phase-P0`). P1 Gate 통과(`make gate P=1`), 보고서 `docs/reports/P1.md`, 태그 `phase-P1`.
-> **다음 Phase(P2)는 Brian의 "GO P2" 승인 후에만 착수한다.** 승인 시 current_phase를 P2, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> P0·P1 완료(`phase-P0`, `phase-P1`). 2026-10-18 Brian "GO P2" 승인으로 P2 착수.
 
 ## Done
 ### P0
@@ -32,7 +31,7 @@ last_updated: 2026-10-18
 - [x] P1-T11 잘못된 Pack fixture 10종 + 각기 명확한 오류 메시지 테스트
 - [x] P1-T12 커버리지 ≥ 90% 확인 · make gate P=1 · reports/P1.md · tag phase-P1
 
-## Next (P2 — 승인 대기)
+## Next
 - [ ] P2-T1 Typer CLI 골격 `myelin` (init/add-domain/doctor/stats) + --vault 옵션
 - [ ] P2-T2 myelin.yaml(5.3) 모델·로더 (owner/language/packs/domains/level/llm/commons)
 - [ ] P2-T3 대화형 init 마법사 — 이름, 3+1 Domain, Pack 선택, Level (비대화형 플래그 동일)
