@@ -34,6 +34,7 @@ gate: P0 PASS 29/29 (docs/reports/P0.md), tag phase-P0
 - ADR-0002: Guard는 모든 예외 → exit 2, Vault 루트에 cwd 사용 금지, exec 형식 Hook (명세 §7.2 보정 7건)
 
 ## Backlog (Phase 범위 밖)
-- 공개 저장소 github.com/wdlab1958/MYELIN push 후 CI green 확인
+- [x] 공개 저장소 github.com/wdlab1958/MYELIN (public, Apache-2.0) push, CI green 확인 (2026-10-18)
+- phase-P0 태그 push — Brian 로컬에서 `git fetch origin && git tag -a phase-P0 2883bf2 -m "P0 Bootstrap" && git push origin phase-P0`
 - 조직별 Org Pack(예: 소속 회사용)은 별도 private 저장소에서 관리 (공개 저장소에는 Example Org만)
 - Hub에서 Guard 차단 이벤트 표시 (P6)
