@@ -1,0 +1,27 @@
+# MYELIN 개인 설정 — 이 Vault의 주인과 Domain을 정한다.
+# 수정 후 `myelin doctor` 로 확인하세요. Domain 추가는 `myelin add-domain` 을 권장합니다.
+myelin: 1
+owner:
+  name: "Brian"
+language: ko
+packs:
+  - myelin.core
+  - brian.physical-ai
+# 3+1 규칙: primary(업무 근간) · research(연구) · growth(성장) + extra 최대 1개
+domains:
+  primary: AI-ML-AX
+  research: ROBOTICS-LEARNING
+  growth: AUTO-DESIGN
+  extra: [EMBEDDED-SW]
+# Claude 권한 Level: 1 = 초안 — ai-drafts에 초안을 쓸 수 있다
+level: 1
+# confidential 노트와 40_IP 는 로컬 LLM으로만 처리한다.
+llm:
+  default: claude
+  route:
+    "confidential": local
+    "40_IP/**": local
+# 팀 공유(Commons)는 opt-in. 개인 Vault는 기본적으로 어디에도 공유되지 않는다.
+commons:
+  enabled: false
+  remote: null

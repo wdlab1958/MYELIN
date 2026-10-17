@@ -21,6 +21,24 @@ so AI drafts never overwrite what you have verified.
 - **HITL 승격** — AI 초안이 `verified` 가 되는 것은 사람의 승인으로만.
 - **Domain은 데이터** — 새 Domain 추가에 코드 변경이 필요 없습니다.
 
+## Privacy model
+
+**도구는 공개, 지식은 각자의 기기에.** 이 저장소에는 코드와 Pack 템플릿만 있습니다. 여러분의 노트는 여기에 올라오지 않습니다.
+
+| 구분 | 무엇 | 어디에 |
+|---|---|---|
+| 공개 (이 저장소) | 코드, Domain Pack 템플릿, 명세 | GitHub |
+| 개인 | Vault(노트), `myelin.yaml`, 색인 `.myelin/` | 각자의 PC·디바이스 |
+| 선택적 공유 | 직접 공개 승인한 노트만 | 조직 내부 Git (Team Commons, opt-in) |
+
+- **Local-first, 완전 로컬은 아닙니다.** Vault 파일은 로컬에 있지만, Claude에게 노트 정리를 맡기면
+  그 노트 내용은 **여러분의 Claude 계정을 통해 Anthropic으로 전송되어 처리**됩니다.
+  데이터 처리 정책은 각자 사용하는 Claude 플랜의 정책을 따릅니다.
+- `classification: confidential` 노트와 `40_IP/` 는 로컬 LLM으로만 처리하도록 라우팅합니다 (`myelin.yaml` 의 `llm.route`).
+- `myelin init` 은 **이 저장소(소스 폴더)나 다른 git 저장소 안에는 Vault를 만들지 않습니다** — fork에 개인 노트가 push되는 사고를 막기 위해서입니다.
+- `myelin doctor` 는 Vault가 공개 코드 호스팅(GitHub 등)을 원격으로 둔 git 안에 있으면 경고합니다. Vault를 git으로 백업한다면 **비공개 저장소**를 쓰세요.
+- Hub(P6)는 기본적으로 `localhost` 에서만 열리고, MCP 서버(P4)는 로컬 stdio로 동작합니다.
+
 ## 구성 (예정)
 
 | 경로 | 구성요소 | Phase |

@@ -4,7 +4,10 @@ version = "0.0.1"
 description = "MYELIN CLI — init / add-domain / doctor / stats"
 license = "Apache-2.0"
 requires-python = ">=3.12"
-dependencies = ["myelin-core"]
+dependencies = [
+    "myelin-core",
+    "typer>=0.12",
+]
 
 [project.scripts]
 myelin = "myelin_cli.main:main"

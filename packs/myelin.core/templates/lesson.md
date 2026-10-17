@@ -1,5 +1,5 @@
 ---
-id: <% tp.date.now("YYYYMMDD-HHmm") %>-<% tp.user.slug(tp.file.title) %>
+id: <% tp.date.now("YYYYMMDD-HHmm-ssSSS") %>
 type: lesson
 domain: []
 era: ""

@@ -1,0 +1,11 @@
+# `myelin doctor violations --no-location --today 2026-10-18` 의 기대 결과 (정확히 이것만)
+findings:
+  - {rule: schema, path: 10_Domains/AI-ML-AX/스키마 위반.md}
+  - {rule: duplicate_id, path: 10_Domains/EMBEDDED-SW/중복 A.md}
+  - {rule: duplicate_id, path: 10_Domains/EMBEDDED-SW/중복 B.md}
+  - {rule: unknown_domain, path: 30_Resources/미등록 도메인.md}
+  - {rule: share_confidential, path: 30_Resources/공유 모순.md}
+  - {rule: failclosed_link, path: 10_Domains/AI-ML-AX/검증 노트.md}
+  - {rule: broken_link, path: 10_Domains/ROBOTICS-LEARNING/깨진 링크.md}
+  - {rule: orphan, path: 20_Projects/고아 노트.md}
+  - {rule: inbox_stale, path: 00_Inbox/오래된 메모.md}

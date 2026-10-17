@@ -1,0 +1,27 @@
+# 자동 생성 파일 — 직접 고치지 마세요 (myelin init / add-domain 이 관리).
+myelin_lock: 1
+packs:
+  - name: myelin.core
+    version: 1.1.0
+    kind: core
+    domains: []
+  - name: brian.physical-ai
+    version: 1.0.0
+    kind: reference
+    domains:
+      - id: AI-ML-AX
+        label: "D1"
+        name: "AI / ML / AX Platform"
+        accent: violet
+      - id: EMBEDDED-SW
+        label: "D2"
+        name: "Embedded SW Engineering"
+        accent: cyan
+      - id: ROBOTICS-LEARNING
+        label: "D3"
+        name: "자율학습 Robotics (Physical AI)"
+        accent: lime
+      - id: AUTO-DESIGN
+        label: "D4"
+        name: "Auto Design — SolidWorks 설계 자동화"
+        accent: magenta

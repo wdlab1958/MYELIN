@@ -12,6 +12,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from myelin_core.config import VaultConfig
 from myelin_core.frontmatter import Frontmatter
 from myelin_core.pack import InterviewBank, PackManifest, TaxonomyFile
 
@@ -20,6 +21,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "pack.schema.json": PackManifest,
     "taxonomy.schema.json": TaxonomyFile,
     "interview-bank.schema.json": InterviewBank,
+    "myelin-config.schema.json": VaultConfig,
 }
 
 

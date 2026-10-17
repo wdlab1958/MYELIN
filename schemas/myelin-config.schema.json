@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "Commons": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "remote": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Remote"
+        }
+      },
+      "title": "Commons",
+      "type": "object"
+    },
+    "LlmRouting": {
+      "additionalProperties": false,
+      "properties": {
+        "default": {
+          "default": "claude",
+          "enum": [
+            "claude",
+            "local"
+          ],
+          "title": "Default",
+          "type": "string"
+        },
+        "route": {
+          "additionalProperties": {
+            "enum": [
+              "claude",
+              "local"
+            ],
+            "type": "string"
+          },
+          "title": "Route",
+          "type": "object"
+        }
+      },
+      "title": "LlmRouting",
+      "type": "object"
+    },
+    "Owner": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Email"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "team": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Team"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Owner",
+      "type": "object"
+    },
+    "Roles": {
+      "additionalProperties": false,
+      "description": "3+1 규칙: 업무 근간·연구·성장 각 1개 + 추가 최대 1개 (명세 §5.4).",
+      "properties": {
+        "extra": {
+          "items": {
+            "maxLength": 32,
+            "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "title": "Extra",
+          "type": "array"
+        },
+        "growth": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Growth"
+        },
+        "primary": {
+          "maxLength": 32,
+          "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$",
+          "title": "Primary",
+          "type": "string"
+        },
+        "research": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Research"
+        }
+      },
+      "required": [
+        "primary"
+      ],
+      "title": "Roles",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "commons": {
+      "$ref": "#/$defs/Commons"
+    },
+    "domains": {
+      "$ref": "#/$defs/Roles"
+    },
+    "language": {
+      "default": "ko",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+      "title": "Language",
+      "type": "string"
+    },
+    "level": {
+      "default": 1,
+      "maximum": 3,
+      "minimum": 0,
+      "title": "Level",
+      "type": "integer"
+    },
+    "llm": {
+      "$ref": "#/$defs/LlmRouting"
+    },
+    "myelin": {
+      "const": 1,
+      "default": 1,
+      "title": "Myelin",
+      "type": "integer"
+    },
+    "owner": {
+      "$ref": "#/$defs/Owner"
+    },
+    "packs": {
+      "items": {
+        "maxLength": 64,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Packs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "owner",
+    "packs",
+    "domains"
+  ],
+  "title": "VaultConfig",
+  "type": "object"
+}

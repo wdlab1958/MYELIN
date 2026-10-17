@@ -1,0 +1,5 @@
+# MYELIN — Vault 로컬 상태 (공유하지 않음)
+.myelin/
+.trash/
+.obsidian/workspace*.json
+.obsidian/cache

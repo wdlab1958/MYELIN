@@ -34,8 +34,10 @@ def current_phase() -> str:
 def next_phase_tasks_listed(phase_num: int) -> Callable[[], bool]:
     def _check() -> bool:
         text = (ROOT / "PHASE_STATE.md").read_text(encoding="utf-8")
-        # 완료([x]) 여부와 무관하게 다음 Phase 작업이 등록되어 있으면 통과 — 과거 Gate도 재실행 가능
-        return re.search(rf"^- \[[ x]\] P{phase_num}-T\d+", text, re.MULTILINE) is not None
+        # 다음 Phase 작업이 등록되어 있거나([ ]/[x]), 그 Phase가 이미 끝나 보고서가 있으면 통과
+        # — 과거 Gate를 언제든 재실행할 수 있게 상태 파일 서식에 의존하지 않는다.
+        listed = re.search(rf"^- \[[ x]\] P{phase_num}-T\d+", text, re.MULTILINE) is not None
+        return listed or (ROOT / "docs" / "reports" / f"P{phase_num}.md").exists()
 
     return _check
 
@@ -160,9 +162,137 @@ def p1_checks() -> list[Check]:
     ]
 
 
+GOLDEN_ARGS = [
+    "--name",
+    "Brian",
+    "--pack",
+    "brian.physical-ai",
+    "--primary",
+    "AI-ML-AX",
+    "--research",
+    "ROBOTICS-LEARNING",
+    "--growth",
+    "AUTO-DESIGN",
+    "--extra",
+    "EMBEDDED-SW",
+    "--level",
+    "1",
+    "--today",
+    "2026-10-18",
+    "--yes",
+]
+
+
+def _run_cli(args: list[str]) -> tuple[int, str]:
+    from typer.testing import CliRunner
+
+    from myelin_cli.main import app
+
+    result = CliRunner().invoke(app, [*args, "--packs", str(ROOT / "packs")])
+    return result.exit_code, result.output
+
+
+def _tree(root: Path) -> dict[str, bytes]:
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+def p2_golden_and_speed() -> bool:
+    import tempfile
+    import time
+
+    with tempfile.TemporaryDirectory() as tmp:
+        target = Path(tmp) / "vault"
+        start = time.perf_counter()
+        code, out = _run_cli(["init", str(target), *GOLDEN_ARGS])
+        elapsed = time.perf_counter() - start
+        if code != 0:
+            print(out)
+            return False
+        golden = ROOT / "tests/fixtures/vaults/golden/brian"
+        return elapsed < 10 and _tree(target) == _tree(golden)
+
+
+def p2_init_refuses_unsafe_targets() -> bool:
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        occupied = Path(tmp) / "occupied"
+        occupied.mkdir()
+        (occupied / "note.md").write_text("mine", encoding="utf-8")
+        in_git = Path(tmp) / "repo"
+        (in_git / ".git").mkdir(parents=True)
+        cases = [occupied, in_git / "vault", ROOT / "my-vault"]
+        results = [_run_cli(["init", str(c), *GOLDEN_ARGS])[0] != 0 for c in cases]
+        untouched = (occupied / "note.md").read_text(encoding="utf-8") == "mine"
+        return all(results) and untouched and not (ROOT / "my-vault").exists()
+
+
+def p2_doctor_golden_clean() -> bool:
+    from myelin_core.doctor import run_doctor
+
+    findings = run_doctor(
+        ROOT / "tests/fixtures/vaults/golden/brian", today=_golden_today(), check_location=False
+    )
+    for f in findings:
+        print(f"    ! unexpected: {f}")
+    return not findings
+
+
+def p2_doctor_violations_exact() -> bool:
+    from myelin_core.doctor import run_doctor
+    from myelin_core.errors import MyelinError
+    from myelin_core.yamlio import load_yaml
+
+    vault = ROOT / "tests/fixtures/vaults/violations"
+    expected_doc = load_yaml(
+        (vault.parent / "violations.expected.yaml").read_text(encoding="utf-8"),
+        "violations.expected.yaml",
+        MyelinError,
+    )
+    expected = {(e["rule"], e["path"]) for e in expected_doc["findings"]}
+    found = {
+        (f.rule, f.path) for f in run_doctor(vault, today=_golden_today(), check_location=False)
+    }
+    for miss in sorted(expected - found):
+        print(f"    ! missed: {miss}")
+    for extra in sorted(found - expected):
+        print(f"    ! false positive: {extra}")
+    rules = {r for r, _ in expected}
+    return found == expected and len(rules) >= 8
+
+
+def _golden_today() -> object:
+    from datetime import date
+
+    return date(2026, 10, 18)
+
+
+def p2_readme_privacy() -> bool:
+    return "## Privacy model" in (ROOT / "README.md").read_text(encoding="utf-8")
+
+
+def p2_checks() -> list[Check]:
+    return [
+        (
+            "exists: docs/adr/0005-vault-config-and-scaffold.md",
+            exists("docs/adr/0005-vault-config-and-scaffold.md"),
+        ),
+        ("init == golden snapshot, < 10s", guarded(p2_golden_and_speed)),
+        (
+            "init refuses occupied / git / source-tree targets",
+            guarded(p2_init_refuses_unsafe_targets),
+        ),
+        ("doctor: golden vault has 0 findings", guarded(p2_doctor_golden_clean)),
+        ("doctor: violations found exactly (>=8 rules)", guarded(p2_doctor_violations_exact)),
+        ("README has Privacy model section", guarded(p2_readme_privacy)),
+        ("PHASE_STATE lists P3 tasks", next_phase_tasks_listed(3)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
     "P0": p0_checks,
     "P1": p1_checks,
+    "P2": p2_checks,
 }
 
 
