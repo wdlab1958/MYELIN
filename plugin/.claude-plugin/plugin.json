@@ -1,0 +1,9 @@
+{
+  "name": "myelin",
+  "displayName": "MYELIN for Claude Code",
+  "version": "0.1.0-alpha.0",
+  "description": "Personal Knowledge OS skills (/ingest /distill /interview /link /compose /review /ip-scan) with a fail-closed write guard. Skills and guard are implemented in Phase P3.",
+  "author": { "name": "WDLAB · A3 AI·ML·AX Research Division" },
+  "license": "Proprietary",
+  "keywords": ["obsidian", "knowledge", "pkm", "fail-closed"]
+}
