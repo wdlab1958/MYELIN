@@ -1,0 +1,2 @@
+questions:
+  - { id: q1, prompt: "왜?", domain: Y }

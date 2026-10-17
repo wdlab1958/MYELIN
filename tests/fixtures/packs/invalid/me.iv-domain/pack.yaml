@@ -1,0 +1,6 @@
+pack: me.iv-domain
+kind: personal
+maintainer: me
+requires: [myelin.core>=1.0]
+domains:
+  - { id: X, name: X, interview_bank: interviews.yaml }

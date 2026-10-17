@@ -1,0 +1,7 @@
+pack: me.bad-version
+version: v1
+kind: personal
+maintainer: me
+requires: [myelin.core>=1.0]
+domains:
+  - { id: X, name: X }

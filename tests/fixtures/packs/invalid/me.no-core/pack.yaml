@@ -1,0 +1,5 @@
+pack: me.no-core
+kind: personal
+maintainer: me
+domains:
+  - { id: X, name: X }

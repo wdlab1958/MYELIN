@@ -1,0 +1,8 @@
+pack: me.unknown-field
+kind: personal
+maintainer: me
+requires: [myelin.core>=1.0]
+domains:
+  - id: X
+    name: X
+    sub_moc: [typo — should be sub_mocs]

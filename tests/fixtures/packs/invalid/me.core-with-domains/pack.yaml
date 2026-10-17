@@ -1,0 +1,5 @@
+pack: me.core-with-domains
+kind: core
+maintainer: MYELIN
+domains:
+  - { id: X, name: X }
