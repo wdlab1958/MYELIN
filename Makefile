@@ -1,0 +1,41 @@
+# MYELIN monorepo — make targets used by the session protocol (CLAUDE.md)
+#   make test            run all tests
+#   make lint            ruff check + format check
+#   make typecheck       mypy (strict)
+#   make gate P=<n>      run Phase gate checks (scripts/gate.py)
+#   make phases          regenerate docs/phases/P*.md from the spec
+#   make sync            uv sync (all workspace members + dev group)
+
+UV ?= uv
+P  ?= 0
+
+.PHONY: sync test lint fmt typecheck gate phases check clean
+
+sync:
+	$(UV) sync --all-packages --group dev
+
+test: sync
+	$(UV) run pytest -q
+
+lint: sync
+	$(UV) run ruff check .
+	$(UV) run ruff format --check .
+
+fmt: sync
+	$(UV) run ruff format .
+	$(UV) run ruff check --fix .
+
+typecheck: sync
+	$(UV) run mypy
+
+check: lint typecheck test
+
+gate: sync
+	$(UV) run python scripts/gate.py $(P)
+
+phases:
+	python3 scripts/split_phases.py
+
+clean:
+	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage coverage.xml
+	find . -name __pycache__ -type d -prune -exec rm -rf {} +
