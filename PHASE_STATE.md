@@ -1,11 +1,10 @@
 # PHASE_STATE
 
-current_phase: P2
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P3
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0·P1 완료(`phase-P0`, `phase-P1`). P2 Gate 통과(`make gate P=2`), 보고서 `docs/reports/P2.md`, 태그 `phase-P2`.
-> **다음 Phase(P3)는 Brian의 "GO P3" 승인 후에만 착수한다.** 승인 시 current_phase를 P3, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> P0~P2 완료(`phase-P0`~`phase-P2`). 2026-10-18 Brian "GO P3" 승인으로 P3 착수.
 
 ## Done
 ### P0
@@ -45,7 +44,7 @@ last_updated: 2026-10-18
 - [x] P2-T11 doctor fixture 시드 위반 100% 검출 · 오탐 0 · init < 10초 벤치
 - [x] P2-T12 make gate P=2 · reports/P2.md · tag phase-P2
 
-## Next (P3 — 승인 대기)
+## Next
 - [ ] P3-T1 plugin/.claude-plugin/plugin.json + skills 디렉터리 골격 (ADR-0002 사양 준수)
 - [ ] P3-T2 hooks/hooks.json + guard_write.py (표준 라이브러리만, 판단 불가 → exit 2)
 - [ ] P3-T3 Guard 테스트 — 허용 외 경로·Vault 밖·심볼릭 링크·`..` 경로·빈 file_path·비JSON 입력 차단 100%
