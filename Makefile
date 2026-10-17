@@ -4,12 +4,15 @@
 #   make typecheck       mypy (strict)
 #   make gate P=<n>      run Phase gate checks (scripts/gate.py)
 #   make phases          regenerate docs/phases/P*.md from the spec
+#   make schemas         export JSON Schemas to docs/spec/schema/
+#   make fixtures        regenerate tests/fixtures/vaults/basic
+#   make packs           validate packs/
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
 P  ?= 0
 
-.PHONY: sync test lint fmt typecheck gate phases check clean
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures packs check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -35,6 +38,15 @@ gate: sync
 
 phases:
 	python3 scripts/split_phases.py
+
+schemas: sync
+	$(UV) run python scripts/export_schemas.py
+
+fixtures:
+	python3 scripts/gen_fixture_vault.py
+
+packs: sync
+	$(UV) run python scripts/validate_packs.py
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage coverage.xml

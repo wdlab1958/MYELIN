@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "Classification": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "Confidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "NoteType": {
+      "enum": [
+        "fleeting",
+        "literature",
+        "evergreen",
+        "moc",
+        "adr",
+        "experiment",
+        "lesson",
+        "checklist",
+        "idea-ip"
+      ],
+      "title": "NoteType",
+      "type": "string"
+    },
+    "Origin": {
+      "enum": [
+        "human",
+        "claude",
+        "mixed"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "Status": {
+      "enum": [
+        "draft",
+        "unverified",
+        "verified",
+        "deprecated"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "description": "Frontmatter v2 (정본 §6.2).",
+  "properties": {
+    "id": {
+      "description": "자동 생성, 불변",
+      "pattern": "^(?P<date>\\d{8})-(?P<time>\\d{4})-(?P<slug>[a-z0-9][a-z0-9-]{0,63})$",
+      "title": "Id",
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/$defs/NoteType"
+    },
+    "domain": {
+      "items": {
+        "pattern": "^[A-Z][A-Z0-9-]{0,31}$",
+        "type": "string"
+      },
+      "title": "Domain",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/Status",
+      "default": "draft"
+    },
+    "origin": {
+      "$ref": "#/$defs/Origin",
+      "default": "human"
+    },
+    "confidence": {
+      "$ref": "#/$defs/Confidence",
+      "default": "medium"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification",
+      "default": "internal"
+    },
+    "share": {
+      "default": false,
+      "title": "Share",
+      "type": "boolean"
+    },
+    "source": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source",
+      "type": "array"
+    },
+    "created": {
+      "format": "date",
+      "title": "Created",
+      "type": "string"
+    },
+    "reviewed": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reviewed"
+    },
+    "tags": {
+      "items": {
+        "pattern": "^[a-z0-9][a-z0-9/_-]{0,63}$",
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "created"
+  ],
+  "title": "Frontmatter",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myelin.wdlab/schema/frontmatter.json"
+}

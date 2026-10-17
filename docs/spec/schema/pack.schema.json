@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "Classification": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "Domain": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[A-Z][A-Z0-9-]{0,31}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "accent": {
+          "default": "violet",
+          "title": "Accent",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "sub_mocs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 12,
+          "title": "Sub Mocs",
+          "type": "array"
+        },
+        "note_types": {
+          "items": {
+            "$ref": "#/$defs/NoteType"
+          },
+          "title": "Note Types",
+          "type": "array"
+        },
+        "taxonomy_seed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Taxonomy Seed"
+        },
+        "templates": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Templates"
+        },
+        "interview_bank": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interview Bank"
+        },
+        "classification_default": {
+          "$ref": "#/$defs/Classification",
+          "default": "internal"
+        },
+        "compose_targets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Compose Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "Domain",
+      "type": "object"
+    },
+    "NoteType": {
+      "enum": [
+        "fleeting",
+        "literature",
+        "evergreen",
+        "moc",
+        "adr",
+        "experiment",
+        "lesson",
+        "checklist",
+        "idea-ip"
+      ],
+      "title": "NoteType",
+      "type": "string"
+    },
+    "PackKind": {
+      "enum": [
+        "core",
+        "reference",
+        "org",
+        "personal"
+      ],
+      "title": "PackKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "pack": {
+      "description": "owner.name, e.g. a3.security-consulting",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)+$",
+      "title": "Pack",
+      "type": "string"
+    },
+    "version": {
+      "default": "1.0.0",
+      "title": "Version",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/PackKind"
+    },
+    "maintainer": {
+      "minLength": 1,
+      "title": "Maintainer",
+      "type": "string"
+    },
+    "requires": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Requires",
+      "type": "array"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "domains": {
+      "items": {
+        "$ref": "#/$defs/Domain"
+      },
+      "title": "Domains",
+      "type": "array"
+    },
+    "templates": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templates"
+    },
+    "taxonomy_seed": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Taxonomy Seed"
+    }
+  },
+  "required": [
+    "pack",
+    "kind",
+    "maintainer"
+  ],
+  "title": "Pack",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myelin.wdlab/schema/pack.json"
+}

@@ -80,14 +80,39 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P1 tasks", phase_state_lists_next_phase_tasks(0)),
     ],
     1: [
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
         Check(
-            "pytest + coverage ≥ 90% (myelin-core)", not_implemented("파서 테스트 커버리지 ≥ 90%")
+            "pytest + coverage ≥ 90% (myelin-core)",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "--cov=myelin_core",
+                    "--cov-fail-under=90",
+                    "--cov-report=term",
+                ]
+            ),
         ),
         Check(
-            "3 packs validate",
-            not_implemented("myelin.core · brian.physical-ai · a3.security-consulting"),
+            "3 packs validate + resolve", sh(["uv", "run", "python", "scripts/validate_packs.py"])
         ),
-        Check("10 invalid pack fixtures → clear errors", not_implemented("잘못된 Pack 10종")),
+        Check(
+            "invalid pack fixtures (≥10) → clear errors",
+            sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_invalid_packs.py"]),
+        ),
+        Check(
+            "fixture vault 30+ notes parse clean",
+            sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_fixture_vault.py"]),
+        ),
+        Check(
+            "JSON Schema export in sync",
+            sh(["uv", "run", "python", "scripts/export_schemas.py", "--check"]),
+        ),
+        Check("ADR-0003 schema policy", adr_exists("0003", "schema-validation-policy")),
+        Check("PHASE_STATE has P2 tasks", phase_state_lists_next_phase_tasks(1)),
     ],
     2: [
         Check("init golden snapshot", not_implemented("golden snapshot 일치")),

@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "InterviewQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "prompt": {
+          "minLength": 1,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "domain": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9-]{0,31}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domain"
+        },
+        "sub_moc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sub Moc"
+        },
+        "follow_ups": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Follow Ups",
+          "type": "array"
+        },
+        "yields": {
+          "$ref": "#/$defs/NoteType",
+          "default": "lesson"
+        }
+      },
+      "required": [
+        "id",
+        "prompt"
+      ],
+      "title": "InterviewQuestion",
+      "type": "object"
+    },
+    "NoteType": {
+      "enum": [
+        "fleeting",
+        "literature",
+        "evergreen",
+        "moc",
+        "adr",
+        "experiment",
+        "lesson",
+        "checklist",
+        "idea-ip"
+      ],
+      "title": "NoteType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "`interviews.yaml` — /interview 암묵지 추출 질문 은행.",
+  "properties": {
+    "questions": {
+      "items": {
+        "$ref": "#/$defs/InterviewQuestion"
+      },
+      "minItems": 1,
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "questions"
+  ],
+  "title": "InterviewBank",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myelin.wdlab/schema/interviewbank.json"
+}

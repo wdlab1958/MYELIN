@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "TaxonomyTerm": {
+      "additionalProperties": false,
+      "properties": {
+        "term": {
+          "minLength": 1,
+          "title": "Term",
+          "type": "string"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "definition": {
+          "default": "",
+          "title": "Definition",
+          "type": "string"
+        },
+        "domain": {
+          "items": {
+            "pattern": "^[A-Z][A-Z0-9-]{0,31}$",
+            "type": "string"
+          },
+          "title": "Domain",
+          "type": "array"
+        }
+      },
+      "required": [
+        "term"
+      ],
+      "title": "TaxonomyTerm",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "`taxonomy.yaml` — 용어 정규화 사전.\n\n/distill 용어 정규화와 90_System/taxonomy.md 렌더링의 원천.",
+  "properties": {
+    "terms": {
+      "items": {
+        "$ref": "#/$defs/TaxonomyTerm"
+      },
+      "title": "Terms",
+      "type": "array"
+    }
+  },
+  "title": "Taxonomy",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myelin.wdlab/schema/taxonomy.json"
+}
