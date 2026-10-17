@@ -1,11 +1,10 @@
 # PHASE_STATE
 
-current_phase: P0
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P1
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0 Gate 통과 (`make gate P=0`), 보고서 `docs/reports/P0.md`, 태그 `phase-P0`.
-> **다음 Phase(P1)는 Brian의 "GO P1" 승인 후에만 착수한다.** 승인 시 current_phase를 P1, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> P0 완료(태그 `phase-P0`). 2026-10-18 Brian "GO P1" 승인으로 P1 착수.
 
 ## Done
 - [x] P0-T1 모노레포 골격 생성 (10.1 구조) · git init · .gitignore
@@ -18,7 +17,7 @@ last_updated: 2026-10-18
 - [x] P0-T8 design/tokens.json 시드(8.1) · plugin/ · theme/ · tests/fixtures 자리표시
 - [x] P0-T9 make gate P=0 통과 · docs/reports/P0.md · git tag phase-P0 · 멈추고 승인 요청
 
-## Next (P1 — 승인 대기)
+## Next
 - [ ] P1-T1 Frontmatter v2 Pydantic 모델 (6.2 정본: id/type/domain/status/origin/confidence/classification/share/source/created/reviewed/tags)
 - [ ] P1-T2 Note 파서 (YAML frontmatter + body, wikilink 추출) + 라운드트립 테스트
 - [ ] P1-T3 Pack 스키마 Pydantic 모델 (5.2: pack/version/kind/maintainer/requires/domains[])
