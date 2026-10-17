@@ -1,0 +1,61 @@
+{
+ "expected": [
+  {
+   "rule": "broken-link",
+   "path": "10_Domains/D1/Dangling.md"
+  },
+  {
+   "rule": "confidential-share",
+   "path": "40_IP/candidates/Secret Shared.md"
+  },
+  {
+   "rule": "domain",
+   "path": "10_Domains/D1/Empty MOC.md"
+  },
+  {
+   "rule": "domain",
+   "path": "10_Domains/D1/Unknown Domain.md"
+  },
+  {
+   "rule": "duplicate-id",
+   "path": "10_Domains/D1/Dup One.md"
+  },
+  {
+   "rule": "duplicate-id",
+   "path": "10_Domains/D1/Dup Two.md"
+  },
+  {
+   "rule": "extra-field",
+   "path": "10_Domains/D1/Has Alias.md"
+  },
+  {
+   "rule": "fail-closed",
+   "path": "10_Domains/D1/Stray AI Draft.md"
+  },
+  {
+   "rule": "fail-closed",
+   "path": "10_Domains/D1/Verified Links AI.md"
+  },
+  {
+   "rule": "orphan",
+   "path": "10_Domains/D1/Lonely.md"
+  },
+  {
+   "rule": "schema",
+   "path": "10_Domains/D1/Bad Status.md"
+  },
+  {
+   "rule": "schema",
+   "path": "10_Domains/D1/No Frontmatter.md"
+  },
+  {
+   "rule": "temporal",
+   "path": "10_Domains/D1/Time Travel.md"
+  },
+  {
+   "rule": "temporal",
+   "path": "10_Domains/D1/Verified No Review.md"
+  }
+ ],
+ "files": 21
+}

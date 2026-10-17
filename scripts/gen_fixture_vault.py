@@ -658,6 +658,7 @@ domains:
   primary: D1
   research: D3
   growth: D4
+  extra: [D2]
 level: 2
 llm:
   default: claude

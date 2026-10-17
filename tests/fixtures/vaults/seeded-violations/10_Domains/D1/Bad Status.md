@@ -1,0 +1,14 @@
+---
+type: evergreen
+domain: [D1]
+status: approved
+origin: human
+confidence: medium
+classification: internal
+share: false
+source: []
+created: 2026-10-01
+tags: []
+id: 20261001-0903-bad-status
+---
+# x

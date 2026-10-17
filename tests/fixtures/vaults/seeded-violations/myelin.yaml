@@ -1,0 +1,7 @@
+owner: { name: Seed, team: QA, email: seed@example.org }
+language: ko
+packs: [myelin.core, brian.physical-ai]
+domains:
+  primary: D1
+  research: D2
+level: 1
