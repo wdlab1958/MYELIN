@@ -115,11 +115,57 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P2 tasks", phase_state_lists_next_phase_tasks(1)),
     ],
     2: [
-        Check("init golden snapshot", not_implemented("golden snapshot 일치")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
         Check(
-            "doctor: 100% seeded violations, 0 false positives", not_implemented("doctor 위반 검출")
+            "pytest + coverage ≥ 90% (core + cli)",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "--cov=myelin_core",
+                    "--cov=myelin_cli",
+                    "--cov-fail-under=90",
+                    "--cov-report=term",
+                ]
+            ),
         ),
-        Check("init < 10s", not_implemented("신규 Vault 생성 < 10초")),
+        Check(
+            "init golden snapshot matches",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-cli/tests/test_golden.py::test_init_matches_golden",
+                ]
+            ),
+        ),
+        Check(
+            "doctor: seeded violations 100%, false positives 0",
+            sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_doctor.py"]),
+        ),
+        Check(
+            "init < 10s",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-cli/tests/test_golden.py::test_init_under_10_seconds",
+                ]
+            ),
+        ),
+        Check(
+            "doctor clean on fixture basic",
+            sh(["uv", "run", "myelin", "doctor", "--vault", "tests/fixtures/vaults/basic"]),
+        ),
+        Check("ADR-0004 myelin.yaml", adr_exists("0004", "myelin-yaml-schema")),
+        Check("PHASE_STATE has P3 tasks", phase_state_lists_next_phase_tasks(2)),
     ],
     3: [
         Check("guard blocks 100% (outside/symlink/..)", not_implemented("허용 외 쓰기 차단 100%")),

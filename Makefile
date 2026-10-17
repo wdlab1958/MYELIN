@@ -5,14 +5,15 @@
 #   make gate P=<n>      run Phase gate checks (scripts/gate.py)
 #   make phases          regenerate docs/phases/P*.md from the spec
 #   make schemas         export JSON Schemas to docs/spec/schema/
-#   make fixtures        regenerate tests/fixtures/vaults/basic
+#   make fixtures        regenerate tests/fixtures/vaults/{basic,seeded-violations}
+#   make golden          regenerate tests/fixtures/golden/init-basic (review the diff!)
 #   make packs           validate packs/
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
 P  ?= 0
 
-.PHONY: sync test lint fmt typecheck gate phases schemas fixtures packs check clean
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -44,6 +45,10 @@ schemas: sync
 
 fixtures:
 	python3 scripts/gen_fixture_vault.py
+	python3 scripts/gen_seeded_vault.py
+
+golden: sync
+	$(UV) run python scripts/gen_golden.py
 
 packs: sync
 	$(UV) run python scripts/validate_packs.py
