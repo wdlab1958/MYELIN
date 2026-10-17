@@ -1,0 +1,28 @@
+# Org Pack (예시) — 보안 컨설팅 조직용 출발점.
+# 실제 조직은 이 Pack을 복사해 자기 private 저장소에서 `<org>.security-consulting` 으로 운영한다.
+pack: org.security-consulting
+version: 0.1.0
+kind: org
+maintainer: Example Org AI WG
+description: 진단·컨설팅 업무 지식 — 방법론, 산출물, 고객 유형별 교훈 (초안)
+requires:
+  - myelin.core>=1.0
+
+domains:
+  - id: SEC-CONSULT
+    label: SEC
+    name: 보안 컨설팅
+    accent: violet
+    description: 진단·컨설팅 업무의 방법론과 교훈을 축적한다.
+    sub_mocs:
+      - 진단 방법론
+      - 컴플라이언스 · 인증 기준
+      - 위협 모델링
+      - 보고서 작성
+      - 고객 커뮤니케이션
+    note_types: [evergreen, lesson, checklist, adr]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [진단 보고서 초안, 제안서 섹션, 교육자료]

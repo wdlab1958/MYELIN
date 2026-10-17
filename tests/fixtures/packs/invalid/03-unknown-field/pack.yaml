@@ -1,0 +1,9 @@
+pack: me.unknown-field
+version: 1.0.0
+kind: personal
+maintainer: tester
+author: someone          # 알 수 없는 필드 — fail-closed로 거부
+domains:
+  - id: X
+    name: x
+    sub_mocs: [a]

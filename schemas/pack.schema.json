@@ -1,0 +1,223 @@
+{
+  "$defs": {
+    "Accent": {
+      "description": "Emboss accent 토큰 (명세 §8).",
+      "enum": [
+        "violet",
+        "cyan",
+        "lime",
+        "magenta",
+        "amber",
+        "slate"
+      ],
+      "title": "Accent",
+      "type": "string"
+    },
+    "Classification": {
+      "enum": [
+        "public",
+        "internal",
+        "confidential"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "Domain": {
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "$ref": "#/$defs/Accent",
+          "default": "violet"
+        },
+        "classification_default": {
+          "$ref": "#/$defs/Classification",
+          "default": "internal"
+        },
+        "compose_targets": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Compose Targets",
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 32,
+          "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "interview_bank": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interview Bank"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "maxLength": 6,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "note_types": {
+          "items": {
+            "$ref": "#/$defs/NoteType"
+          },
+          "minItems": 1,
+          "title": "Note Types",
+          "type": "array"
+        },
+        "sub_mocs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Sub Mocs",
+          "type": "array"
+        },
+        "taxonomy_seed": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Taxonomy Seed"
+        },
+        "templates": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Templates"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "sub_mocs"
+      ],
+      "title": "Domain",
+      "type": "object"
+    },
+    "NoteType": {
+      "enum": [
+        "fleeting",
+        "literature",
+        "evergreen",
+        "moc",
+        "adr",
+        "experiment",
+        "lesson",
+        "checklist",
+        "idea-ip"
+      ],
+      "title": "NoteType",
+      "type": "string"
+    },
+    "PackKind": {
+      "enum": [
+        "core",
+        "reference",
+        "org",
+        "personal"
+      ],
+      "title": "PackKind",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "domains": {
+      "items": {
+        "$ref": "#/$defs/Domain"
+      },
+      "title": "Domains",
+      "type": "array"
+    },
+    "kind": {
+      "$ref": "#/$defs/PackKind"
+    },
+    "maintainer": {
+      "minLength": 1,
+      "title": "Maintainer",
+      "type": "string"
+    },
+    "pack": {
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)+$",
+      "title": "Pack",
+      "type": "string"
+    },
+    "requires": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Requires",
+      "type": "array"
+    },
+    "templates": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templates"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "pack",
+    "version",
+    "kind",
+    "maintainer"
+  ],
+  "title": "PackManifest",
+  "type": "object"
+}

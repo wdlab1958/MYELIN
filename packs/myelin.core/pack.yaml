@@ -1,0 +1,9 @@
+# MYELIN Core Pack — 모든 Vault의 공통 기반 (필수)
+pack: myelin.core
+version: 1.0.0
+kind: core
+maintainer: MYELIN
+description: >-
+  노트 유형 9종의 기본 템플릿. Domain은 선언하지 않는다 —
+  Domain은 Reference / Org / Personal Pack이 공급한다.
+templates: templates

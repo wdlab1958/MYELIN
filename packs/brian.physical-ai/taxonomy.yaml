@@ -1,0 +1,61 @@
+# Controlled vocabulary seed — Vault의 90_System/taxonomy.md 로 렌더링된다 (P2).
+terms:
+  # AI-ML-AX
+  - term: RAG
+    aliases: [Retrieval-Augmented Generation, 검색 증강 생성]
+    domain: AI-ML-AX
+    definition: 외부 지식 검색 결과를 생성 모델 입력에 결합하는 방식
+  - term: MCP
+    aliases: [Model Context Protocol]
+    domain: AI-ML-AX
+    definition: LLM 클라이언트가 외부 도구·데이터에 접근하는 표준 프로토콜
+  - term: HITL
+    aliases: [Human-in-the-Loop, 사람 개입]
+    domain: AI-ML-AX
+    definition: 결정 경로에 사람의 승인 단계를 두는 설계
+  - term: Fail-closed
+    aliases: [페일 클로즈드]
+    definition: 판단 불가 시 허용이 아니라 차단으로 끝나는 설계 원칙
+  - term: LLMOps
+    domain: AI-ML-AX
+    definition: LLM 서비스의 평가·배포·모니터링 운영 체계
+  # EMBEDDED-SW
+  - term: WCET
+    aliases: [Worst-Case Execution Time, 최악 실행 시간]
+    domain: EMBEDDED-SW
+    definition: 태스크가 걸릴 수 있는 최대 실행 시간 — 실시간 스케줄 가능성의 기준
+  - term: RTOS
+    aliases: [Real-Time Operating System, 실시간 운영체제]
+    domain: EMBEDDED-SW
+  - term: HIL
+    aliases: [Hardware-in-the-Loop]
+    domain: EMBEDDED-SW
+    definition: 실제 하드웨어를 시뮬레이션 루프에 넣어 검증하는 시험 방식
+  - term: Watchdog
+    aliases: [워치독]
+    domain: EMBEDDED-SW
+  # ROBOTICS-LEARNING
+  - term: Sim2Real
+    aliases: [Sim-to-Real]
+    domain: ROBOTICS-LEARNING
+    definition: 시뮬레이션에서 학습한 정책을 실물로 옮기는 문제
+  - term: Domain Randomization
+    aliases: [도메인 랜덤화]
+    domain: ROBOTICS-LEARNING
+  - term: VLA
+    aliases: [Vision-Language-Action]
+    domain: ROBOTICS-LEARNING
+  - term: MPC
+    aliases: [Model Predictive Control, 모델 예측 제어]
+    domain: ROBOTICS-LEARNING
+  # AUTO-DESIGN
+  - term: Design Table
+    aliases: [디자인 테이블]
+    domain: AUTO-DESIGN
+    definition: 스프레드시트로 파라미터 조합을 정의해 구성(Configuration)을 생성하는 기능
+  - term: DFM
+    aliases: [Design for Manufacturing, 제조 용이성 설계]
+    domain: AUTO-DESIGN
+  - term: Configuration
+    aliases: [구성]
+    domain: AUTO-DESIGN

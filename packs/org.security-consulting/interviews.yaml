@@ -1,0 +1,10 @@
+domains:
+  SEC-CONSULT:
+    - id: missed-finding
+      q: 진단에서 놓쳤다가 나중에 드러난 취약점이 있었나? 무엇 때문에 놓쳤나?
+      follow_ups:
+        - 체크리스트에 어떤 항목을 추가하면 다음에는 잡을 수 있나?
+    - id: client-pushback
+      q: 고객이 발견 사항을 받아들이지 않았던 경우, 무엇이 설득을 바꿨나?
+    - id: report-reuse
+      q: 매번 비슷하게 다시 쓰는 보고서 문단은 무엇인가?

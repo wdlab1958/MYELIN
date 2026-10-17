@@ -1,0 +1,9 @@
+pack: me.interview-missing-domain
+version: 1.0.0
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: x
+    sub_mocs: [a]
+    interview_bank: interviews.yaml

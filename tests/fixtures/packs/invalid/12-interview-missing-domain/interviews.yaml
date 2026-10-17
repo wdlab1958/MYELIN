@@ -1,0 +1,4 @@
+domains:
+  OTHER:
+    - id: q1
+      q: 이 질문은 다른 Domain 것이다

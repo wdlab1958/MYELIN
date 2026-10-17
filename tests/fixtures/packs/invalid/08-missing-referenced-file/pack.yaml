@@ -1,0 +1,10 @@
+pack: me.missing-referenced-file
+version: 1.0.0
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: x
+    sub_mocs: [a]
+    interview_bank: interviews.yaml   # 파일 없음
+    templates: templates              # 디렉터리 없음

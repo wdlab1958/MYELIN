@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "Question": {
+      "additionalProperties": false,
+      "properties": {
+        "follow_ups": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Follow Ups",
+          "type": "array"
+        },
+        "id": {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "q": {
+          "minLength": 1,
+          "title": "Q",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "q"
+      ],
+      "title": "Question",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "domains": {
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$": {
+          "items": {
+            "$ref": "#/$defs/Question"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 32
+      },
+      "title": "Domains",
+      "type": "object"
+    }
+  },
+  "required": [
+    "domains"
+  ],
+  "title": "InterviewBank",
+  "type": "object"
+}

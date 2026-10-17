@@ -1,0 +1,80 @@
+# Reference Pack — 45년차 엔지니어의 Physical AI 지식 지형도
+# 후배는 이 Pack의 Sub-MOC 구조와 interview bank를 출발점으로 쓰고, 자기 경험으로 채운다.
+pack: brian.physical-ai
+version: 1.0.0
+kind: reference
+maintainer: Brian (이원대), WDLAB
+description: >-
+  AI/ML/AX Platform · Embedded SW · 자율학습 Robotics · SolidWorks 설계 자동화.
+  네 Domain은 하나의 Physical AI 스택을 이루며, Domain 경계의 연결이 가장 큰 가치다.
+requires:
+  - myelin.core>=1.0
+
+domains:
+  - id: AI-ML-AX
+    label: D1
+    name: AI / ML / AX Platform
+    accent: violet
+    description: 플랫폼 개발 경험을 재사용 가능한 아키텍처 패턴·평가 체계·사업화 지식으로 구조화한다.
+    sub_mocs:
+      - LLM Engineering (RAG, Agent, MCP, Tool-use)
+      - LLMOps · Evaluation · AI 품질 진단
+      - AX(업무 전환) 방법론 · 컨설팅 프레임
+      - AI Security · Guardrail · Fail-closed Agent 설계
+      - Platform Architecture Patterns (Routing Shell, HITL Gate)
+      - 사업화 · 가격 · GTM
+    note_types: [literature, evergreen, adr, lesson, idea-ip]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    compose_targets: [플랫폼 설계서, 사업 제안서, AI 품질진단 리포트, 특허 명세서]
+
+  - id: EMBEDDED-SW
+    label: D2
+    name: Embedded SW Engineering
+    accent: cyan
+    description: 1980년대 Embedded/Avionics부터 축적된 암묵지를 명시지로 전환한다.
+    sub_mocs:
+      - Hard Real-time 설계 (RTOS, Scheduling, WCET)
+      - Safety-critical SW (Fault tolerance, 인증 사고방식)
+      - MCU / SoC · Driver · Bootloader
+      - Edge AI on Device
+      - Test · Verification · HIL
+      - Lessons from the Field
+    note_types: [literature, evergreen, lesson, checklist, adr]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    compose_targets: [Embedded 설계 가이드, Safety 설계 체크리스트, 교육자료]
+
+  - id: ROBOTICS-LEARNING
+    label: D3
+    name: 자율학습 Robotics (Physical AI)
+    accent: lime
+    description: 실물 로봇 프로젝트를 축으로 학습 기반 제어의 실험 지식을 체계화한다.
+    sub_mocs:
+      - Locomotion · 제어 (RL, MPC)
+      - Sim2Real (시뮬레이터, Domain Randomization)
+      - Perception · VLA · Robot Foundation Model
+      - ROS2 · Real-time Middleware
+      - Hardware Platform (Actuator, Sensor, Power)
+      - Experiment Log
+    note_types: [literature, evergreen, experiment, lesson, idea-ip]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    compose_targets: [실험 보고서, Physical AI 로드맵, 특허 후보]
+
+  - id: AUTO-DESIGN
+    label: D4
+    name: Auto Design — SolidWorks 설계 자동화
+    accent: magenta
+    description: 반복 설계 작업을 규칙화·자동화하고, 설계 지식을 파라메트릭 규칙과 코드로 축적한다.
+    sub_mocs:
+      - SolidWorks API · Macro (VBA, C# / .NET)
+      - Parametric Design · Design Table · Configuration
+      - 설계 규칙 엔진 (Design Rule → Code)
+      - 부품 라이브러리 · 표준품 관리
+      - DFM · 공차 · 재질
+      - AI × CAD (Text-to-CAD, 설계 Agent)
+    note_types: [literature, evergreen, adr, lesson, checklist]
+    taxonomy_seed: taxonomy.yaml
+    interview_bank: interviews.yaml
+    compose_targets: [매크로 라이브러리 문서, 설계 규칙집, Agentic CAD 연구 노트]

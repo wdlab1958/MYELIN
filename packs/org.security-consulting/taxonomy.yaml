@@ -1,0 +1,14 @@
+terms:
+  - term: 취약점 진단
+    aliases: [Vulnerability Assessment]
+    domain: SEC-CONSULT
+  - term: 모의해킹
+    aliases: [Penetration Test, 침투 테스트]
+    domain: SEC-CONSULT
+  - term: 위협 모델링
+    aliases: [Threat Modeling, STRIDE]
+    domain: SEC-CONSULT
+  - term: 비식별화
+    aliases: [De-identification]
+    domain: SEC-CONSULT
+    definition: 공유 전 고객명·IP·식별 정보를 제거하는 절차

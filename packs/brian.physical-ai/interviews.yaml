@@ -1,0 +1,43 @@
+# /interview 질문 은행 — 암묵지를 lesson 노트로 끌어내기 위한 질문 (P3 Skill이 사용)
+domains:
+  AI-ML-AX:
+    - id: platform-regret
+      q: 만든 플랫폼 중 다시 만든다면 아키텍처를 가장 크게 바꿀 것은 무엇이고, 왜인가?
+      follow_ups:
+        - 그 결정을 당시에 내리게 한 제약은 무엇이었나?
+        - 지금 같은 상황의 후배에게 줄 규칙 한 줄은?
+    - id: eval-failure
+      q: 평가 지표는 좋았는데 실제 서비스에서 실패한 사례가 있는가?
+      follow_ups:
+        - 지표가 놓친 것은 무엇이었나?
+    - id: hitl-placement
+      q: 사람 승인 단계를 어디에 두었을 때 가장 효과가 컸고, 어디에서는 방해만 되었나?
+
+  EMBEDDED-SW:
+    - id: late-answer
+      q: “늦은 정답은 오답”을 처음 몸으로 배운 사건은 무엇이었나?
+      follow_ups:
+        - 그때 시스템은 어떻게 실패했나?
+        - 지금의 AI 시스템에서 같은 원칙은 어디에 적용되는가?
+    - id: field-bug
+      q: 실험실에서는 재현되지 않고 현장에서만 나타난 버그 중 가장 기억에 남는 것은?
+      follow_ups:
+        - 결국 원인은 무엇이었고, 어떻게 찾았나?
+    - id: then-now
+      q: 1980년대에 당연했던 설계 습관 중 지금 개발자들이 모르는 것은 무엇인가?
+
+  ROBOTICS-LEARNING:
+    - id: sim-gap
+      q: 시뮬레이션에서는 잘 되다가 실물에서 무너진 경험이 있는가? 가장 큰 차이는 무엇이었나?
+    - id: hw-limit
+      q: 학습 알고리즘보다 하드웨어 제약(전원·액추에이터·센서)이 결과를 결정한 경우는?
+      follow_ups:
+        - 그 제약을 설계 초기에 알았다면 무엇을 바꿨을까?
+
+  AUTO-DESIGN:
+    - id: repeated-task
+      q: 설계에서 가장 자주 반복하는 수작업은 무엇이고, 규칙으로 쓸 수 있는가?
+      follow_ups:
+        - 그 규칙의 예외는 어떤 경우인가?
+    - id: manufacturing-feedback
+      q: 제조 단계에서 되돌아온 설계 오류 중 가장 비용이 컸던 것은?

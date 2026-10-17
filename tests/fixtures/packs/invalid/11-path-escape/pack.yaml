@@ -1,0 +1,9 @@
+pack: me.path-escape
+version: 1.0.0
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: x
+    sub_mocs: [a]
+    taxonomy_seed: ../../outside.yaml

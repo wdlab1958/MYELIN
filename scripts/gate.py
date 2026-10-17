@@ -34,7 +34,8 @@ def current_phase() -> str:
 def next_phase_tasks_listed(phase_num: int) -> Callable[[], bool]:
     def _check() -> bool:
         text = (ROOT / "PHASE_STATE.md").read_text(encoding="utf-8")
-        return re.search(rf"^- \[ \] P{phase_num}-T\d+", text, re.MULTILINE) is not None
+        # 완료([x]) 여부와 무관하게 다음 Phase 작업이 등록되어 있으면 통과 — 과거 Gate도 재실행 가능
+        return re.search(rf"^- \[[ x]\] P{phase_num}-T\d+", text, re.MULTILINE) is not None
 
     return _check
 

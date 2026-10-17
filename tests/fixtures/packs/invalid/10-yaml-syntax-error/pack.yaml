@@ -1,0 +1,8 @@
+pack: me.yaml-syntax-error
+version: 1.0.0
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: [unclosed
+    sub_mocs: [a]

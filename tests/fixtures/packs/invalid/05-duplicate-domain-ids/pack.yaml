@@ -1,0 +1,11 @@
+pack: me.duplicate-domain-ids
+version: 1.0.0
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: first
+    sub_mocs: [a]
+  - id: X
+    name: second
+    sub_mocs: [b]

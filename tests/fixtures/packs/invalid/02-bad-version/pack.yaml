@@ -1,0 +1,8 @@
+pack: me.bad-version
+version: "1.0"
+kind: personal
+maintainer: tester
+domains:
+  - id: X
+    name: x
+    sub_mocs: [a]
