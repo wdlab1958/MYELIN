@@ -69,8 +69,99 @@ def p0_checks() -> list[Check]:
     return checks
 
 
+def p1_reference_packs_valid() -> bool:
+    from myelin_core.loader import discover_packs, resolve
+
+    found = discover_packs(ROOT / "packs")
+    wanted = ["myelin.core", "brian.physical-ai", "org.security-consulting"]
+    if not set(wanted) <= set(found):
+        return False
+    resolve(wanted, found)  # 실패 시 PackError
+    return True
+
+
+def p1_invalid_packs_rejected() -> bool:
+    from myelin_core.errors import PackError
+    from myelin_core.loader import load_pack
+
+    cases = sorted(p for p in (ROOT / "tests/fixtures/packs/invalid").iterdir() if p.is_dir())
+    if len(cases) < 10:
+        return False
+    for case in cases:
+        try:
+            load_pack(case)
+        except PackError as err:
+            if not err.issues or not all(i.loc for i in err.issues):
+                return False
+            continue
+        return False  # 통과해 버린 잘못된 Pack
+    return True
+
+
+def p1_minimal_vault_parses() -> bool:
+    from myelin_core.note import parse_note_file
+
+    vault = ROOT / "tests/fixtures/vaults/minimal"
+    notes = sorted(vault.rglob("*.md"))
+    for path in notes:
+        parse_note_file(path, root=vault)  # 실패 시 NoteParseError
+    return len(notes) >= 30
+
+
+def p1_schemas_up_to_date() -> bool:
+    from myelin_core.schema_export import render_schemas
+
+    for name, text in render_schemas().items():
+        target = ROOT / "schemas" / name
+        if not target.exists() or target.read_text(encoding="utf-8") != text:
+            return False
+    return True
+
+
+def p1_core_coverage() -> bool:
+    import subprocess
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "packages/myelin-core",
+        "-q",
+        "--cov=myelin_core",
+        "--cov-fail-under=90",
+        "--no-header",
+        "-p",
+        "no:cacheprovider",
+    ]
+    return subprocess.run(cmd, cwd=ROOT, capture_output=True).returncode == 0
+
+
+def guarded(fn: Callable[[], bool]) -> Callable[[], bool]:
+    def _run() -> bool:
+        try:
+            return fn()
+        except Exception as exc:  # 검사 중 예외 = FAIL (fail-closed)
+            print(f"    ! {fn.__name__}: {type(exc).__name__}: {exc}")
+            return False
+
+    return _run
+
+
+def p1_checks() -> list[Check]:
+    return [
+        ("exists: docs/adr/0003-yaml-library.md", exists("docs/adr/0003-yaml-library.md")),
+        ("reference packs (3) validate & resolve", guarded(p1_reference_packs_valid)),
+        ("invalid pack fixtures (>=10) rejected with locs", guarded(p1_invalid_packs_rejected)),
+        ("minimal vault (>=30 notes) parses cleanly", guarded(p1_minimal_vault_parses)),
+        ("schemas/*.json match models", guarded(p1_schemas_up_to_date)),
+        ("myelin_core coverage >= 90%", guarded(p1_core_coverage)),
+        ("PHASE_STATE lists P2 tasks", next_phase_tasks_listed(2)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
     "P0": p0_checks,
+    "P1": p1_checks,
 }
 
 

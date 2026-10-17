@@ -43,6 +43,9 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["myelin_core", "myelin_cli", "myelin_mcp", "myelin_hub_api"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
