@@ -55,6 +55,7 @@ ignore = ["ANN401"]
 "**/tests/**" = ["ANN"]
 "scripts/**" = ["ANN"]
 "scripts/split_phases.py" = ["E501"]  # Task 목록 데이터 문자열(한국어)
+"scripts/gen_fixture_vault.py" = ["E501"]  # fixture 데이터 테이블
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]

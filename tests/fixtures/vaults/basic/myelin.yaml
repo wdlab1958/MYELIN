@@ -1,0 +1,13 @@
+# <Vault>/myelin.yaml (정본 §5.3) — fixture: Brian 개인 Vault
+owner: { name: Brian, team: A3-AI WG, email: brian@example.org }
+language: ko
+packs: [myelin.core, brian.physical-ai]
+domains:
+  primary: D1
+  research: D3
+  growth: D4
+level: 2
+llm:
+  default: claude
+  route: { confidential: local, "40_IP/**": local }
+commons: { enabled: false }

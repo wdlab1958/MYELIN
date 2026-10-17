@@ -1,0 +1,846 @@
+{
+ "count": 35,
+ "notes": [
+  {
+   "path": "10_Domains/D1/_MOC.md",
+   "id": "20260901-0900-d1-moc",
+   "type": "moc",
+   "domain": [
+    "D1"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-01",
+   "reviewed": "2026-10-01",
+   "tags": [
+    "moc"
+   ],
+   "title": "D1 AI/ML/AX Platform",
+   "links": [
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다",
+    "RAG 청킹 전략 비교",
+    "AX 저항은 통제감 상실에서 온다"
+   ]
+  },
+  {
+   "path": "10_Domains/D2/_MOC.md",
+   "id": "20260901-0901-d2-moc",
+   "type": "moc",
+   "domain": [
+    "D2"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-01",
+   "reviewed": "2026-10-01",
+   "tags": [
+    "moc"
+   ],
+   "title": "D2 Embedded SW",
+   "links": [
+    "WCET 예산은 측정값의 1.5배로 잡는다",
+    "ISR 안에서 로그를 찍지 않는다",
+    "Safety 리뷰 체크리스트"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/_MOC.md",
+   "id": "20260901-0902-d3-moc",
+   "type": "moc",
+   "domain": [
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-01",
+   "reviewed": "2026-10-01",
+   "tags": [
+    "moc"
+   ],
+   "title": "D3 자율학습 Robotics",
+   "links": [
+    "Sim2Real 갭의 첫 용의자는 마찰 계수다",
+    "Dogbot 보행 실험 07",
+    "ROS2 Executor 선택 ADR"
+   ]
+  },
+  {
+   "path": "10_Domains/D4/_MOC.md",
+   "id": "20260901-0903-d4-moc",
+   "type": "moc",
+   "domain": [
+    "D4"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-01",
+   "reviewed": "2026-10-01",
+   "tags": [
+    "moc"
+   ],
+   "title": "D4 Auto Design (SolidWorks)",
+   "links": [
+    "설계 규칙은 실패에서 태어난다",
+    "구멍 간 최소 간격 규칙",
+    "DFM 검토 체크리스트"
+   ]
+  },
+  {
+   "path": "10_Domains/D1/LLM 평가는 오프라인 지표만으로 충분하지 않다.md",
+   "id": "20260905-1010-llm-eval-offline",
+   "type": "evergreen",
+   "domain": [
+    "D1"
+   ],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "high",
+   "classification": "internal",
+   "share": true,
+   "source": [
+    "[[Lit - LLM-as-a-Judge 한계]]"
+   ],
+   "created": "2026-09-05",
+   "reviewed": "2026-09-20",
+   "tags": [
+    "llmops",
+    "evaluation"
+   ],
+   "title": "LLM 평가는 오프라인 지표만으로 충분하지 않다",
+   "links": [
+    "Lit - LLM-as-a-Judge 한계",
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D1/RAG 청킹 전략 비교.md",
+   "id": "20260906-1400-rag-chunking",
+   "type": "evergreen",
+   "domain": [
+    "D1"
+   ],
+   "status": "unverified",
+   "origin": "human",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-06",
+   "reviewed": null,
+   "tags": [
+    "rag"
+   ],
+   "title": "RAG 청킹 전략 비교",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D1/AX 저항은 통제감 상실에서 온다.md",
+   "id": "20260910-0930-ax-resistance",
+   "type": "lesson",
+   "domain": [
+    "D1"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": true,
+   "source": [],
+   "created": "2026-09-10",
+   "reviewed": "2026-09-30",
+   "tags": [
+    "lesson",
+    "ax"
+   ],
+   "title": "AX 저항은 통제감 상실에서 온다",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "30_Resources/Lit - LLM-as-a-Judge 한계.md",
+   "id": "20260904-2200-lit-llm-judge",
+   "type": "literature",
+   "domain": [
+    "D1"
+   ],
+   "status": "verified",
+   "origin": "claude",
+   "confidence": "medium",
+   "classification": "public",
+   "share": false,
+   "source": [
+    "https://example.org/llm-judge-limits"
+   ],
+   "created": "2026-09-04",
+   "reviewed": "2026-09-05",
+   "tags": [
+    "llmops"
+   ],
+   "title": "Lit - LLM-as-a-Judge 한계",
+   "links": []
+  },
+  {
+   "path": "10_Domains/D1/ADR - 평가 파이프라인은 오프라인+온라인 2단으로.md",
+   "id": "20260912-1100-adr-eval-pipeline",
+   "type": "adr",
+   "domain": [
+    "D1"
+   ],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-12",
+   "reviewed": "2026-09-15",
+   "tags": [
+    "adr"
+   ],
+   "title": "ADR - 평가 파이프라인은 오프라인+온라인 2단으로",
+   "links": [
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다"
+   ]
+  },
+  {
+   "path": "40_IP/candidates/프롬프트 인젭션 다층 가드 아이디어.md",
+   "id": "20260915-1500-ip-prompt-guard",
+   "type": "idea-ip",
+   "domain": [
+    "D1"
+   ],
+   "status": "draft",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "confidential",
+   "share": false,
+   "source": [],
+   "created": "2026-09-15",
+   "reviewed": null,
+   "tags": [
+    "ip",
+    "ai-security"
+   ],
+   "title": "프롬프트 인젭션 다층 가드 아이디어",
+   "links": [
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다"
+   ]
+  },
+  {
+   "path": "10_Domains/D2/WCET 예산은 측정값의 1.5배로 잡는다.md",
+   "id": "20260907-0800-wcet-budget",
+   "type": "evergreen",
+   "domain": [
+    "D2",
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "high",
+   "classification": "internal",
+   "share": true,
+   "source": [
+    "[[Lit - ROS2 Executor]]"
+   ],
+   "created": "2026-09-07",
+   "reviewed": "2026-09-21",
+   "tags": [
+    "rtos",
+    "control-loop"
+   ],
+   "title": "WCET 예산은 측정값의 1.5배로 잡는다",
+   "links": [
+    "Lit - ROS2 Executor",
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D2/ISR 안에서 로그를 찍지 않는다.md",
+   "id": "20260908-0815-isr-no-log",
+   "type": "lesson",
+   "domain": [
+    "D2"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": true,
+   "source": [],
+   "created": "2026-09-08",
+   "reviewed": "2026-09-22",
+   "tags": [
+    "lesson",
+    "isr"
+   ],
+   "title": "ISR 안에서 로그를 찍지 않는다",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D2/Safety 리뷰 체크리스트.md",
+   "id": "20260909-0900-safety-checklist",
+   "type": "checklist",
+   "domain": [
+    "D2"
+   ],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-09",
+   "reviewed": "2026-09-23",
+   "tags": [
+    "checklist",
+    "safety"
+   ],
+   "title": "Safety 리뷰 체크리스트",
+   "links": [
+    "ISR 안에서 로그를 찍지 않는다",
+    "WCET 예산은 측정값의 1.5배로 잡는다"
+   ]
+  },
+  {
+   "path": "30_Resources/Lit - ROS2 Executor.md",
+   "id": "20260903-2100-lit-ros2-executor",
+   "type": "literature",
+   "domain": [
+    "D2",
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "public",
+   "share": false,
+   "source": [
+    "https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Executors.html"
+   ],
+   "created": "2026-09-03",
+   "reviewed": "2026-09-04",
+   "tags": [
+    "ros2"
+   ],
+   "title": "Lit - ROS2 Executor",
+   "links": []
+  },
+  {
+   "path": "10_Domains/D2/Edge AI 양자화 결정.md",
+   "id": "20260918-1300-edge-quant",
+   "type": "adr",
+   "domain": [
+    "D2"
+   ],
+   "status": "unverified",
+   "origin": "claude",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-18",
+   "reviewed": null,
+   "tags": [
+    "adr",
+    "edge-ai"
+   ],
+   "title": "Edge AI 양자화 결정",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/Sim2Real 갭의 첫 용의자는 마찰 계수다.md",
+   "id": "20260911-1000-sim2real-friction",
+   "type": "evergreen",
+   "domain": [
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": true,
+   "source": [],
+   "created": "2026-09-11",
+   "reviewed": "2026-09-25",
+   "tags": [
+    "sim2real"
+   ],
+   "title": "Sim2Real 갭의 첫 용의자는 마찰 계수다",
+   "links": [
+    "Dogbot 보행 실험 07",
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/Dogbot 보행 실험 07.md",
+   "id": "20260913-1600-dogbot-exp-07",
+   "type": "experiment",
+   "domain": [
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-13",
+   "reviewed": "2026-09-14",
+   "tags": [
+    "experiment",
+    "dogbot"
+   ],
+   "title": "Dogbot 보행 실험 07",
+   "links": [
+    "Sim2Real 갭의 첫 용의자는 마찰 계수다"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/Dogbot 보행 실험 08.md",
+   "id": "20260920-1600-dogbot-exp-08",
+   "type": "experiment",
+   "domain": [
+    "D3"
+   ],
+   "status": "draft",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-20",
+   "reviewed": null,
+   "tags": [
+    "experiment",
+    "dogbot"
+   ],
+   "title": "Dogbot 보행 실험 08",
+   "links": [
+    "Dogbot 보행 실험 07"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/ROS2 Executor 선택 ADR.md",
+   "id": "20260914-0900-adr-ros2-executor",
+   "type": "adr",
+   "domain": [
+    "D3"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-14",
+   "reviewed": "2026-09-16",
+   "tags": [
+    "adr",
+    "ros2"
+   ],
+   "title": "ROS2 Executor 선택 ADR",
+   "links": [
+    "Lit - ROS2 Executor",
+    "WCET 예산은 측정값의 1.5배로 잡는다"
+   ]
+  },
+  {
+   "path": "10_Domains/D3/보상 함수 악용 교훈.md",
+   "id": "20260916-1700-reward-hack",
+   "type": "lesson",
+   "domain": [
+    "D3"
+   ],
+   "status": "unverified",
+   "origin": "claude",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-16",
+   "reviewed": null,
+   "tags": [
+    "lesson",
+    "rl"
+   ],
+   "title": "보상 함수 악용 교훈",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D4/설계 규칙은 실패에서 태어난다.md",
+   "id": "20260917-1000-rules-from-failure",
+   "type": "evergreen",
+   "domain": [
+    "D4"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": true,
+   "source": [],
+   "created": "2026-09-17",
+   "reviewed": "2026-09-27",
+   "tags": [
+    "design-rule"
+   ],
+   "title": "설계 규칙은 실패에서 태어난다",
+   "links": [
+    "구멍 간 최소 간격 규칙",
+    "_MOC"
+   ]
+  },
+  {
+   "path": "10_Domains/D4/구멍 간 최소 간격 규칙.md",
+   "id": "20260918-1030-hole-spacing-rule",
+   "type": "evergreen",
+   "domain": [
+    "D4"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "high",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-18",
+   "reviewed": "2026-09-28",
+   "tags": [
+    "design-rule",
+    "dfm"
+   ],
+   "title": "구멍 간 최소 간격 규칙",
+   "links": [
+    "설계 규칙은 실패에서 태어난다"
+   ]
+  },
+  {
+   "path": "10_Domains/D4/DFM 검토 체크리스트.md",
+   "id": "20260919-1100-dfm-checklist",
+   "type": "checklist",
+   "domain": [
+    "D4"
+   ],
+   "status": "unverified",
+   "origin": "mixed",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-19",
+   "reviewed": null,
+   "tags": [
+    "checklist",
+    "dfm"
+   ],
+   "title": "DFM 검토 체크리스트",
+   "links": [
+    "구멍 간 최소 간격 규칙"
+   ]
+  },
+  {
+   "path": "10_Domains/D4/매크로 재사용 교훈.md",
+   "id": "20260921-1500-macro-reuse",
+   "type": "lesson",
+   "domain": [
+    "D4"
+   ],
+   "status": "verified",
+   "origin": "human",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-09-21",
+   "reviewed": "2026-09-29",
+   "tags": [
+    "lesson",
+    "macro"
+   ],
+   "title": "매크로 재사용 교훈",
+   "links": [
+    "_MOC"
+   ]
+  },
+  {
+   "path": "40_IP/candidates/Agentic CAD 검증 루프.md",
+   "id": "20260922-1200-ip-agentic-cad",
+   "type": "idea-ip",
+   "domain": [
+    "D4",
+    "D1"
+   ],
+   "status": "draft",
+   "origin": "mixed",
+   "confidence": "low",
+   "classification": "confidential",
+   "share": false,
+   "source": [],
+   "created": "2026-09-22",
+   "reviewed": null,
+   "tags": [
+    "ip",
+    "agentic-cad"
+   ],
+   "title": "Agentic CAD 검증 루프",
+   "links": [
+    "설계 규칙은 실패에서 태어난다",
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다"
+   ]
+  },
+  {
+   "path": "00_Inbox/오늘 회의 메모 - 평가 지표.md",
+   "id": "20261015-0930-meeting-eval",
+   "type": "fleeting",
+   "domain": [],
+   "status": "draft",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-15",
+   "reviewed": null,
+   "tags": [],
+   "title": "오늘 회의 메모 - 평가 지표",
+   "links": []
+  },
+  {
+   "path": "00_Inbox/읽을 것 - executor 논문.md",
+   "id": "20261015-1000-read-executor",
+   "type": "fleeting",
+   "domain": [
+    "D3"
+   ],
+   "status": "draft",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-15",
+   "reviewed": null,
+   "tags": [
+    "todo"
+   ],
+   "title": "읽을 것 - executor 논문",
+   "links": []
+  },
+  {
+   "path": "00_Inbox/clips/클립 - 양자화 블로그.md",
+   "id": "20261016-0800-clip-quant",
+   "type": "fleeting",
+   "domain": [
+    "D2"
+   ],
+   "status": "draft",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "public",
+   "share": false,
+   "source": [
+    "https://example.org/quant"
+   ],
+   "created": "2026-10-16",
+   "reviewed": null,
+   "tags": [
+    "clip"
+   ],
+   "title": "클립 - 양자화 블로그",
+   "links": []
+  },
+  {
+   "path": "00_Inbox/ai-drafts/Lit - 양자화 서베이.md",
+   "id": "20261016-0900-ai-lit-quant",
+   "type": "literature",
+   "domain": [
+    "D2"
+   ],
+   "status": "draft",
+   "origin": "claude",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [
+    "https://example.org/quant-survey"
+   ],
+   "created": "2026-10-16",
+   "reviewed": null,
+   "tags": [
+    "edge-ai"
+   ],
+   "title": "Lit - 양자화 서베이",
+   "links": []
+  },
+  {
+   "path": "00_Inbox/ai-drafts/평가 지표 회의 - 원자 노트 1.md",
+   "id": "20261016-0910-ai-atomic-1",
+   "type": "evergreen",
+   "domain": [
+    "D1"
+   ],
+   "status": "draft",
+   "origin": "claude",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-16",
+   "reviewed": null,
+   "tags": [
+    "evaluation"
+   ],
+   "title": "평가 지표 회의 - 원자 노트 1",
+   "links": [
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다"
+   ]
+  },
+  {
+   "path": "00_Inbox/ai-drafts/인터뷰 - 데드라인 미스 교훈.md",
+   "id": "20261017-1100-ai-interview-deadline",
+   "type": "lesson",
+   "domain": [
+    "D2"
+   ],
+   "status": "draft",
+   "origin": "claude",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-17",
+   "reviewed": null,
+   "tags": [
+    "lesson",
+    "interview"
+   ],
+   "title": "인터뷰 - 데드라인 미스 교훈",
+   "links": [
+    "WCET 예산은 측정값의 1.5배로 잡는다"
+   ]
+  },
+  {
+   "path": "00_Inbox/ai-drafts/Dogbot 실험 09 초안.md",
+   "id": "20261017-1500-ai-dogbot-09",
+   "type": "experiment",
+   "domain": [
+    "D3"
+   ],
+   "status": "draft",
+   "origin": "claude",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-17",
+   "reviewed": null,
+   "tags": [
+    "experiment"
+   ],
+   "title": "Dogbot 실험 09 초안",
+   "links": [
+    "Dogbot 보행 실험 08"
+   ]
+  },
+  {
+   "path": "50_Journal/2026-W41 주간 리뷰.md",
+   "id": "20261012-1800-weekly-w41",
+   "type": "fleeting",
+   "domain": [],
+   "status": "verified",
+   "origin": "mixed",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-12",
+   "reviewed": "2026-10-12",
+   "tags": [
+    "weekly"
+   ],
+   "title": "2026-W41 주간 리뷰",
+   "links": [
+    "Dogbot 보행 실험 08",
+    "DFM 검토 체크리스트"
+   ]
+  },
+  {
+   "path": "80_Outputs/Physical AI 로드맵 v0.md",
+   "id": "20261010-1000-roadmap-v0",
+   "type": "evergreen",
+   "domain": [
+    "D1",
+    "D2",
+    "D3",
+    "D4"
+   ],
+   "status": "unverified",
+   "origin": "mixed",
+   "confidence": "medium",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-10-10",
+   "reviewed": null,
+   "tags": [
+    "roadmap",
+    "cross-domain"
+   ],
+   "title": "Physical AI 로드맵 v0",
+   "links": [
+    "Sim2Real 갭의 첫 용의자는 마찰 계수다",
+    "WCET 예산은 측정값의 1.5배로 잡는다",
+    "설계 규칙은 실패에서 태어난다",
+    "LLM 평가는 오프라인 지표만으로 충분하지 않다"
+   ]
+  },
+  {
+   "path": "99_Archive/구 평가 체크리스트.md",
+   "id": "20260801-0900-old-eval-checklist",
+   "type": "checklist",
+   "domain": [
+    "D1"
+   ],
+   "status": "deprecated",
+   "origin": "human",
+   "confidence": "low",
+   "classification": "internal",
+   "share": false,
+   "source": [],
+   "created": "2026-08-01",
+   "reviewed": "2026-09-12",
+   "tags": [
+    "checklist"
+   ],
+   "title": "구 평가 체크리스트",
+   "links": [
+    "ADR - 평가 파이프라인은 오프라인+온라인 2단으로"
+   ]
+  }
+ ]
+}
