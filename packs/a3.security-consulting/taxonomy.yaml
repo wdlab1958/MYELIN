@@ -1,0 +1,8 @@
+terms:
+  - { term: ISMS-P, aliases: [정보보호 및 개인정보보호 관리체계, ISMS], domain: [SEC-CONSULT] }
+  - { term: 취약점 진단, aliases: [VA, vulnerability assessment, 기술 진단], domain: [SEC-CONSULT] }
+  - { term: 모의해킹, aliases: [펜테스트, penetration test, pentest], domain: [SEC-CONSULT] }
+  - { term: 위협 모델링, aliases: [threat modeling, STRIDE], domain: [SEC-CONSULT] }
+  - { term: 조치 권고, aliases: [remediation, 개선 권고], domain: [SEC-CONSULT], definition: 발견 사항별 우선순위·방법·검증 기준을 담은 권고 }
+  - { term: 고객 유형, aliases: [customer type, 산업군], domain: [SEC-CONSULT], definition: 금융·공공·제조·플랫폼 등 — lesson 노트의 분류 축 }
+  - { term: 비식별, aliases: [de-identification, 익명화], domain: [SEC-CONSULT], definition: 고객명·IP·시스템명을 제거해 Commons 공개 가능하게 만드는 처리 }

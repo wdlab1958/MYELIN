@@ -1,0 +1,23 @@
+questions:
+  - id: sec-method-skip
+    domain: SEC-CONSULT
+    sub_moc: 진단 방법론
+    prompt: 표준 진단 절차에서 현장 사정으로 건너뛴 단계가 있었나? 그 결과 무엇을 놓쳤거나, 반대로 불필요했다고 확인됐나?
+  - id: sec-compliance-gap
+    domain: SEC-CONSULT
+    sub_moc: 컴플라이언스(ISMS-P 등)
+    prompt: 인증 기준은 충족했지만 실제 위험은 남아 있던 항목이 있었나? 고객에게 그 차이를 어떻게 설명했나?
+  - id: sec-threat-model-miss
+    domain: SEC-CONSULT
+    sub_moc: 위협 모델링
+    prompt: 위협 모델링에서 빠뜨렸다가 나중에 드러난 공격 경로가 있나? 다음 모델링에 추가할 질문은?
+    yields: checklist
+  - id: sec-report-pushback
+    domain: SEC-CONSULT
+    sub_moc: 보고서 작성
+    prompt: 보고서의 어떤 표현이 고객 반발을 불렀나? 같은 사실을 어떻게 다시 썼나?
+  - id: sec-customer-type
+    domain: SEC-CONSULT
+    sub_moc: 고객 커뮤니케이션
+    prompt: 이 고객 유형(금융/공공/제조/플랫폼)에서만 통하는 커뮤니케이션 규칙이 있나? 고객명 없이 일반화해 말해라.
+    follow_ups: [그 규칙을 어기면 보통 무슨 일이 생기나?]
