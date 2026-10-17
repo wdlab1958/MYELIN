@@ -1,0 +1,10 @@
+# MYELIN Core Pack — 모든 Vault의 공통 기반 (정본 §5.1 Core Pack: note types, frontmatter, 기본 템플릿)
+pack: myelin.core
+version: 1.0.0
+kind: core
+maintainer: MYELIN
+description: >-
+  Frontmatter v2 note types(9종)의 기본 템플릿과 MYELIN 공통 용어 사전.
+  Domain은 선언하지 않는다 — Domain은 Reference/Org/Personal Pack이 공급한다.
+templates: templates
+taxonomy_seed: taxonomy.yaml

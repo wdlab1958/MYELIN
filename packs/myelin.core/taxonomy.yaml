@@ -1,0 +1,53 @@
+# MYELIN 공통 용어 — 90_System/taxonomy.md 로 렌더링(P2), /distill 용어 정규화의 기준
+terms:
+  - term: MYELIN
+    aliases: [myelin, 미엘린]
+    definition: Personal Knowledge OS. 쓸수록 빨라지는 나의 지식 신경망.
+  - term: Vault
+    aliases: [볼트, 개인 Vault]
+    definition: 개인 소유 Obsidian Vault. Markdown + YAML 정본(SoR).
+  - term: Domain
+    aliases: [도메인]
+    definition: Pack에 선언된 지식 영역. 10_Domains/<ID>/ 폴더와 _MOC.md 를 가진다.
+  - term: Domain Pack
+    aliases: [Pack, 팩]
+    definition: Domain 정의 YAML. Core / Reference / Org / Personal 네 유형.
+  - term: MOC
+    aliases: [Map of Content, 맵]
+    definition: Domain 또는 주제의 진입 노트. 하위 노트를 구조화해 링크한다.
+  - term: Fleeting
+    aliases: [fleeting note, 임시 노트]
+    definition: 가공 전 짧은 메모. 00_Inbox 에 머문다.
+  - term: Literature
+    aliases: [literature note, 문헌 노트]
+    definition: 외부 출처(논문·문서·URL)의 핵심 주장과 인용 위치를 담은 노트.
+  - term: Evergreen
+    aliases: [evergreen note, 상록 노트, 원자 노트]
+    definition: 하나의 개념을 자기 언어로 쓴 재사용 가능한 노트. verified 승격 대상.
+  - term: Lesson
+    aliases: [lesson learned, 교훈]
+    definition: 경험에서 추출한 암묵지. /interview 의 산출물.
+  - term: ADR
+    aliases: [Architecture Decision Record, 설계 결정 기록]
+    definition: 되돌리기 어려운 결정과 그 근거를 기록한 노트.
+  - term: verified
+    aliases: [myelinated, 검증 완료]
+    definition: 사람이 Review Gate 에서 승격한 상태. Hub 에서 Lime 링으로 표시.
+  - term: ai-draft
+    aliases: [AI 초안, claude draft]
+    definition: origin claude 인 미검증 초안. 00_Inbox/ai-drafts 에만 생성된다.
+  - term: Fail-closed
+    aliases: [페일클로즈드]
+    definition: 판단 불가 입력은 거부. AI 쓰기는 ai-drafts·_patches 등 허용 경로만.
+  - term: HITL
+    aliases: [Human-in-the-loop, 사람 승인]
+    definition: verified 승격·MOC 편집·Commons 공개는 사람만 수행한다.
+  - term: Review Gate
+    aliases: [리뷰 게이트, 승격 게이트]
+    definition: Hub 에서 ai-draft 를 verified 로 승격하는 유일한 경로. Git commit 으로 기록.
+  - term: Commons
+    aliases: [Team Commons, MYELIN Commons]
+    definition: 조직 공유 저장소. share true + verified + classification ≤ internal 노트만.
+  - term: classification
+    aliases: [보안등급]
+    definition: public | internal | confidential. confidential 은 로컬 LLM 라우팅·공개 불가.
