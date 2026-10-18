@@ -48,7 +48,18 @@ def is_repo(vault: Path) -> bool:
 
 
 def _env() -> dict[str, str]:
-    return {**os.environ, "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C"}
+    # LITERAL_PATHSPECS: 파일 이름의 * ? [ 를 와일드카드로 보지 않는다 (다른 파일 stage 방지)
+    return {**os.environ, "GIT_TERMINAL_PROMPT": "0", "LC_ALL": "C", "GIT_LITERAL_PATHSPECS": "1"}
+
+
+def _subcommand(args: tuple[str, ...]) -> str:
+    it = iter(args)
+    for a in it:
+        if a == "-c":
+            next(it, None)
+            continue
+        return a
+    return "?"
 
 
 def _git(vault: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -64,7 +75,7 @@ def _git(vault: Path, *args: str, check: bool = True) -> subprocess.CompletedPro
     )
     if check and res.returncode != 0:
         detail = (res.stderr or res.stdout).strip().splitlines()[-1:] or ["(출력 없음)"]
-        raise GitError(f"git {args[0]} 실패", [Issue("git", detail[0], "git_failed")])
+        raise GitError(f"git {_subcommand(args)} 실패", [Issue("git", detail[0], "git_failed")])
     return res
 
 
@@ -119,17 +130,27 @@ def commit_paths(vault: Path, paths: Sequence[str], message: str, author: Author
     if not specs:
         raise GitError("commit할 변경이 없습니다", [Issue("git", "경로 없음", "nothing")])
     _git(vault, "add", "-A", "--", *specs)
-    _git(vault, *_identity(vault, author), "commit", "-q", "-m", message, "--", *specs)
+    try:
+        _git(vault, *_identity(vault, author), "commit", "-q", "-m", message, "--", *specs)
+    except GitError:
+        # 실패한 commit의 stage를 남기지 않는다 — 다음 사용자 commit에 섞이지 않게
+        if head(vault) is not None:
+            _git(vault, "reset", "-q", "--", *specs, check=False)
+        else:
+            _git(vault, "rm", "-q", "-r", "--cached", "--ignore-unmatch", "--", *specs, check=False)
+        raise
     return head(vault) or ""
 
 
 def recent_commits(vault: Path, limit: int = 10) -> list[CommitInfo]:
     if head(vault) is None:
         return []
-    res = _git(vault, "log", f"-{limit}", "--format=%H%x1f%s%x1f%cI")
+    res = _git(vault, "log", f"-{limit}", "-z", "--format=%H%x1f%cI%x1f%s")
     out: list[CommitInfo] = []
-    for line in res.stdout.splitlines():
-        sha, subject, when = line.split("\x1f")
+    for record in res.stdout.split("\0"):
+        if not record.strip():
+            continue
+        sha, when, subject = record.split("\x1f", 2)  # 제목은 마지막 — 어떤 문자가 와도 안전
         out.append(CommitInfo(sha, subject, when))
     return out
 

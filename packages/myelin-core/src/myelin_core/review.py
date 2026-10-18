@@ -11,6 +11,9 @@
 from __future__ import annotations
 
 import io
+import os
+import re
+import tempfile
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
@@ -89,30 +92,46 @@ def review_queue(vault: Path) -> list[ReviewItem]:
 
 
 # ── 경로·읽기 ────────────────────────────────────────────────────────────
-def safe_note_path(vault: Path, rel: str) -> Path:
-    """Vault 안의 실제 지식 노트 파일만 허용한다."""
-    bad = ReviewError("노트 경로가 올바르지 않습니다", [Issue("path", rel, "bad_path")])
-    pure = PurePosixPath(rel)
-    if not rel or pure.is_absolute() or ".." in pure.parts or "\\" in rel:
-        raise bad
-    if not is_note_path(Path(*pure.parts)):
-        raise bad
-    root = vault.resolve()
-    target = vault / Path(*pure.parts)
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _symlink_free(vault: Path, rel: str) -> None:
+    """`rel` 의 경로 구성요소 중 존재하는 것이 하나라도 심볼릭 링크면 거부."""
     probe = vault
-    for part in pure.parts:
+    for part in PurePosixPath(rel).parts:
         probe = probe / part
         if probe.is_symlink():
             raise ReviewError("심볼릭 링크는 다루지 않습니다", [Issue("path", rel, "symlink")])
-    if not target.is_file() or not target.resolve().is_relative_to(root):
+
+
+def safe_note_path(vault: Path, rel: str) -> Path:
+    """Vault 안의 실제 지식 노트 파일만 허용한다."""
+    bad = ReviewError("노트 경로가 올바르지 않습니다", [Issue("path", repr(rel), "bad_path")])
+    pure = PurePosixPath(rel)
+    if not rel or pure.is_absolute() or ".." in pure.parts or "\\" in rel or _CONTROL.search(rel):
+        raise bad
+    if not is_note_path(Path(*pure.parts)):
+        raise bad
+    target = vault / Path(*pure.parts)
+    _symlink_free(vault, rel)
+    if not target.is_file() or not target.resolve().is_relative_to(vault.resolve()):
         raise ReviewError("노트를 찾을 수 없습니다", [Issue("path", rel, "not_found")])
     return target
+
+
+def _read_raw(path: Path) -> str:
+    """줄바꿈 변환 없이 읽는다 (CRLF·BOM 그대로)."""
+    return path.read_bytes().decode("utf-8")
+
+
+def _write_raw(path: Path, text: str) -> None:
+    path.write_bytes(text.encode("utf-8"))
 
 
 def read_note(vault: Path, rel: str) -> tuple[Note, str]:
     path = safe_note_path(vault, rel)
     try:
-        text = path.read_text(encoding="utf-8")
+        text = _read_raw(path)
         note = parse_note(text, source=rel, title=path.stem)
     except (UnicodeDecodeError, NoteParseError) as exc:
         issues = exc.issues if isinstance(exc, NoteParseError) else [Issue(rel, "UTF-8 아님")]
@@ -130,25 +149,29 @@ def _rt() -> YAML:
 
 
 def set_fields(text: str, rel: str, fields: dict[str, Any]) -> str:
-    """frontmatter의 `fields` 만 바꾼 새 텍스트. 본문·다른 키·주석은 그대로."""
-    norm = text.removeprefix(_BOM).replace("\r\n", "\n")
-    lines = norm.split("\n")
+    """frontmatter의 `fields` 만 바꾼 새 텍스트.
+
+    본문은 닫는 `---` 줄부터 **원래 문자 그대로** 붙인다 (CRLF·BOM 포함). frontmatter 구획도
+    원래 줄바꿈 방식(LF/CRLF)으로 다시 쓴다. 다른 키·순서·주석은 ruamel round-trip으로 보존.
+    """
+    bom = _BOM if text.startswith(_BOM) else ""
+    lines = text[len(bom) :].splitlines(keepends=True)
     close = next((i for i, line in enumerate(lines[1:], 1) if line.strip() in ("---", "...")), None)
-    if lines[0].strip() != "---" or close is None:
+    if not lines or lines[0].strip() != "---" or close is None:
         raise ReviewError("frontmatter 구획을 찾을 수 없습니다", [Issue(rel, "---", "no_fm")])
+    eol = "\r\n" if lines[0].endswith("\r\n") else "\n"
     rt = _rt()
-    data = rt.load("\n".join(lines[1:close]))
+    data = rt.load("".join(lines[1:close]).replace("\r\n", "\n"))
     for key, value in fields.items():
         data[key] = value
     buf = io.StringIO()
     rt.dump(data, buf)
-    head = "---\n" + buf.getvalue() + lines[close] + "\n"
-    body = "\n".join(lines[close + 1 :])
-    new = head + body
-    # 결과 검증: 다시 읽히고, id·본문이 그대로여야 한다
-    before = parse_note(norm, source=rel)
+    tail = "".join(lines[close:])  # 닫는 줄 + 본문, 원문 그대로
+    new = bom + lines[0] + buf.getvalue().replace("\n", eol) + tail
+    # 결과 검증: 다시 읽히고, id가 같고, 본문 문자열이 원문 그대로여야 한다
+    before = parse_note(text, source=rel)
     after = parse_note(new, source=rel)
-    if after.frontmatter.id != before.frontmatter.id or after.body != before.body:
+    if after.frontmatter.id != before.frontmatter.id or not new.endswith(tail):
         raise ReviewError("frontmatter 변경 검증 실패", [Issue(rel, "id/본문 변경", "verify")])
     return new
 
@@ -180,6 +203,7 @@ def _domain_dest(vault: Path, note: Note, rel: str) -> str:
             [Issue("domain", f"{rel}: 이 Vault의 Domain({', '.join(cfg.domains.all())})이 없음")],
         )
     folder = f"10_Domains/{domains[0]}"
+    _symlink_free(vault, folder)
     if not (vault / folder).is_dir():
         raise ReviewError("Domain 폴더가 없습니다", [Issue(folder, "없음", "missing_dir")])
     return f"{folder}/{PurePosixPath(rel).name}"
@@ -202,8 +226,14 @@ def _unverified_ai_targets(vault: Path, rel: str) -> list[str]:
     return out
 
 
-def _exists(dst: str) -> ReviewError:
-    return ReviewError("옮길 자리에 같은 이름이 있습니다", [Issue(dst, "덮어쓰지 않음", "exists")])
+def _check_dest(vault: Path, dst: str) -> None:
+    """이동 대상: 경로에 심볼릭 링크가 없고, 같은 이름이 없어야 한다 (덮어쓰기 금지)."""
+    _symlink_free(vault, dst)
+    target = vault / dst
+    if target.exists() or target.is_symlink():
+        raise ReviewError(
+            "옮길 자리에 같은 이름이 있습니다", [Issue(dst, "덮어쓰지 않음", "exists")]
+        )
 
 
 def plan_promote(vault: Path, rel: str, expected_id: str, today: date) -> Change:
@@ -218,10 +248,8 @@ def plan_promote(vault: Path, rel: str, expected_id: str, today: date) -> Change
             [Issue(p, "origin≠human, status≠verified", "links_unverified_ai") for p in pending],
         )
     dst = _domain_dest(vault, note, rel) if rel.startswith(INBOX) else rel
-    if dst != rel and (vault / dst).exists():
-        raise ReviewError(
-            "옮길 자리에 같은 이름이 있습니다", [Issue(dst, "덮어쓰지 않음", "exists")]
-        )
+    if dst != rel:
+        _check_dest(vault, dst)
     new = set_fields(text, rel, {"status": Status.VERIFIED.value, "reviewed": today})
     return Change("promote", note.frontmatter.id, note.title, rel, dst, text, new)
 
@@ -229,10 +257,7 @@ def plan_promote(vault: Path, rel: str, expected_id: str, today: date) -> Change
 def plan_reject(vault: Path, rel: str, expected_id: str, today: date) -> Change:
     note, text = _common(vault, rel, expected_id, today)
     dst = f"{REJECTED_DIR}/{PurePosixPath(rel).name}"
-    if (vault / dst).exists():
-        raise ReviewError(
-            "옮길 자리에 같은 이름이 있습니다", [Issue(dst, "덮어쓰지 않음", "exists")]
-        )
+    _check_dest(vault, dst)
     new = set_fields(text, rel, {"status": Status.DEPRECATED.value, "reviewed": today})
     return Change("reject", note.frontmatter.id, note.title, rel, dst, text, new)
 
@@ -240,23 +265,35 @@ def plan_reject(vault: Path, rel: str, expected_id: str, today: date) -> Change:
 # ── 적용·되돌리기 ───────────────────────────────────────────────────────
 def apply_change(vault: Path, change: Change) -> None:
     src = vault / change.src
-    if src.read_text(encoding="utf-8") != change.original:
+    _symlink_free(vault, change.src)
+    if _read_raw(src) != change.original:
         raise ReviewError("계획 이후 파일이 바뀌었습니다", [Issue(change.src, "변경됨", "stale")])
+    data = change.text.encode("utf-8")
     if change.dst == change.src:
-        tmp = src.with_name(f".{src.name}.myelin-tmp")
-        tmp.write_text(change.text, encoding="utf-8")
-        tmp.replace(src)
+        # 임의 이름 + O_EXCL 임시 파일 (미리 심어 둔 링크를 따라가지 않는다)
+        fd, tmp = tempfile.mkstemp(dir=src.parent, prefix=f".{src.name}.", suffix=".myelin-tmp")
+        try:
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(data)
+            os.replace(tmp, src)
+        except BaseException:
+            Path(tmp).unlink(missing_ok=True)
+            raise
         return
+    _check_dest(vault, change.dst)
     dst = vault / change.dst
     dst.parent.mkdir(parents=True, exist_ok=True)
-    with dst.open("x", encoding="utf-8") as fh:  # 덮어쓰기 금지
-        fh.write(change.text)
+    _symlink_free(vault, change.dst)  # mkdir 이후 다시 확인
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(dst, flags, 0o644)  # 덮어쓰기 금지 · 링크 따라가지 않음
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(data)
     src.unlink()
 
 
 def revert_change(vault: Path, change: Change) -> None:
-    """apply_change 를 되돌린다 (commit 실패 시)."""
-    (vault / change.src).write_text(change.original, encoding="utf-8")
+    """apply_change 를 되돌린다 (commit 실패 시) — 원래 바이트 그대로."""
+    _write_raw(vault / change.src, change.original)
     if change.dst != change.src:
         (vault / change.dst).unlink(missing_ok=True)
 

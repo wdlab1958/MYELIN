@@ -76,6 +76,35 @@ def test_git_refusals(vault: Path, tmp_path: Path) -> None:
     assert exc.value.issues[0].code == "vault_in_git"
 
 
+def test_failed_commit_leaves_index_clean(vault: Path) -> None:
+    gitops.init_repo(vault, ME)
+    hook = vault / ".git/hooks/pre-commit"
+    hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    hook.chmod(0o755)
+    (vault / "20_Projects/a.md").write_text("a\n", encoding="utf-8")
+    with pytest.raises(GitError) as exc:
+        gitops.commit_paths(vault, ["20_Projects/a.md"], "m", ME)
+    assert exc.value.message == "git commit 실패"
+    assert _git(vault, "diff", "--cached", "--name-only") == ""
+
+
+def test_glob_names_are_literal(vault: Path) -> None:
+    gitops.init_repo(vault, ME)
+    (vault / "00_Inbox/wip.md").write_text("사용자 작업 중\n", encoding="utf-8")
+    (vault / "00_Inbox/*.md").write_text("hub\n", encoding="utf-8")
+    sha = gitops.commit_paths(vault, ["00_Inbox/*.md"], "m", ME)
+    assert gitops.files_in_commit(vault, sha) == ["00_Inbox/*.md"]
+    assert _git(vault, "diff", "--cached", "--name-only") == ""
+    assert "?? 00_Inbox/wip.md" in _git(vault, "status", "--porcelain")
+
+
+def test_recent_commits_odd_subject(vault: Path) -> None:
+    gitops.init_repo(vault, ME)
+    (vault / "20_Projects/a.md").write_text("a\n", encoding="utf-8")
+    gitops.commit_paths(vault, ["20_Projects/a.md"], "제목\x1f이상한 문자", ME)
+    assert gitops.recent_commits(vault, 1)[0].subject == "제목\x1f이상한 문자"
+
+
 def test_git_missing(vault: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(gitops.shutil, "which", lambda _: None)
     assert not gitops.git_available()

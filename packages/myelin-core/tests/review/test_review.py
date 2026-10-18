@@ -219,11 +219,64 @@ def test_stale_plan_and_revert(vault: Path, put: Put) -> None:
 
 
 def test_set_fields_crlf_and_bom(vault: Path) -> None:
-    text = "﻿" + draft().replace("\n", "\r\n")
+    text = "\ufeff" + draft().replace("\n", "\r\n")
     new = set_fields(text, "x.md", {"status": "verified"})
-    assert new.startswith("---\nid:") and "status: verified" in new and "\r" not in new
+    assert new.startswith("\ufeff---\r\nid:") and "status: verified\r\n" in new
+    assert "\n" not in new.replace("\r\n", "")  # 줄바꿈 방식 유지
+    assert new.endswith("---\r\n# WCET 예산\r\n\r\n본문 그대로.\r\n")
     with pytest.raises(ReviewError):
         set_fields("---\nid: x\n", "x.md", {"status": "verified"})
+
+
+def test_promote_keeps_crlf_bytes(vault: Path) -> None:
+    rel = "20_Projects/crlf.md"
+    raw = draft("20261016-0900-crlf", origin="human").replace("\n", "\r\n").encode()
+    (vault / rel).write_bytes(raw)
+    change = plan_promote(vault, rel, "20261016-0900-crlf", TODAY)
+    apply_change(vault, change)
+    new = (vault / rel).read_bytes()
+    assert new.count(b"\r\n") == raw.count(b"\r\n") + 1  # reviewed 줄만 추가
+    assert new.split(b"---\r\n", 2)[2] == raw.split(b"---\r\n", 2)[2]
+    revert_change(vault, change)
+    assert (vault / rel).read_bytes() == raw
+
+
+def test_planted_tmp_symlink_not_followed(vault: Path, put: Put, tmp_path: Path) -> None:
+    rel = put("20_Projects/t.md", draft("20261016-0900-tmp", origin="human"))
+    victim = tmp_path / "victim.txt"
+    victim.write_text("원래 내용", encoding="utf-8")
+    os.symlink(victim, vault / "20_Projects/.t.md.myelin-tmp")
+    apply_change(vault, plan_promote(vault, rel, "20261016-0900-tmp", TODAY))
+    assert victim.read_text(encoding="utf-8") == "원래 내용"
+    assert not (vault / rel).is_symlink() and "verified" in (vault / rel).read_text("utf-8")
+    leftovers = [p.name for p in (vault / "20_Projects").iterdir() if "myelin-tmp" in p.name]
+    assert leftovers == [".t.md.myelin-tmp"]  # 심어 둔 링크만 남고 우리 임시 파일은 없다
+
+
+def test_symlinked_destination_refused(vault: Path, put: Put, tmp_path: Path) -> None:
+    put(AI, draft())
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    folder = vault / "10_Domains/AI-ML-AX"
+    for f in folder.iterdir():
+        f.unlink()
+    folder.rmdir()
+    os.symlink(outside, folder)
+    with pytest.raises(ReviewError) as exc:
+        plan_promote(vault, AI, "20261018-0900-wcet", TODAY)
+    assert _code(exc) == "symlink"
+    os.symlink(outside, vault / "99_Archive/rejected")
+    with pytest.raises(ReviewError) as exc:
+        plan_reject(vault, AI, "20261018-0900-wcet", TODAY)
+    assert _code(exc) == "symlink"
+    assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize("name", ["a\nb.md", "a\x1fb.md", "a\x7fb.md"])
+def test_control_chars_refused(vault: Path, name: str) -> None:
+    with pytest.raises(ReviewError) as exc:
+        plan_promote(vault, f"00_Inbox/ai-drafts/{name}", "x", TODAY)
+    assert _code(exc) == "bad_path"
 
 
 def test_read_note_non_utf8(vault: Path) -> None:
