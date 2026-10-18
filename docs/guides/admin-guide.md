@@ -7,6 +7,7 @@
 | MCP | `claude mcp add myelin -- uv --directory <repo> run myelin-mcp --vault <v>` | stdio, 읽기 전용 기본 |
 | Plugin | `claude plugin marketplace add <repo>` → `claude plugin install myelin@myelin-local` | `claude plugin validate <repo>/plugin --strict` |
 | Commons | 사내 git (`myelin commons init <dir>` 후 push) | 구성원은 `MYELIN_PACKS=<clone>/registry/packs` |
+| Obsidian | `scripts/install_obsidian.sh --vault <v>` (Debian/Ubuntu, .deb from obsidianmd/obsidian-releases) | 테마 `MYELIN Emboss` 를 `.obsidian/appearance.json` 에 선선택 |
 
 ## 2. Commons 운영
 1. `myelin commons init /srv/myelin-commons` → 원격 생성·push.

@@ -33,8 +33,13 @@ CLI 로 하려면 `myelin init --vault ~/Vaults/me`. 둘 다 같은 로직이다
 - MCP(`search_notes`, `get_note` …)는 읽기 전용. confidential 노트는 본문을 돌려주지 않는다.
 
 ## 5. Obsidian
-- Settings › Appearance › Themes › **MYELIN Emboss**(설치 스크립트가 복사).
-- 노트 상태 표시: `cssclasses: [mx-status-verified]` 또는 Dataview.
+MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 **테마 + 파일 규약**이다. 상세는 [`docs/guides/obsidian-setup.md`](obsidian-setup.md).
+- **어느 Vault 인가**: MYELIN Vault 는 `myelin.yaml` 이 있는 폴더다. Obsidian 이 처음 만드는 `~/Obsidian Vault` 는 MYELIN 과 무관하므로 왼쪽 아래 Vault 전환으로 MYELIN Vault 를 연다.
+- **테마 파일**: `myelin init`/Hub 온보딩이 만든 Vault 에는 `.obsidian/themes/MYELIN Emboss/` 와 `appearance.json`(라이트·테마 선선택)이 이미 있다. 기존 Vault 는 `scripts/install.sh --vault <Vault>` 또는 `theme/obsidian-myelin-emboss/` 를 `<Vault>/.obsidian/themes/MYELIN Emboss/` 로 복사(폴더 이름 = manifest.json 의 name).
+- **Settings**: Appearance › Base color scheme **Light** › Themes **Manage** › **MYELIN Emboss**. 목록에 없으면 `Ctrl+P` › *Reload app without saving*.
+- **상태 표시**: frontmatter `cssclasses: [mx-status-verified]`(라임 링 + verified 칩) / `[mx-status-ai-draft]`(시안 glow) / `[mx-status-blocked]`(마젠타 외곽선). 미지 필드이지만 허용·보존된다(ADR-0003).
+- **색 변경**: `theme.css` 가 아니라 `design/tokens.json` → `make emboss` → 복사.
+- Obsidian 자체가 없으면 `scripts/install_obsidian.sh --vault <Vault>` (Debian/Ubuntu).
 
 ## 6. 공유 (Commons)
 - 공개하고 싶은 verified 노트에 `share: true`. Hub › Review Gate › **Commons 후보** 에서 비식별 검사 → 확인 체크 → "Commons 제안" → 브랜치/PR → 챔피언 merge.

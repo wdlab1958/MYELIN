@@ -52,6 +52,7 @@ git clone git@github.com:wdlab1958/MYELIN.git myelin && cd myelin
 scripts/install.sh --vault ~/Vaults/me      # python/uv 자가 검사 → uv sync → Hub 빌드 → 런처(~/.local/bin) → plugin → MCP → Obsidian 테마
 myelin-hub --vault ~/Vaults/me               # http://127.0.0.1:8787 → 온보딩 마법사(3+1 Domain) → 첫 ai-draft 승격
 ```
+Obsidian 이 없으면 `scripts/install_obsidian.sh --vault ~/Vaults/me` (Debian/Ubuntu: 공식 .deb 설치 + Emboss 테마 선선택 + Vault 열기).
 CLI 로만: `myelin init --vault ~/Vaults/me` → Obsidian 에서 열기 → Vault 폴더에서 `claude` → `/myelin:ingest <자료>` → `/myelin:distill` → Hub 에서 Promote.
 
 요구 사항: Python 3.12, [uv](https://docs.astral.sh/uv/), git, Node 22 (Hub 웹), [Claude Code](https://claude.com/claude-code) 2.1.275+ (plugin/MCP), Google Chrome (e2e 선택).
@@ -129,7 +130,7 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 
 ## 9. 문서
 
-- 가이드: [사용자](docs/guides/user-guide.md) · [관리자](docs/guides/admin-guide.md) · [MCP 설정](docs/guides/mcp-setup.md) · [파일럿](docs/guides/pilot-guide.md) · [60분 워크숍](docs/guides/workshop-60min.md) · [Day 1 체크리스트](docs/guides/day1-checklist.md)
+- 가이드: [사용자](docs/guides/user-guide.md) · [관리자](docs/guides/admin-guide.md) · [Obsidian 연동](docs/guides/obsidian-setup.md) · [MCP 설정](docs/guides/mcp-setup.md) · [파일럿](docs/guides/pilot-guide.md) · [60분 워크숍](docs/guides/workshop-60min.md) · [Day 1 체크리스트](docs/guides/day1-checklist.md)
 - 스펙: [정본](docs/spec/MYELIN_Rev2.0.md) · [JSON Schema](docs/spec/schema/) · [Commons 구조](docs/spec/commons.md) · [컴포넌트 스펙](design/components.md)
 - 보안: [위협 모델(STRIDE)](docs/security/threat-model.md) · [이름 확인(상표·도메인·GitHub)](docs/reports/P8/naming-check.md)
 - 릴리스: [RELEASE_NOTES](docs/RELEASE_NOTES.md) · [CHANGELOG](CHANGELOG.md)
