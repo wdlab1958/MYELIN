@@ -1,10 +1,12 @@
 # PHASE_STATE
 
 current_phase: P7
-status: in_progress   # in_progress | gate_pending | awaiting_approval
+status: gate_pending   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P6 완료(`phase-P0`~`phase-P6`). 2026-10-18 Brian "GO P7" 승인으로 P7 착수.
+> P0~P6 완료(`phase-P0`~`phase-P6`). P7 구현 Task 는 완료, **Gate 의 사람 참여 항목 2개가 대기 중**(파일럿 5명 온보딩 ≤15분 · 피드백 리포트).
+> 자동 검사는 모두 통과(`make gate P=7` 의 HUMAN 2항목만 FAIL). 보고서 `docs/reports/P7.md`.
+> **태그 `phase-P7` 과 P8 착수는 파일럿 결과 기록 후** — Brian 이 `python3 scripts/pilot.py record …` 로 5명 이상 기록하고 `docs/reports/P7/pilot-feedback.md` 의 TBD 를 채운 뒤 `make gate P=7` PASS → 태그 → "GO P8".
 
 ## Done
 ### P0
@@ -83,26 +85,38 @@ last_updated: 2026-10-18
 - [x] P6-T7 Settings 화면 + 온보딩 마법사 (init과 동일 로직 공유)
 - [x] P6-T8 Playwright e2e: 신규 사용자 온보딩 → 첫 노트 승격 · 커밋 생성 확인
 - [x] P6-T9 사용자 클릭 없이 Vault 쓰기 0 검증(쓰기 경로 감사 테스트) · 스크린샷 docs/reports/P6/ · make gate P=6 · tag phase-P6
-
-## Next
-- [ ] P7-T1 Commons Git 구조 정의 (packs registry + notes) · 사내 Pack Registry 포맷
-- [ ] P7-T2 publish 흐름 — share:true + verified + classification ≤ internal 검사 → PR 생성, 사용자 확인 단계 필수
-- [ ] P7-T3 비식별 체크리스트(고객명·IP·기밀) + publish 전 자동 스캔
-- [ ] P7-T4 confidential / share:false publish 차단 100% 테스트
-- [ ] P7-T5 opt-in 익명 지표 집계 (11.2) — 개인 Vault 내용 미전송 보장
-- [ ] P7-T6 Org Pack 2종 확정 (팀 챔피언과) · Pack 진화 제안 흐름
-- [ ] P7-T7 파일럿 가이드 · 60분 워크숍 자료(9.3) · Day 1 체크리스트(부록 D)
+### P7
+- [x] P7-T1 Commons Git 구조 정의 (packs registry + notes) · 사내 Pack Registry 포맷
+- [x] P7-T2 publish 흐름 — share:true + verified + classification ≤ internal 검사 → PR 생성, 사용자 확인 단계 필수
+- [x] P7-T3 비식별 체크리스트(고객명·IP·기밀) + publish 전 자동 스캔
+- [x] P7-T4 confidential / share:false publish 차단 100% 테스트
+- [x] P7-T5 opt-in 익명 지표 집계 (11.2) — 개인 Vault 내용 미전송 보장
+- [x] P7-T6 Org Pack 2종 확정 (팀 챔피언과) · Pack 진화 제안 흐름
+- [x] P7-T7 파일럿 가이드 · 60분 워크숍 자료(9.3) · Day 1 체크리스트(부록 D)
 - [ ] P7-T8 파일럿 5명+ 온보딩 15분 측정 · 피드백 리포트 · make gate P=7 · tag phase-P7
 
+## Next
+- [ ] P7-T8(사람): 파일럿 운영 — `docs/guides/pilot-guide.md` 로 5~10명 온보딩, `scripts/pilot.py record --vault <참가자 Vault>` 로 기록(이름 미저장), `scripts/pilot.py report`
+- [ ] P7-T8(사람): `docs/reports/P7/pilot-feedback.md` 작성(TBD 제거), Org Pack 2종 챔피언 이름을 Registry 에 기입(`myelin commons add-pack … --champion`)
+- [ ] P7-T8: `make gate P=7` PASS → `docs/reports/P7.md` 갱신 → `git tag phase-P7` → 승인 요청
+### P8 — 승인 대기
+- [ ] P8-T1 위협 모델(STRIDE) 문서 — Guard 우회, MCP 경로 이탈, Commons 유출, 공급망
+- [ ] P8-T2 High 항목 조치 및 회귀 테스트
+- [ ] P8-T3 설치 스크립트 (uv tool install, plugin 등록, MCP 설정, Theme 복사)
+- [ ] P8-T4 사용자 가이드 · 관리자 가이드 · 릴리스 노트(알려진 제약: 다크 모드 미지원 등)
+- [ ] P8-T5 KIPRIS 상표 검색(제9류·제42류) · 도메인 · GitHub 조직명 확인 결과 기록
+- [ ] P8-T6 신규 사용자 설치→첫 verified 노트 < 15분 측정
+- [ ] P8-T7 v1.0 태그 · 회고 · make gate P=8 · reports/P8.md
+
 ## Blockers
-- (없음) — CI green은 GitHub 원격 push 후 확인 필요. CI 에 Node 설치·Chrome 채널 준비 단계 추가 필요(Backlog).
+- **사람 참여 필요**: 파일럿 참가자 모집·운영(3주), 챔피언 지정. 코드/도구 측 블로커 없음.
+- CI green 은 GitHub 원격 push 후 확인 필요.
 
 ## Decisions (→ ADR)
-- ADR-0001~0008
-- ADR-0009 Hub 쓰기 정책 — 쓰기 엔드포인트는 `X-Myelin-Intent: user-click` 헤더 필수(UI onClick 에서만 부여), 쓰기 동작 6종은 각각 정확히 하나의 git commit, 승격 전제(ai-drafts·유효 frontmatter·설정 Domain·모순 없음), 첫 쓰기에서 `git init`, `.myelin/` git ignore, welcome 초안은 Hub 온보딩에서만 생성, Hub 는 localhost 전용·기밀 비가림(소유자 UI)
-- P6 결정(기록): Hub 는 서버가 `--vault` 로 받은 디렉터리가 Vault 가 아니면 온보딩 마법사를 띄우고 `POST /api/onboarding` 이 `init_vault` 를 호출(CLI 와 동일 로직). e2e 포트는 5199/8799(워크스테이션의 다른 dev 서버와 충돌 회피, env 로 변경 가능), Playwright 는 시스템 Chrome 채널. `default_pack_roots` 중복 제거(`$MYELIN_PACKS` 가 저장소 packs/ 를 가리킬 때 "already loaded" 오류 수정). Guard 차단 이벤트는 `.myelin/guard.log` JSONL → Dashboard 타일.
+- ADR-0001~0009
+- ADR-0010 Commons 정책 — 별도 git 저장소 구조, 공개 하드 게이트(share+verified+≤internal, 40_IP 밖, confidential 링크 없음), 비식별 스캔(내장 7종 + deid.yaml 용어/정규식, 적중 시 차단·자동 치환 없음), 사용자 확인 필수(CLI y/--yes, Hub 체크+클릭, 코어 confirmed=True), 공개 = publish/<id> 브랜치 + 커밋 + PR(main 금지), 출처 보존 필드, Pack 진화 propose/<name>, 익명 지표 opt-in(허용 키 11개 스칼라, 익명성 가드), 온보딩 시간 계측, Org Pack 챔피언 미지정 = 초안
+- P7 결정(기록): 재공개 시도는 브랜치 존재로 거부("pending review"). golden 비교에서 `.myelin/` 제외(타임스탬프 이벤트). myelin.yaml 필드 추가 `commons.local`, `commons.metrics_opt_in`.
 
 ## Backlog (Phase 범위 밖)
-- P7: Team 모드 인증(Hub `--host` 비-loopback 허용 조건), Commons publish 흐름을 Hub Review Row 에 추가("Commons 제안" 버튼), a3 Org Pack 확정, Obsidian 테마 실사용 피드백
-- P7/P8: CI 워크플로에 Node 22 + `make web` + Chrome 채널(e2e) 단계 추가 · 패치 `replace` 적용 실패 시 UI 안내 개선 · Hub 에서 `_patches` 미리보기 diff 뷰
-- P8: 정본 Rev 2.1 제안(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더) · 위협 모델(Hub CSRF: localhost + 커스텀 헤더로 cross-site 폼 전송 차단, 추가로 Origin 검사 검토) · 설치 스크립트(인터프리터 검증, npm 빌드 포함) · plugin/README marketplace 한 줄 · Pack 번들 경로
+- P8: Team 모드 인증(Hub 비-loopback) · CI 에 Node/Chrome 단계 · 정본 Rev 2.1 제안(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단 규칙) · 위협 모델(Hub CSRF/Origin, Guard 한계, Commons 유출 경로) · 설치 스크립트(인터프리터 검증, npm 빌드, Registry 경로) · plugin/README marketplace 한 줄 · KIPRIS 상표 검색
+- P8+: Commons PR 자동 리뷰 체크(비식별 재스캔 CI) · Hub 에서 Registry 의 Pack 을 바로 설치(add-domain)
