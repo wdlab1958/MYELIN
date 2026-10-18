@@ -26,6 +26,8 @@ WRITE_ROUTES = {
     "/api/domains/add",
     "/api/commons/propose",
     "/api/commons/push",
+    "/api/patches/apply",
+    "/api/patches/reject",
 }
 PURE_POSTS = {"/api/onboarding/preview", "/api/packs/validate"}
 
@@ -39,6 +41,7 @@ def _get_paths(app_client: TestClient) -> list[str]:
                 .replace("{rest:path}", "anything")
                 .replace("/api/note", "/api/note?path=00_Inbox/ai-drafts/x.md")
                 .replace("/api/commons/check", "/api/commons/check?path=30_Resources/x.md")
+                .replace("/api/patches/preview", "/api/patches/preview?path=_patches/p.patch.md")
             )
     return paths
 
@@ -121,6 +124,11 @@ def test_no_passive_writes_on_reads(
 ) -> None:
     put("00_Inbox/ai-drafts/x.md", make_draft())
     put("00_Inbox/raw.md", "frontmatter 없는 메모\n")
+    put(
+        "_patches/p.patch.md",
+        "---\npatch: 1\ntarget: 10_Domains/AI-ML-AX/_MOC.md\nkind: append\norigin: claude\n"
+        "skill: link\ncreated: 2026-10-18\nrationale: r\nstatus: proposed\n---\n## append\n- x\n",
+    )
     before = snapshot(onboarded)
     for _ in range(2):
         for path in _get_paths(client):

@@ -6,6 +6,7 @@ import Dashboard from "./screens/Dashboard";
 import Domains from "./screens/Domains";
 import Onboarding from "./screens/Onboarding";
 import Packs from "./screens/Packs";
+import Patches from "./screens/Patches";
 import Review from "./screens/Review";
 import Settings from "./screens/Settings";
 import type { State } from "./types";
@@ -14,6 +15,7 @@ const SCREENS = [
   { key: "dashboard", label: "Dashboard" },
   { key: "domains", label: "My Domains" },
   { key: "review", label: "Review Gate" },
+  { key: "patches", label: "링크·MOC 제안" },
   { key: "packs", label: "Domain Packs" },
   { key: "commons", label: "Team Commons" },
   { key: "settings", label: "Settings" },
@@ -69,6 +71,7 @@ export default function App() {
           {screen === "dashboard" && <Dashboard />}
           {screen === "domains" && <Domains />}
           {screen === "review" && <Review />}
+          {screen === "patches" && <Patches />}
           {screen === "packs" && <Packs />}
           {screen === "commons" && <Commons />}
           {screen === "settings" && <Settings onChange={refresh} />}

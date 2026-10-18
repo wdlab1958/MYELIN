@@ -181,3 +181,27 @@ export type CommonsCheck = {
   deid: Issue[];
   checklist: Record<string, string>;
 };
+
+export type PatchRow =
+  | {
+      path: string;
+      structured: true;
+      target: string;
+      kind: string;
+      skill: string;
+      origin: string;
+      created: string;
+      rationale: string;
+      status: string;
+    }
+  | { path: string; structured: false; reason: string };
+
+export type PatchPreview = {
+  path: string;
+  target: string;
+  kind: string;
+  rationale: string;
+  diff: string;
+  warnings: string[];
+  digest: string;
+};

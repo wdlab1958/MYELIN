@@ -6,6 +6,8 @@ HTTP 계층이 POST + 의도 헤더 + 같은 출처를 확인한 뒤에만 호�
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import threading
 from collections.abc import Callable
 from dataclasses import asdict
@@ -15,7 +17,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from myelin_core import commons, gitops
+from myelin_core import commons, gitops, patches
 from myelin_core.config import (
     CONFIG_FILE,
     LEVEL_DESCRIPTIONS,
@@ -54,6 +56,10 @@ from myelin_core.vault import scan_vault
 from myelin_core.yamlio import load_yaml
 
 MAX_PACK_TEXT = 200_000
+
+
+def _digest(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
 class NotInitialized(MyelinError):
@@ -282,6 +288,48 @@ class HubService:
             "level": prepared.config.level,
             "sample": [f for f in files if not f.endswith(".gitkeep")][:40],
         }
+
+    # ── patches (ADR-0010) ──────────────────────────────────────────────
+    def patches(self) -> list[dict[str, Any]]:
+        self._cfg()
+        return patches.list_patches(self.vault)
+
+    def patch_preview(self, rel: str) -> dict[str, Any]:
+        self._cfg()
+        plan = patches.plan_patch(self.vault, rel, self.today())
+        return {**plan.as_dict(), "digest": _digest(plan.patch_original)}
+
+    def do_patch_apply(self, rel: str, digest: str) -> dict[str, Any]:
+        with self._lock:
+            self._cfg()
+            self._require_repo()
+            plan = patches.plan_patch(self.vault, rel, self.today())
+            if not hmac.compare_digest(_digest(plan.patch_original), digest):
+                raise patches.PatchError(
+                    "화면의 patch와 파일이 다릅니다 — 새로고침 후 다시 확인하세요",
+                    [Issue("digest", rel, "digest_mismatch")],
+                )
+            patches.apply_plan(self.vault, plan)
+            sha = self._commit_or_revert(
+                plan.paths,
+                f"myelin: apply patch {Path(rel).name} -> {plan.meta.target}\n\n"
+                f"{plan.meta.rationale}\nvia MYELIN Hub Review Gate",
+                lambda: patches.revert_plan(self.vault, plan),
+            )
+            return {"path": rel, "target": plan.meta.target, "commit": sha}
+
+    def do_patch_reject(self, rel: str) -> dict[str, Any]:
+        with self._lock:
+            self._cfg()
+            self._require_repo()
+            plan = patches.plan_reject(self.vault, rel, self.today())
+            patches.apply_reject(self.vault, plan)
+            sha = self._commit_or_revert(
+                plan.paths,
+                f"myelin: reject patch {Path(rel).name}\n\nvia MYELIN Hub Review Gate",
+                lambda: patches.revert_reject(self.vault, plan),
+            )
+            return {"path": rel, "commit": sha}
 
     def commons(self) -> dict[str, Any]:
         """Commons 상태·Registry·제안 목록·공개 후보. 읽기만 한다."""

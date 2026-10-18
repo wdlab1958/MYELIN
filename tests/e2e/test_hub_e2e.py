@@ -23,6 +23,12 @@ DRAFT = (
     "제어 루프 주기 안에 모델 추론 p99 지연을 예산으로 잡는다.\n\n"
     "상위: [[10_Domains/AI-ML-AX/_MOC]]\n"
 )
+PATCH = (
+    "---\npatch: 1\ntarget: 10_Domains/AI-ML-AX/_MOC.md\nkind: append\n"
+    'under: "## 핵심 Evergreen"\norigin: claude\nskill: link\ncreated: 2026-10-18\n'
+    "rationale: 같은 개념의 verified 노트가 MOC에서 빠짐\nstatus: proposed\n---\n"
+    "## append\n- [[WCET 예산은 추론 지연을 포함]]\n"
+)
 DRAFT_REL = "00_Inbox/ai-drafts/WCET 예산은 추론 지연을 포함.md"
 PROMOTED = "10_Domains/AI-ML-AX/WCET 예산은 추론 지연을 포함.md"
 
@@ -126,6 +132,20 @@ def test_onboarding_to_promotion(page: Any, hub: Any) -> None:
     _go(page, "settings")
     _shot(page, hub, "settings")
 
+    # 5) /link patch (P9) — diff를 보고 적용 → MOC 갱신 + commit
+    (hub.vault / "_patches/p.patch.md").write_text(PATCH, encoding="utf-8")
+    _go(page, "patches")
+    page.get_by_test_id("patch-row").first.click()
+    page.get_by_test_id("patch-diff").get_by_text("WCET 예산은 추론 지연을 포함").wait_for()
+    shots_p9 = hub.shots.parent / "P9" if hub.shots.name == "P6" else hub.shots
+    shots_p9.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(shots_p9 / "patches.png"), full_page=True)
+    page.get_by_test_id("patch-apply").click()
+    page.get_by_test_id("patch-message").get_by_text("적용했습니다").wait_for()
+    moc = (hub.vault / "10_Domains/AI-ML-AX/_MOC.md").read_text(encoding="utf-8")
+    assert "- [[WCET 예산은 추론 지연을 포함]]" in moc
+    assert _git(hub.vault, "log", "-1", "--format=%s").startswith("myelin: apply patch p.patch.md")
+
 
 def test_no_passive_writes(page: Any, hub: Any, snapshot: Callable[[Path], dict[str, str]]) -> None:
     """버튼(만들기·승격·반려·저장·추가·git 시작)을 누르지 않는 한 Vault는 바뀌지 않는다."""
@@ -152,13 +172,18 @@ def test_no_passive_writes(page: Any, hub: Any, snapshot: Callable[[Path], dict[
         hub.vault, "00_Inbox/ai-drafts/other.md", DRAFT.replace("wcet-budget", "other")
     )
     (hub.vault / "00_Inbox/메모.md").write_text("frontmatter 없는 메모\n", encoding="utf-8")
+    passive_patch = PATCH.replace("[[WCET 예산은 추론 지연을 포함]]", "[[아직 없는 노트]]")
+    (hub.vault / "_patches/p.patch.md").write_text(passive_patch, encoding="utf-8")
     posts.clear()
     before = snapshot(hub.vault)
 
     # 모든 화면을 돌아다니고, 노트를 열어 보고, Pack을 검증하고, 새로고침한다
     for _ in range(2):
-        for screen in ("dashboard", "domains", "review", "packs", "settings"):
+        for screen in ("dashboard", "domains", "review", "patches", "packs", "settings"):
             _go(page, screen)
+        _go(page, "patches")
+        page.get_by_test_id("patch-row").first.click()
+        page.get_by_test_id("patch-diff").wait_for()
         rows = page.locator("[data-testid=review-row]")
         _go(page, "review")
         for i in range(rows.count()):

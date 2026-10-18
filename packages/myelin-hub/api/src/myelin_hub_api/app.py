@@ -31,6 +31,7 @@ from myelin_core.config import ConfigError
 from myelin_core.errors import MyelinError, PackError
 from myelin_core.gitops import GitError
 from myelin_core.onboarding import InitRequest, OnboardingError
+from myelin_core.patches import PatchError
 from myelin_core.review import ReviewError
 from myelin_hub_api import __version__
 from myelin_hub_api.service import HubService, NotInitialized
@@ -51,6 +52,7 @@ STATUS: tuple[tuple[type[MyelinError], int], ...] = (
     (ConfigError, 422),
     (PackError, 404),
     (CommonsError, 409),
+    (PatchError, 409),
 )
 
 
@@ -92,6 +94,11 @@ class SettingsBody(_Body):
     level: Annotated[int | None, Field(ge=0, le=3)] = None
     mcp_write_drafts: bool | None = None
     metrics_opt_in: bool | None = None
+
+
+class PatchBody(_Body):
+    path: Annotated[str, Field(max_length=512)]
+    digest: Annotated[str, Field(max_length=64)] = ""
 
 
 class ProposeBody(_Body):
@@ -229,6 +236,14 @@ def create_app(
     def settings() -> dict[str, Any]:
         return svc.settings()
 
+    @app.get("/api/patches")
+    def patch_list() -> list[dict[str, Any]]:
+        return svc.patches()
+
+    @app.get("/api/patches/preview")
+    def patch_preview(path: Annotated[str, Query(max_length=512)]) -> dict[str, Any]:
+        return svc.patch_preview(path)
+
     @app.get("/api/commons")
     def commons_state() -> dict[str, Any]:
         return svc.commons()
@@ -270,6 +285,14 @@ def create_app(
             write_drafts=body.mcp_write_drafts,
             metrics_opt_in=body.metrics_opt_in,
         )
+
+    @app.post("/api/patches/apply")
+    def patch_apply(body: PatchBody) -> dict[str, Any]:
+        return svc.do_patch_apply(body.path, body.digest)
+
+    @app.post("/api/patches/reject")
+    def patch_reject(body: PatchBody) -> dict[str, Any]:
+        return svc.do_patch_reject(body.path)
 
     @app.post("/api/commons/propose")
     def commons_propose(body: ProposeBody) -> dict[str, Any]:
