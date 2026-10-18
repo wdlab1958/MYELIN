@@ -14,6 +14,9 @@
 #   make a11y            text contrast / neon-as-text check
 #   make emboss-lint     raw color literal lint (CSS/HTML/TSX)
 #   make gallery         headless Chrome screenshot of the gallery → docs/reports/P5/gallery.png
+#   make hub             run the Hub (API + built web) on VAULT=<path>, PORT=8787
+#   make web             install + build the Hub web app
+#   make e2e             Playwright e2e (Chrome channel) with screenshots → docs/reports/P6/
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
@@ -26,7 +29,7 @@ ifneq ($(SYSTEM_PY),)
 export UV_PYTHON ?= $(SYSTEM_PY)
 endif
 
-.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp emboss a11y emboss-lint gallery check clean
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp emboss a11y emboss-lint gallery hub web e2e check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -81,6 +84,17 @@ a11y:
 
 emboss-lint:
 	python3 scripts/emboss.py lint
+
+PORT ?= 8787
+web:
+	npm install --prefix packages/myelin-hub/web --no-audit --no-fund
+	npm run --prefix packages/myelin-hub/web build
+
+hub: sync
+	$(UV) run myelin-hub --vault $(VAULT) --port $(PORT)
+
+e2e:
+	npm run --prefix packages/myelin-hub/web e2e:screens
 
 CHROME ?= $(shell command -v google-chrome google-chrome-stable chromium chromium-browser 2>/dev/null | head -1)
 gallery:

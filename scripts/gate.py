@@ -301,9 +301,57 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P6 tasks", phase_state_lists_next_phase_tasks(5)),
     ],
     6: [
-        Check("playwright: onboarding → first promote", not_implemented("온보딩·승격 e2e")),
-        Check("promote creates git commit", not_implemented("승격 시 commit")),
-        Check("zero writes without user action", not_implemented("사람 행위 없는 쓰기 0")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "hub api: reads never write · writes need user click",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-hub/api/tests/test_api.py",
+                    "-k",
+                    "reads_never_write or writes_require_user_click",
+                ]
+            ),
+        ),
+        Check(
+            "hub api: promote → git commit",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-hub/api/tests/test_api.py",
+                    "-k",
+                    "promote_creates or onboarding",
+                ]
+            ),
+        ),
+        Check(
+            "web: typecheck + build",
+            sh(["npm", "run", "--prefix", "packages/myelin-hub/web", "build"]),
+        ),
+        Check(
+            "web: no hardcoded colors (emboss lint)", sh(["python3", "scripts/emboss.py", "lint"])
+        ),
+        Check(
+            "playwright: onboarding → first promote, zero writes without click",
+            sh(["npm", "run", "--prefix", "packages/myelin-hub/web", "e2e:screens"]),
+        ),
+        Check(
+            "screenshots in docs/reports/P6",
+            lambda: (
+                len(list((ROOT / "docs/reports/P6").glob("*.png"))) >= 5,
+                f"{len(list((ROOT / 'docs/reports/P6').glob('*.png')))} png",
+            ),
+        ),
+        Check("ADR-0009 hub write policy", adr_exists("0009", "hub-write-policy")),
+        Check("PHASE_STATE has P7 tasks", phase_state_lists_next_phase_tasks(6)),
     ],
     7: [
         Check("confidential/share:false publish blocked 100%", not_implemented("publish 차단")),
