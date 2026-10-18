@@ -1,9 +1,8 @@
 # PHASE_STATE
-current_phase: P8
-status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 11:40 KST
-approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진행 승인
-gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8·v1.0.0 태그 보류 (docs/reports/P8.md)
+current_phase: P9
+status: in_progress            # in_progress | gate_pending | awaiting_approval
+last_updated: 2026-10-18 12:05 KST
+approved: "GO" — Desktop 기능 이식 (Brian, 2026-10-18 12:03)
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
@@ -16,7 +15,16 @@ gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8
 - P7 — Commons & Org Pilot: 자동 7/7 PASS · **사람 증거 2건 PEND** (파일럿 온보딩 결과, 피드백 리포트) — phase-P7 태그 보류 (docs/reports/P7.md)
 - P8 — Hardening & v1.0: 자동 6/6 PASS · 사람 증거 1건 PEND (상표) (docs/reports/P8.md)
 
-## Next (사람 — v1.0.0 태그 조건)
+## Next (P9 — Desktop 구현 기능 이식, v1.1)
+- [x] P9-T1 scripts/gate.py 에 P9 Gate 검사 추가
+- [ ] P9-T2 구조화 patch 형식(ADR-0010) — core 파서·적용 계획, /link 스킬 출력 계약 갱신
+- [ ] P9-T3 Hub Review Gate에서 patch 미리보기·적용·반려 (사람 클릭 + git commit)
+- [ ] P9-T4 개인 Pack → Org Pack 제안 (`myelin commons propose-pack`, 확인 + 비식별 + 브랜치)
+- [ ] P9-T5 익명 지표 집계 (`myelin metrics aggregate`, 익명성 검사)
+- [ ] P9-T6 install.sh 선택 설정: Obsidian 테마 복사, Claude Code 플러그인·MCP 등록 (opt-in 플래그)
+- [ ] P9-T7 Gate · 보고서
+
+## 사람 확인 대기 (v1.0.0 태그 조건)
 - [ ] KIPRIS 제9·42류 검토 → docs/legal/trademark-check.md `reviewed_by`·`decision` → `make gate P=8` → tag phase-P8, v1.0.0
 - [ ] §9.1 정책 3종 합의 → 파일럿 5명+ (docs/pilot/results.yaml, feedback.md) → `make gate P=7` → tag phase-P7
 - [ ] 로컬에서 태그 push (phase-P0 … , v1.0.0)

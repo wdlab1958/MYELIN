@@ -777,7 +777,34 @@ def p8_regression() -> bool:
     return ok
 
 
+# ── P9 — Desktop 구현 기능 이식 (v1.1) ──────────────────────────────────
+def p9_checks() -> list[Check]:
+    return [
+        ("exists: docs/adr/0010-patches.md", exists("docs/adr/0010-patches.md")),
+        (
+            "core patches (parse, plan, safety)",
+            guarded(p3_pytest("packages/myelin-core/tests/patches")),
+        ),
+        (
+            "/link output contract passes guard + doctor + patch parser",
+            guarded(p3_pytest("tests/plugin")),
+        ),
+        ("hub patches API (click-only apply, commit)", guarded(p3_pytest(HUB_API_TESTS))),
+        (
+            "pack proposal + metrics aggregate",
+            guarded(p3_pytest("packages/myelin-core/tests/commons")),
+        ),
+        ("install.sh optional setup only with flags", guarded(p3_pytest("tests/test_install.py"))),
+        (
+            "e2e: zero vault writes without user action (incl. patches)",
+            guarded(_pytest_required("tests/e2e", "no_passive_writes")),
+        ),
+        ("regression: P0-P6 gates", guarded(p8_regression)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P9": p9_checks,
     "P8": p8_checks,
     "P7": p7_checks,
     "P6": p6_checks,
