@@ -1,6 +1,6 @@
 {
   "name": "myelin-local",
-  "owner": { "name": "WDLAB · A3 AI·ML·AX Research Division" },
+  "owner": { "name": "WDLAB" },
   "metadata": { "description": "MYELIN local marketplace — install the plugin from this checkout" },
   "plugins": [
     {

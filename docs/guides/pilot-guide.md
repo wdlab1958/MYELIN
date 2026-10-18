@@ -1,10 +1,10 @@
-# MYELIN A3 파일럿 가이드 (P7)
+# MYELIN 조직 파일럿 가이드 (P7)
 
 대상: 자원자 5~10명 + 팀별 챔피언 · 기간: 3주 · 목표: **온보딩 15분**, Org Pack 2종 확정, Commons 첫 공개.
 
 ## 0. 준비 (운영자 — Brian)
 1. Commons 저장소 생성: `uv run myelin commons init /srv/myelin-commons` → 사내 git 에 push, URL 을 아래 2단계에 기입.
-2. Org Pack 등록: `uv run myelin commons add-pack packs/a3.security-consulting --commons /srv/myelin-commons --champion <이름>` (incident-response 도 동일).
+2. Org Pack 등록: `uv run myelin commons add-pack packs/org.security-consulting --commons /srv/myelin-commons --champion <이름>` (incident-response 도 동일).
 3. 파일럿 참가자에게 이 문서 + `day1-checklist.md` 전달. 워크숍 일정(60분) 잡기.
 
 ## 1. 설치 (참가자, 5분)

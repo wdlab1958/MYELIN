@@ -68,8 +68,8 @@ CHAMPIONS = """# Domain Champions
 
 | Domain | Champion | Pack |
 |---|---|---|
-| SEC-CONSULT | (TBD — 컨설팅 팀) | a3.security-consulting |
-| IR | (TBD — 침해사고 대응 팀) | a3.incident-response |
+| SEC-CONSULT | (TBD — 컨설팅 팀) | org.security-consulting |
+| IR | (TBD — 침해사고 대응 팀) | org.incident-response |
 """
 
 

@@ -15,7 +15,7 @@ CLI 로 하려면 `myelin init --vault ~/Vaults/me`. 둘 다 같은 로직이다
 |---|---|
 | Vault | 내 Obsidian 폴더. Markdown + YAML 정본. 내 것이며 조직은 열람하지 않는다 |
 | Domain (3+1) | Primary(업무 근간) · Research · Growth · 선택 +1. Pack 이 공급 |
-| Pack | Domain 선언(YAML). Core / Reference(brian.physical-ai) / Org(a3.*) / Personal(me.*) |
+| Pack | Domain 선언(YAML). Core / Reference(brian.physical-ai) / Org(org.*) / Personal(me.*) |
 | ai-draft | Claude 가 만든 초안. `00_Inbox/ai-drafts/` 에만 생긴다. Cyan |
 | verified | 사람이 Review Gate 에서 승격한 노트. Lime 링(myelinated). git commit 으로 기록 |
 | Level | 0 읽기 전용 · 1 초안 · 2 링크 패치 · 3 정기 리뷰. `myelin.yaml level` 은 사람만 바꾼다 |

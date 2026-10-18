@@ -3,7 +3,7 @@
 <!-- myelin:generated — 이 블록은 `myelin init` / `myelin add-domain` 이 Pack에서 다시 생성한다. 개인 규칙은 아래 personal 블록에. -->
 
 ## Vault
-- Owner: Brian · A3-AI WG · 언어: ko · 생성: 2026-10-18
+- Owner: Brian · Example Org AI WG · 언어: ko · 생성: 2026-10-18
 - 정본은 이 Vault의 Markdown + YAML. 모든 변경은 Git commit. AI 커밋은 `[myelin:<skill>]` 접두사.
 - Frontmatter v2 필수: id · type · created (그 외 status/origin/confidence/classification/share/source/reviewed/tags). 스키마: `90_System/`의 템플릿을 따른다.
 

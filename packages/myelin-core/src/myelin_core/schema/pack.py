@@ -2,10 +2,10 @@
 reference: `taxonomy.yaml` (용어 사전) and `interviews.yaml` (/interview 질문 은행).
 
 ```yaml
-pack: a3.security-consulting
+pack: org.security-consulting
 version: 1.0.0
 kind: org                 # core | reference | org | personal
-maintainer: A3-AI WG
+maintainer: Example Org AI WG
 requires: [myelin.core>=1.0]
 domains:
   - id: SEC-CONSULT
@@ -44,7 +44,7 @@ REQ_RE = re.compile(
 ACCENTS: frozenset[str] = frozenset({"violet", "lime", "cyan", "magenta"})
 
 PackName = Annotated[
-    str, Field(pattern=PACK_NAME_RE.pattern, description="owner.name, e.g. a3.security-consulting")
+    str, Field(pattern=PACK_NAME_RE.pattern, description="owner.name, e.g. org.security-consulting")
 ]
 DomainIdField = Annotated[str, Field(pattern=DOMAIN_ID_RE.pattern)]
 

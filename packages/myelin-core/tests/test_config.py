@@ -19,7 +19,7 @@ from myelin_core.config import (
 SPEC = {
     "owner": {"name": "홍길동", "team": "컨설팅2팀", "email": "gildong@a3sc.co.kr"},
     "language": "ko",
-    "packs": ["myelin.core", "a3.security-consulting", "a3.cloud-security", "me.llm-security"],
+    "packs": ["myelin.core", "org.security-consulting", "org.cloud-security", "me.llm-security"],
     "domains": {"primary": "SEC-CONSULT", "research": "LLM-SEC", "growth": "CLOUD-SEC"},
     "level": 1,
     "llm": {"default": "claude", "route": {"confidential": "local", "40_IP/**": "local"}},
@@ -52,7 +52,7 @@ def test_minimal_defaults() -> None:
 @pytest.mark.parametrize(
     "patch,needle",
     [
-        ({"packs": ["a3.x"]}, "must include myelin.core"),
+        ({"packs": ["org.x"]}, "must include myelin.core"),
         ({"packs": ["myelin.core", "myelin.core>=1.0"]}, "more than once"),
         ({"packs": ["myelin.core", "Bad.Name"]}, "invalid"),
         ({"domains": {"primary": "D1", "research": "D1"}}, "distinct"),
@@ -70,8 +70,8 @@ def test_invalid(patch: dict[str, object], needle: str) -> None:
 
 
 def test_requirement_syntax_in_packs() -> None:
-    cfg = MyelinConfig.model_validate({**SPEC, "packs": ["myelin.core>=1.0", "a3.x~=1.2"]})
-    assert cfg.pack_names == ["myelin.core", "a3.x"]
+    cfg = MyelinConfig.model_validate({**SPEC, "packs": ["myelin.core>=1.0", "org.x~=1.2"]})
+    assert cfg.pack_names == ["myelin.core", "org.x"]
 
 
 def test_domains_extra_roles() -> None:

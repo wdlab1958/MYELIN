@@ -399,7 +399,7 @@ GATES: dict[int, list[Check]] = {
             sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_metrics.py"]),
         ),
         Check(
-            "org packs: 4 packs validate (incl. a3.incident-response)",
+            "org packs: 4 packs validate (incl. org.incident-response)",
             sh(["uv", "run", "python", "scripts/validate_packs.py"]),
         ),
         Check(

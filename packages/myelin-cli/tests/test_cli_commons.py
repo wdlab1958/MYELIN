@@ -27,7 +27,9 @@ def test_commons_init_registry(
     assert run(["commons", "init", str(c)]) == 0
     assert (c / "registry/index.yaml").exists()
     assert (
-        run(["commons", "add-pack", str(packs_dir / "a3.security-consulting"), "--commons", str(c)])
+        run(
+            ["commons", "add-pack", str(packs_dir / "org.security-consulting"), "--commons", str(c)]
+        )
         == 0
     )
     assert "초안" in capsys.readouterr().out
@@ -36,7 +38,7 @@ def test_commons_init_registry(
             [
                 "commons",
                 "add-pack",
-                str(packs_dir / "a3.incident-response"),
+                str(packs_dir / "org.incident-response"),
                 "--commons",
                 str(c),
                 "--champion",
@@ -48,7 +50,7 @@ def test_commons_init_registry(
     assert "확정" in capsys.readouterr().out
     assert run(["commons", "registry", str(c)]) == 0
     out = capsys.readouterr().out
-    assert "a3.incident-response" in out and "홍챔피언" in out and "(초안)" in out
+    assert "org.incident-response" in out and "홍챔피언" in out and "(초안)" in out
     assert run(["commons", "registry", str(c), "--json"]) == 0
     assert len(json.loads(capsys.readouterr().out)) == 2
     assert run(["commons", "add-pack", str(tmp_path / "nope"), "--commons", str(c)]) == 2

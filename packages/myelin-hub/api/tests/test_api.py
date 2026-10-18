@@ -228,9 +228,9 @@ def test_pack_editor(client: TestClient, vault_root: Path) -> None:
     )
     assert (
         client.put(
-            "/api/packs/a3.x",
+            "/api/packs/org.x",
             headers=CLICK,
-            json={"pack_yaml": yaml_text.replace("me.side", "a3.x")},
+            json={"pack_yaml": yaml_text.replace("me.side", "org.x")},
         ).status_code
         == 403
     )

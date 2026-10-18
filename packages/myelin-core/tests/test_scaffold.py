@@ -25,7 +25,7 @@ NOW = datetime(2026, 10, 18, 9, 0)
 
 def _cfg(**over: object) -> MyelinConfig:
     data: dict[str, object] = {
-        "owner": {"name": "Brian", "team": "A3"},
+        "owner": {"name": "Brian", "team": "Example Org"},
         "packs": ["myelin.core", "brian.physical-ai"],
         "domains": {"primary": "D1", "research": "D3"},
         "level": 1,
@@ -140,7 +140,7 @@ def test_add_domain(tmp_path: Path, packs_dir: Path) -> None:
     with pytest.raises(ScaffoldError, match="no pack declares"):
         add_domain(v, "D9", NOW, pack_roots=[packs_dir])
     with pytest.raises(ScaffoldError, match="no pack declares"):
-        add_domain(v, "D2", NOW, pack_name="a3.security-consulting", pack_roots=[packs_dir])
+        add_domain(v, "D2", NOW, pack_name="org.security-consulting", pack_roots=[packs_dir])
 
 
 def test_add_domain_from_new_pack_and_conflicts(tmp_path: Path, packs_dir: Path) -> None:
@@ -149,7 +149,7 @@ def test_add_domain_from_new_pack_and_conflicts(tmp_path: Path, packs_dir: Path)
     v = Vault.open(root)
     add_domain(v, "SEC-CONSULT", NOW, pack_roots=[packs_dir])
     cfg = load_config(root)
-    assert "a3.security-consulting" in cfg.pack_names
+    assert "org.security-consulting" in cfg.pack_names
     assert (root / "10_Domains/SEC-CONSULT/_MOC.md").is_file()
     # refuse to overwrite an existing MOC
     (root / "10_Domains/D2").mkdir()

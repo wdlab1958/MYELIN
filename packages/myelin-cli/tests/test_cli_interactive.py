@@ -22,7 +22,7 @@ def test_wizard_prompts_and_creates_vault(
     vault = tmp_path / "v"
     runner = CliRunner()
     # name, team, email, primary, research, growth
-    answers = "\n".join(["Brian", "A3", "", "D1", "D3", ""]) + "\n"
+    answers = "\n".join(["Brian", "Example Org", "", "D1", "D3", ""]) + "\n"
     result = runner.invoke(
         app, ["init", "--vault", str(vault), "--packs-dir", str(packs_dir)], input=answers
     )

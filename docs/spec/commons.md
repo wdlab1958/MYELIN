@@ -16,11 +16,11 @@ commons/                      # git@git.a3sc.internal:myelin/commons.git (사내
 ## registry/index.yaml
 ```yaml
 packs:
-  - name: a3.security-consulting
+  - name: org.security-consulting
     version: 1.0.0
     kind: org
-    maintainer: A3-AI WG
-    path: registry/packs/a3.security-consulting
+    maintainer: Example Org AI WG
+    path: registry/packs/org.security-consulting
     domains: [SEC-CONSULT]
     champions: []            # 비어 있으면 "초안". 챔피언 이름이 들어가야 확정
     updated: 2026-10-18

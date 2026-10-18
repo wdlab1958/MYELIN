@@ -60,25 +60,25 @@ def test_init_commons_structure_and_idempotent(commons: Path) -> None:
 
 def test_registry_add_pack(commons: Path, packs_dir: Path) -> None:
     assert registry(commons) == []
-    e = add_pack_to_registry(commons, packs_dir / "a3.security-consulting")
+    e = add_pack_to_registry(commons, packs_dir / "org.security-consulting")
     assert (
-        e["name"] == "a3.security-consulting"
+        e["name"] == "org.security-consulting"
         and e["champions"] == []
         and e["domains"] == ["SEC-CONSULT"]
     )
-    e2 = add_pack_to_registry(commons, packs_dir / "a3.incident-response", champions=["김챔피언"])
+    e2 = add_pack_to_registry(commons, packs_dir / "org.incident-response", champions=["김챔피언"])
     assert e2["champions"] == ["김챔피언"] and e2["domains"] == ["IR"]
-    assert (commons / "registry/packs/a3.incident-response/pack.yaml").exists()
+    assert (commons / "registry/packs/org.incident-response/pack.yaml").exists()
     names = [r["name"] for r in registry(commons)]
-    assert names == ["a3.incident-response", "a3.security-consulting"]
-    add_pack_to_registry(commons, packs_dir / "a3.security-consulting", champions=["이챔피언"])
+    assert names == ["org.incident-response", "org.security-consulting"]
+    add_pack_to_registry(commons, packs_dir / "org.security-consulting", champions=["이챔피언"])
     assert len(registry(commons)) == 2 and registry(commons)[1]["champions"] == ["이챔피언"]
     # the registry dir is a valid pack search root
     from myelin_core.packs.loader import discover_packs
 
     assert set(discover_packs([commons / "registry/packs"])) == {
-        "a3.security-consulting",
-        "a3.incident-response",
+        "org.security-consulting",
+        "org.incident-response",
     }
 
 

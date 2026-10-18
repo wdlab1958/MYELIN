@@ -3,7 +3,7 @@
 ```yaml
 owner: { name: 홍길동, team: 컨설팅2팀, email: gildong@a3sc.co.kr }
 language: ko
-packs: [myelin.core, a3.security-consulting, a3.cloud-security, me.llm-security]
+packs: [myelin.core, org.security-consulting, org.cloud-security, me.llm-security]
 domains:
   primary: SEC-CONSULT      # 업무 근간
   research: LLM-SEC         # 연구 관심

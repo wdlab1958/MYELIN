@@ -26,7 +26,7 @@ last_updated: 2026-10-18
 - [x] P1-T6 JSON Schema export (frontmatter.schema.json, pack.schema.json) + CLI 없이 함수로 제공
 - [x] P1-T7 packs/myelin.core 작성 (note types, 기본 템플릿, 공통 taxonomy)
 - [x] P1-T8 packs/brian.physical-ai 작성 (5.5 D1~D4, Sub-MOC, interview bank 초안)
-- [x] P1-T9 packs/a3.security-consulting 초안 작성 (5.2 예시 기준)
+- [x] P1-T9 packs/org.security-consulting 초안 작성 (5.2 예시 기준)
 - [x] P1-T10 tests/fixtures/vaults/basic — 30+ 노트 fixture (모든 type·status·origin 조합 포함)
 - [x] P1-T11 잘못된 Pack fixture 10종 + 각기 명확한 오류 메시지 테스트
 - [x] P1-T12 커버리지 ≥ 90% 확인 · make gate P=1 · reports/P1.md · tag phase-P1

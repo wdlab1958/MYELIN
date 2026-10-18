@@ -25,7 +25,7 @@
 | 제품 | 경로 | 내용 |
 |---|---|---|
 | **MYELIN Vault** | Vault 표준 §6 | Frontmatter v2(id/type/domain/status/origin/confidence/classification/share/source/created/reviewed/tags), 폴더 표준(`00_Inbox 10_Domains 20_Projects 30_Resources 40_IP 50_Journal 80_Outputs 90_System 99_Archive _patches .myelin`) |
-| **MYELIN Packs** | [`packs/`](packs/) | `myelin.core`(note type 9종 템플릿 + 공통 용어), `brian.physical-ai`(Reference, D1~D4, 인터뷰 질문 16), `a3.security-consulting`, `a3.incident-response`(Org). Pack 스키마·로더·의존성 해석·검증 |
+| **MYELIN Packs** | [`packs/`](packs/) | `myelin.core`(note type 9종 템플릿 + 공통 용어), `brian.physical-ai`(Reference, D1~D4, 인터뷰 질문 16), `org.security-consulting`, `org.incident-response`(Org). Pack 스키마·로더·의존성 해석·검증 |
 | **MYELIN CLI** | [`packages/myelin-cli`](packages/myelin-cli) | `myelin init`(3+1 마법사) · `add-domain` · `doctor`(규칙 8종) · `stats`(§11.1) · `skills` · `interview-bank` · `publish` · `pack-propose` · `metrics` · `commons` |
 | **MYELIN for Claude Code** | [`plugin/`](plugin/) | Skill 7종 `/myelin:ingest distill interview review link compose ip-scan`, Fail-closed Guard(`guard_write.py`, `guard_bash.py`, 표준 라이브러리만), 로컬 marketplace |
 | **MYELIN MCP** | [`packages/myelin-mcp`](packages/myelin-mcp) | stdio 서버, 읽기 전용 기본(`search_notes get_note query_frontmatter list_domains vault_stats`), opt-in `write_draft`, 기밀 비노출 기본, SQLite FTS5 색인 |
@@ -77,7 +77,7 @@ Claude Code: `/myelin:ingest` `/myelin:distill` `/myelin:interview` (Level ≥ 1
 ```
 ├── CLAUDE.md · PHASE_STATE.md · Makefile · CHANGELOG.md
 ├── docs/{spec, phases, adr, reports, guides, security}/
-├── packs/{myelin.core, brian.physical-ai, a3.security-consulting, a3.incident-response}/
+├── packs/{myelin.core, brian.physical-ai, org.security-consulting, org.incident-response}/
 ├── packages/{myelin-core, myelin-cli, myelin-mcp, myelin-hub/{api, web}}/
 ├── plugin/ (.claude-plugin/plugin.json · skills/ · hooks/) · .claude-plugin/marketplace.json
 ├── design/{tokens.json, tokens.schema.json, dist/, gallery/, components.md}
@@ -151,4 +151,4 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 - 브랜드명 MYELIN 은 사내용 가칭(미국 동일 명칭 소프트웨어 상표 선출원 심사 중, 주요 도메인 점유). 대외 공개 시 결합형 `MYELIN KOS` 검토.
 
 ---
-WDLAB · A3 Security · AI·ML·AX Research Division · 작성 Brian (Research Director, A3-AI WG) · 구현 Claude Code
+WDLAB · 작성 Brian (이원대) · 구현 Claude Code

@@ -132,7 +132,7 @@
   "additionalProperties": false,
   "properties": {
     "pack": {
-      "description": "owner.name, e.g. a3.security-consulting",
+      "description": "owner.name, e.g. org.security-consulting",
       "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)+$",
       "title": "Pack",
       "type": "string"

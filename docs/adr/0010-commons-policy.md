@@ -13,7 +13,7 @@
 6. **Pack 진화**: 개인 Pack → `propose/<name>` 브랜치의 `proposals/packs/<name>/` + `PROPOSAL.md`. 비식별 스캔 동일.
 7. **익명 지표(opt-in)**: `commons.metrics_opt_in: true` 일 때만 `metrics/<owner-hash>/<week>.json` 을 쓴다. 페이로드는 **허용 키 11개의 스칼라만**(active, verified_7d, onboarding_minutes, published, proposals, notes, level, packs_count …). 소유자 식별은 `sha256(email|name)[:12]`. 노트 제목·경로·본문·이메일이 들어가면 `payload_is_anonymous()` 가 거부한다(테스트로 고정). 집계는 `myelin metrics aggregate <commons>`.
 8. **온보딩 시간 계측**: Hub 온보딩/CLI init 이 `.myelin/metrics.jsonl` 에 `onboard_start`, 첫 승격이 `first_promote` 를 기록. `onboarding_minutes` = 두 시각의 차. 파일럿 Gate(≤ 15분) 는 이 값을 `scripts/pilot.py record` 로 모은다.
-9. **Org Pack 확정**: Registry `index.yaml` 의 `champions` 가 비어 있으면 "초안". P7 산출물로 `a3.security-consulting` 과 `a3.incident-response` 를 Registry 에 올리되, 챔피언 서명(이름 기입)은 사람이 한다.
+9. **Org Pack 확정**: Registry `index.yaml` 의 `champions` 가 비어 있으면 "초안". P7 산출물로 `org.security-consulting` 과 `org.incident-response` 를 Registry 에 올리되, 챔피언 서명(이름 기입)은 사람이 한다.
 
 ## 결과
 - 개인 Vault 에서 밖으로 나가는 경로는 publish·propose·metrics 셋뿐이며 모두 확인 단계와 비식별/익명 검사를 지난다.

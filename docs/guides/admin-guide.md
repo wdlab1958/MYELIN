@@ -1,4 +1,4 @@
-# MYELIN 관리자 가이드 (v1.0, A3 운영자·챔피언)
+# MYELIN 관리자 가이드 (v1.0, 조직 운영자·챔피언)
 
 ## 1. 구성 요소와 포트
 | 구성 | 실행 | 비고 |
@@ -10,7 +10,7 @@
 
 ## 2. Commons 운영
 1. `myelin commons init /srv/myelin-commons` → 원격 생성·push.
-2. Org Pack 등록: `myelin commons add-pack packs/a3.security-consulting --commons <clone> --champion <이름>`.
+2. Org Pack 등록: `myelin commons add-pack packs/org.security-consulting --commons <clone> --champion <이름>`.
 3. `deid.yaml` 에 고객명·프로젝트 코드 등 금칙어 유지(Commons 공통). 각 Vault 의 `90_System/deid.yaml` 로 보강 가능.
 4. PR 리뷰(챔피언): 비식별 확인 → merge. main 직접 커밋 금지.
 5. 지표: `myelin metrics aggregate <clone>` (opt-in 한 사람의 숫자만 모인다).

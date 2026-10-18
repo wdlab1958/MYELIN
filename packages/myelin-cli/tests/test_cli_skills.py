@@ -53,7 +53,7 @@ def test_interview_bank_empty(
     tmp_path: Path, packs_dir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     (tmp_path / "myelin.yaml").write_text(
-        "owner: {name: x}\npacks: [myelin.core, a3.security-consulting]\n"
+        "owner: {name: x}\npacks: [myelin.core, org.security-consulting]\n"
         "domains: {primary: SEC-CONSULT}\nlevel: 1\n",
         encoding="utf-8",
     )

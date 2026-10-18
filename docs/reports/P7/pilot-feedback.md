@@ -12,8 +12,8 @@
 ## 3. Org Pack 2종 — 챔피언 확정 사항
 | Pack | 챔피언 | Sub-MOC 변경 | 용어 변경 |
 |---|---|---|---|
-| a3.security-consulting | (TBD) | | |
-| a3.incident-response | (TBD) | | |
+| org.security-consulting | (TBD) | | |
+| org.incident-response | (TBD) | | |
 
 ## 4. Commons 첫 공개
 - 공개 노트 수 / PR 수 / 비식별 차단 건수: (TBD)

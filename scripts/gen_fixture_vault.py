@@ -651,7 +651,7 @@ note(
 )
 
 MYELIN_YAML = """# <Vault>/myelin.yaml (정본 §5.3) — fixture: Brian 개인 Vault
-owner: { name: Brian, team: A3-AI WG, email: brian@example.org }
+owner: { name: Brian, team: Example Org AI WG, email: brian@example.org }
 language: ko
 packs: [myelin.core, brian.physical-ai]
 domains:

@@ -14,7 +14,7 @@ REQUIRED = [
     "docs/adr/0002-plugin-spec.md",
     "packs/myelin.core",
     "packs/brian.physical-ai",
-    "packs/a3.security-consulting",
+    "packs/org.security-consulting",
     "packages/myelin-core/pyproject.toml",
     "packages/myelin-cli/pyproject.toml",
     "packages/myelin-mcp/pyproject.toml",

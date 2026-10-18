@@ -23,7 +23,7 @@ ARGS = [
     "--name",
     "Brian",
     "--team",
-    "A3-AI WG",
+    "Example Org AI WG",
     "--email",
     "brian@example.org",
     "--primary",

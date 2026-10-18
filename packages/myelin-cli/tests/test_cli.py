@@ -90,13 +90,13 @@ def test_init_extra_pack_and_dry_run(
 ) -> None:
     vault = tmp_path / "v"
     assert (
-        run([*_init_args(vault, packs_dir), "--pack", "a3.security-consulting", "--dry-run"]) == 0
+        run([*_init_args(vault, packs_dir), "--pack", "org.security-consulting", "--dry-run"]) == 0
     )
     out = capsys.readouterr().out
     assert "CLAUDE.md" in out and "10_Domains/D1/_MOC.md" in out
     assert not vault.exists()  # dry-run writes nothing
-    assert run([*_init_args(vault, packs_dir), "--pack", "a3.security-consulting"]) == 0
-    assert "a3.security-consulting" in (vault / "myelin.yaml").read_text(encoding="utf-8")
+    assert run([*_init_args(vault, packs_dir), "--pack", "org.security-consulting"]) == 0
+    assert "org.security-consulting" in (vault / "myelin.yaml").read_text(encoding="utf-8")
 
 
 def test_init_fail_closed_on_existing(

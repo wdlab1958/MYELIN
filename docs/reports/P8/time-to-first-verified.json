@@ -1,10 +1,10 @@
 {
   "date": "2026-10-18",
-  "total_s": 0.4,
+  "total_s": 1.1,
   "budget_s": 900,
   "pass": true,
-  "install_s": 0.09,
-  "init_s": 0.2,
-  "draft_and_promote_s": 0.13,
-  "onboarding_minutes_recorded": 0.0
+  "install_s": 0.21,
+  "init_s": 0.4,
+  "draft_and_promote_s": 0.46,
+  "onboarding_minutes_recorded": 0.01
 }

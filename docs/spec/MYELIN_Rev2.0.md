@@ -1,4 +1,4 @@
-**WDLAB · A3 Security · AI·ML·AX Research Division**
+**WDLAB · Open Source · Apache-2.0**
 
 **MYELIN**
 
@@ -12,7 +12,7 @@ Personal Knowledge OS — powered by Obsidian + Claude
 
 문서 번호 WDLAB-MYELIN-SPEC \| Rev 2.0 \| 2026-10-18
 
-작성 Brian · Research Director, A3-AI WG
+작성 Brian (이원대) · WDLAB
 
 **개정 이력**
 
@@ -20,137 +20,15 @@ Personal Knowledge OS — powered by Obsidian + Claude
 |---------|------------|-------------------------------------------------------------------------------------------------------------------|
 | 1.0     | 2026-10-18 | Brian’s Second Brain Boost — 개인 4대 Domain 한정 방법론                                                          |
 | 2.0     | 2026-10-18 | 브랜드 MYELIN 확정 · 범용/조직 확장(Domain Pack) · Emboss 디자인 시스템 · Claude Code Phase 구현 계획(P0~P8) 추가 |
+| 2.0-P   | 2026-10-18 | 공개판 — 조직 특정 정보를 일반화(Example Org), Apache-2.0 공개                                                    |
 
 **목차**
 
-[1. Executive Summary 4](#executive-summary)
-
-[1.1 Rev 1.0 → Rev 2.0 변경 요약 4](#rev-1.0-rev-2.0-변경-요약)
-
-[1.2 핵심 설계 결정 4](#핵심-설계-결정)
-
-[2. 브랜드 — MYELIN 5](#브랜드-myelin)
-
-[2.1 네이밍 컨셉 5](#네이밍-컨셉)
-
-[2.2 후보 비교 5](#후보-비교)
-
-[2.3 제품군 네이밍 체계 5](#제품군-네이밍-체계)
-
-[3. 설계 원칙 7](#설계-원칙)
-
-[4. 시스템 아키텍처 8](#시스템-아키텍처)
-
-[4.1 구성요소와 계층 8](#구성요소와-계층)
-
-[4.2 데이터 흐름 8](#데이터-흐름)
-
-[4.3 배포 모드 8](#배포-모드)
-
-[4.4 기술 스택 9](#기술-스택)
-
-[5. Domain Pack 체계 — 누구나 자기 Domain을
-10](#domain-pack-체계-누구나-자기-domain을)
-
-[5.1 Pack 유형 10](#pack-유형)
-
-[5.2 Pack 스키마 10](#pack-스키마)
-
-[5.3 개인 설정 — myelin.yaml 10](#개인-설정-myelin.yaml)
-
-[5.4 Domain 설정 가이드 (구성원용) 11](#domain-설정-가이드-구성원용)
-
-[5.5 Reference Pack: brian.physical-ai (Rev 1.0의 4대 Domain)
-11](#reference-pack-brian.physical-ai-rev-1.0의-4대-domain)
-
-[5.6 A3 Org Starter Packs (초안) 11](#a3-org-starter-packs-초안)
-
-[6. Vault 표준 13](#vault-표준)
-
-[6.1 폴더 구조 (Pack이 10_Domains 하위를 생성)
-13](#폴더-구조-pack이-10_domains-하위를-생성)
-
-[6.2 Frontmatter 스키마 v2 13](#frontmatter-스키마-v2)
-
-[7. Claude 연동 — Plugin · Guard · MCP
-14](#claude-연동-plugin-guard-mcp)
-
-[7.1 MYELIN for Claude Code (Plugin) 14](#myelin-for-claude-code-plugin)
-
-[7.2 Fail-closed Guard (PreToolUse Hook)
-14](#fail-closed-guard-pretooluse-hook)
-
-[7.3 MYELIN MCP 15](#myelin-mcp)
-
-[8. MYELIN Emboss — 디자인 시스템 16](#myelin-emboss-디자인-시스템)
-
-[8.1 Design Tokens 16](#design-tokens)
-
-[8.2 색의 의미 체계 (Semantic Mapping)
-17](#색의-의미-체계-semantic-mapping)
-
-[8.3 컴포넌트 17](#컴포넌트)
-
-[8.4 Token CSS (Hub · Obsidian 공용) 18](#token-css-hub-obsidian-공용)
-
-[9. A3 조직 확장 19](#a3-조직-확장)
-
-[9.1 Team Commons — 공유의 원칙 19](#team-commons-공유의-원칙)
-
-[9.2 Rollout 계획 19](#rollout-계획)
-
-[9.3 교육 키트 (60분 워크숍) 19](#교육-키트-60분-워크숍)
-
-[10. Claude Code Phase 구현 계획 20](#claude-code-phase-구현-계획)
-
-[10.1 저장소 구조 (Monorepo) 20](#저장소-구조-monorepo)
-
-[10.2 연속 작업 프로토콜 20](#연속-작업-프로토콜)
-
-[10.3 Phase 개요 21](#phase-개요)
-
-[P0. Bootstrap (0.5주) 21](#p0.-bootstrap-0.5주)
-
-[P1. Core Model & Domain Pack (1주) 21](#p1.-core-model-domain-pack-1주)
-
-[P2. CLI Scaffolder (1주) 22](#p2.-cli-scaffolder-1주)
-
-[P3. Claude Code Plugin + Fail-closed Guard (1.5주)
-22](#p3.-claude-code-plugin-fail-closed-guard-1.5주)
-
-[P4. MYELIN MCP Server (1주) 23](#p4.-myelin-mcp-server-1주)
-
-[P5. Emboss Design System + Obsidian Theme (1주)
-23](#p5.-emboss-design-system-obsidian-theme-1주)
-
-[P6. MYELIN Hub (2주) 23](#p6.-myelin-hub-2주)
-
-[P7. Commons & A3 Pilot (1.5주) 24](#p7.-commons-a3-pilot-1.5주)
-
-[P8. Hardening & v1.0 Release (1주) 24](#p8.-hardening-v1.0-release-1주)
-
-[11. 지표 (KPI) 25](#지표-kpi)
-
-[11.1 개인 25](#개인)
-
-[11.2 조직 (opt-in 익명 집계) 25](#조직-opt-in-익명-집계)
-
-[12. 위험과 대응 26](#위험과-대응)
-
-[부록 A. 저장소 CLAUDE.md 27](#부록-a.-저장소-claude.md)
-
-[부록 B. PHASE_STATE.md 템플릿 27](#부록-b.-phase_state.md-템플릿)
-
-[부록 C. 마스터 착수 프롬프트 (P0 첫 세션)
-27](#부록-c.-마스터-착수-프롬프트-p0-첫-세션)
-
-[부록 D. 구성원 Day 1 체크리스트 28](#부록-d.-구성원-day-1-체크리스트)
-
-# 1. Executive Summary
+1\. Executive Summary
 
 Rev 1.0은 Brian 개인의 4대 관심 Domain을 위한 Second Brain 방법론이었다.
 Rev 2.0은 이를 **누구나 자기 Domain을 설정해 쓰는 범용 지식 운영체계
-MYELIN** 으로 일반화하고, A3 사내 구성원에게 배포할 수 있는 제품 구조와
+MYELIN** 으로 일반화하고, 조직 구성원 누구나 도입할 수 있는 제품 구조와
 구현 계획을 정의한다.
 
 <table>
@@ -160,7 +38,7 @@ MYELIN** 으로 일반화하고, A3 사내 구성원에게 배포할 수 있는 
 <tbody>
 <tr class="odd">
 <td><p><strong>Vision</strong></p>
-<p>A3의 젊은 엔지니어·컨설턴트가 <strong>자신의 업무 근간 Domain과 연구
+<p>조직의 젊은 엔지니어·연구자가 <strong>자신의 업무 근간 Domain과 연구
 관심사를 직접 설정</strong> 하고, 매일의 경험을 Claude와 함께 재사용
 가능한 지식으로 전환한다.</p>
 <p>그 결과 각자가 <strong>AI 시대에 축적이 복리로 작동하는 사람</strong>
@@ -169,23 +47,21 @@ MYELIN** 으로 일반화하고, A3 사내 구성원에게 배포할 수 있는 
 </tbody>
 </table>
 
-## 1.1 Rev 1.0 → Rev 2.0 변경 요약
+1.1 Rev 1.0 → Rev 2.0 변경 요약
 
 | **영역**    | **Rev 1.0**                    | **Rev 2.0**                                                                       |
 |-------------|--------------------------------|-----------------------------------------------------------------------------------|
-| 대상        | Brian 1인                      | A3 구성원 누구나 (개인 소유 Vault + 선택적 팀 공유)                               |
+| 대상        | Brian 1인                      | 누구나 (개인 소유 Vault + 선택적 팀 공유)                                         |
 | Domain      | D1~D4 고정                     | **Domain Pack** 으로 설정 가능. Brian 4대 Domain은 Reference Pack으로 제공        |
 | Claude 연동 | 운영 규칙(CLAUDE.md)·명령 설계 | Claude Code **Plugin**(Skills + Fail-closed Hook) + **MCP Server** 로 패키징      |
 | UI          | Obsidian 기본 UI               | **MYELIN Hub**(웹 대시보드·온보딩 마법사) + Obsidian Theme — Emboss 디자인 시스템 |
 | 브랜드      | Second Brain Boost (가칭)      | **MYELIN** — 제품군 네이밍 체계 확정                                              |
 | 구현 계획   | 사용자 운영 로드맵 (8주)       | **Claude Code 연속 구현용 Phase P0~P8** + 세션 간 상태 인계 프로토콜              |
 
-## 1.2 핵심 설계 결정
+1.2 핵심 설계 결정
 
 - **Vault는 개인 소유** — 각자의 로컬 Markdown Vault가 정본. 조직 공유는
   opt-in, 검증(verified)·보안등급 통과 노트만.
-
-<!-- -->
 
 - **Domain은 데이터, 코드가 아님** — Domain은 YAML Pack으로 선언. 새
   Domain 추가에 코드 변경이 없다 (Thin Additive Routing Shell).
@@ -199,9 +75,9 @@ MYELIN** 으로 일반화하고, A3 사내 구성원에게 배포할 수 있는 
 - **Phase-gated 구현** — 9개 Phase, 각 Phase는 Gate 통과 + 사람 승인
   후에만 다음으로 진행한다.
 
-# 2. 브랜드 — MYELIN
+2\. 브랜드 — MYELIN
 
-## 2.1 네이밍 컨셉
+2.1 네이밍 컨셉
 
 **Myelin(미엘린, 수초)** 은 신경세포의 축삭을 감싸 신호 전달 속도를
 높이는 절연층이다. 반복해서 쓰는 신경 경로일수록 미엘린화가 진행되어 더
@@ -228,7 +104,7 @@ Neural/AI 시대의 톤을 하나의 단어로 담는다.
 </tbody>
 </table>
 
-## 2.2 후보 비교
+2.2 후보 비교
 
 | **후보**   | **의미**                         | **정체성 적합**  | **확장성**                   | **고유성(추정)**                     | **판단**                 |
 |------------|----------------------------------|------------------|------------------------------|--------------------------------------|--------------------------|
@@ -238,12 +114,12 @@ Neural/AI 시대의 톤을 하나의 단어로 담는다.
 | Cortex OS  | 대뇌피질 + OS                    | ○                | ○                            | △ 매우 흔함                          | 보류                     |
 | Accrue     | 축적 — 축적 위의 창업            | ○ 철학 일치      | △                            | ○                                    | 슬로건 후보로 재활용     |
 
-※ “고유성” 은 추정이다. 사내 배포 전 **KIPRIS 상표 검색(제9류
+※ “고유성” 은 추정이다. 조직 내 배포 전 **KIPRIS 상표 검색(제9류
 소프트웨어, 제42류 SaaS)** 과 도메인·GitHub 조직명 확인을 P8
 체크리스트에 포함한다. 충돌 시 대안은 MYELIN 을 유지한 결합형(예: MYELIN
 KOS) 또는 MindForge.
 
-## 2.3 제품군 네이밍 체계
+2.3 제품군 네이밍 체계
 
 | **이름**               | **구성요소**        | **설명**                                                                        |
 |------------------------|---------------------|---------------------------------------------------------------------------------|
@@ -254,9 +130,9 @@ KOS) 또는 MindForge.
 | MYELIN MCP             | MCP Server          | Claude Desktop/Code에서 Vault 검색·조회 (기본 읽기 전용)                        |
 | MYELIN Hub             | 웹 대시보드         | 지식 현황, Domain Map, Review Gate, 온보딩 마법사, Pack 편집기                  |
 | MYELIN Emboss          | 디자인 시스템       | 백색 뉴모피즘 + Violet/Neon 강조 — Hub·Obsidian Theme 공용                      |
-| MYELIN Commons         | 팀 공유 저장소      | A3 공용 Pack Registry + 공개 승인된 Evergreen 노트                              |
+| MYELIN Commons         | 팀 공유 저장소      | 조직 공용 Pack Registry + 공개 승인된 Evergreen 노트                            |
 
-#  3. 설계 원칙
+3\. 설계 원칙
 
 Rev 1.0의 다섯 원칙을 유지하고, 조직 확장을 위해 두 가지를 추가한다.
 
@@ -270,9 +146,9 @@ Rev 1.0의 다섯 원칙을 유지하고, 조직 확장을 위해 두 가지를 
 | **Personal Ownership (신규)**      | Vault는 개인의 것. 조직은 개인 Vault를 열람하지 않으며, 공유는 개인이 명시적으로 publish한 노트에 한정  |
 | **Low-friction Onboarding (신규)** | 설치부터 첫 verified 노트까지 15분 이내. Domain 선택은 마법사로, 기본값이 좋은 시스템                   |
 
-#  4. 시스템 아키텍처
+4\. 시스템 아키텍처
 
-## 4.1 구성요소와 계층
+4.1 구성요소와 계층
 
 | **Layer**       | **구성요소**                                                                              | **역할**                         |
 |-----------------|-------------------------------------------------------------------------------------------|----------------------------------|
@@ -281,9 +157,9 @@ Rev 1.0의 다섯 원칙을 유지하고, 조직 확장을 위해 두 가지를 
 | L2. Vault (SoR) | 개인 Obsidian Vault + Git                                                                 | 단일 정본, 버전 관리             |
 | L3. Engine      | myelin-core(Python) · MYELIN CLI · MYELIN for Claude Code · MYELIN MCP · Local LLM 라우팅 | 검증·색인·가공 자동화, 정책 강제 |
 | L4. Experience  | MYELIN Hub (Web) · Obsidian Emboss Theme                                                  | 현황·검토·온보딩 UI              |
-| L5. Commons     | A3 Pack Registry · Commons Vault (Git, 사내)                                              | Pack 배포, 공개 승인 노트 공유   |
+| L5. Commons     | Org Pack Registry · Commons Vault (Git, 조직 내부)                                        | Pack 배포, 공개 승인 노트 공유   |
 
-## 4.2 데이터 흐름
+4.2 데이터 흐름
 
 > \[Capture\] ──▶ 00_Inbox ──/ingest·/distill──▶ ai-drafts
 > (origin:claude, status:draft)
@@ -304,17 +180,17 @@ Rev 1.0의 다섯 원칙을 유지하고, 조직 확장을 위해 두 가지를 
 >
 > ▼
 >
-> MYELIN Commons (A3 사내 Git)
+> MYELIN Commons (조직 내부 Git)
 
-## 4.3 배포 모드
+4.3 배포 모드
 
-| **모드**  | **대상**          | **구성**                                                               | **LLM**                                          |
-|-----------|-------------------|------------------------------------------------------------------------|--------------------------------------------------|
-| Personal  | 개인 (Brian 포함) | Vault + CLI + Plugin + MCP + Hub(localhost)                            | Claude (기본) · 로컬 LLM(confidential)           |
-| Team (A3) | A3 구성원         | Personal + Commons Git + 사내 Pack Registry                            | 회사 승인 Claude 플랜 · 사내 로컬 LLM 서버(선택) |
-| Offline   | 망분리 환경       | Personal에서 Claude 대신 로컬 LLM만 사용 (AgentForge 계열과 연계 가능) | 로컬 LLM 전용                                    |
+| **모드**    | **대상**          | **구성**                                                               | **LLM**                                             |
+|-------------|-------------------|------------------------------------------------------------------------|-----------------------------------------------------|
+| Personal    | 개인 (Brian 포함) | Vault + CLI + Plugin + MCP + Hub(localhost)                            | Claude (기본) · 로컬 LLM(confidential)              |
+| Team (조직) | 조직 구성원       | Personal + Commons Git + 조직 내 Pack Registry                         | 회사 승인 Claude 플랜 · 조직 내 로컬 LLM 서버(선택) |
+| Offline     | 망분리 환경       | Personal에서 Claude 대신 로컬 LLM만 사용 (AgentForge 계열과 연계 가능) | 로컬 LLM 전용                                       |
 
-## 4.4 기술 스택
+4.4 기술 스택
 
 | **구성**   | **스택**                                                                | **비고**                                  |
 |------------|-------------------------------------------------------------------------|-------------------------------------------|
@@ -325,32 +201,32 @@ Rev 1.0의 다섯 원칙을 유지하고, 조직 확장을 위해 두 가지를 
 | Hub        | FastAPI + React 18 · Vite · TypeScript · Tailwind (Emboss preset)       | localhost 기본, 인증은 Team 모드에서      |
 | Theme      | Obsidian CSS Theme (Emboss tokens)                                      | tokens.json에서 생성                      |
 
-#  5. Domain Pack 체계 — 누구나 자기 Domain을
+5\. Domain Pack 체계 — 누구나 자기 Domain을
 
 Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고르거나
 자기 Domain을 직접 정의하고, MYELIN은 Pack을 읽어 폴더·MOC·템플릿·용어
 사전·인터뷰 질문·Claude 규칙을 생성한다.
 
-## 5.1 Pack 유형
+5.1 Pack 유형
 
-| **유형**       | **관리 주체**     | **예시**                                       | **용도**                                            |
-|----------------|-------------------|------------------------------------------------|-----------------------------------------------------|
-| Core Pack      | MYELIN            | note types, frontmatter, 기본 템플릿           | 모든 Vault의 공통 기반 (필수)                       |
-| Reference Pack | 전문가 (Brian 등) | brian.physical-ai — D1~D4                      | 숙련자의 Domain 지형도를 후배가 출발점으로 사용     |
-| Org Pack       | A3-AI WG          | a3.security-consulting, a3.incident-response … | 사내 업무 Domain 표준 — 용어·체크리스트·인터뷰 질문 |
-| Personal Pack  | 개인              | me.side-research                               | 개인 고유 관심사. Commons로 제안 가능               |
+| **유형**       | **관리 주체**     | **예시**                                         | **용도**                                               |
+|----------------|-------------------|--------------------------------------------------|--------------------------------------------------------|
+| Core Pack      | MYELIN            | note types, frontmatter, 기본 템플릿             | 모든 Vault의 공통 기반 (필수)                          |
+| Reference Pack | 전문가 (Brian 등) | brian.physical-ai — D1~D4                        | 숙련자의 Domain 지형도를 후배가 출발점으로 사용        |
+| Org Pack       | Example Org AI WG | org.security-consulting, org.incident-response … | 조직 내 업무 Domain 표준 — 용어·체크리스트·인터뷰 질문 |
+| Personal Pack  | 개인              | me.side-research                                 | 개인 고유 관심사. Commons로 제안 가능                  |
 
-## 5.2 Pack 스키마
+5.2 Pack 스키마
 
-> \# packs/a3.security-consulting/pack.yaml
+> \# packs/org.security-consulting/pack.yaml
 >
-> pack: a3.security-consulting
+> pack: org.security-consulting
 >
 > version: 1.0.0
 >
 > kind: org \# core \| reference \| org \| personal
 >
-> maintainer: A3-AI WG
+> maintainer: Example Org AI WG
 >
 > requires: \[myelin.core\>=1.0\]
 >
@@ -379,15 +255,15 @@ Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고�
 >
 > compose_targets: \[진단 보고서 초안, 제안서 섹션, 교육자료\]
 
-## 5.3 개인 설정 — myelin.yaml
+5.3 개인 설정 — myelin.yaml
 
 > \# \<Vault\>/myelin.yaml
 >
-> owner: { name: 홍길동, team: 컨설팅2팀, email: gildong@a3sc.co.kr }
+> owner: { name: 홍길동, team: 컨설팅2팀, email: gildong@example.com }
 >
 > language: ko
 >
-> packs: \[myelin.core, a3.security-consulting, a3.cloud-security,
+> packs: \[myelin.core, org.security-consulting, org.cloud-security,
 > me.llm-security\]
 >
 > domains:
@@ -408,9 +284,9 @@ Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고�
 > route: { confidential: local, "40_IP/\*\*": local }
 >
 > commons: { enabled: true, remote:
-> git@git.a3sc.internal:myelin/commons.git }
+> git@git.example.internal:myelin/commons.git }
 
-## 5.4 Domain 설정 가이드 (구성원용)
+5.4 Domain 설정 가이드 (구성원용)
 
 <table>
 <colgroup>
@@ -431,7 +307,7 @@ Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고�
 </tbody>
 </table>
 
-## 5.5 Reference Pack: brian.physical-ai (Rev 1.0의 4대 Domain)
+5.5 Reference Pack: brian.physical-ai (Rev 1.0의 4대 Domain)
 
 | **Domain**                  | **Sub-MOC (요약)**                                                                   | **대표 산출물**                                   |
 |-----------------------------|--------------------------------------------------------------------------------------|---------------------------------------------------|
@@ -444,23 +320,23 @@ Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고�
 자산이다. 후배는 이 Pack을 설치해 Sub-MOC 구조와 /interview 질문 은행을
 출발점으로 쓰고, 자기 경험으로 채운다.
 
-## 5.6 A3 Org Starter Packs (초안)
+5.6 Org Starter Packs (예시)
 
-| **Pack**               | **Domain 예**   | **특화 요소**                                            |
-|------------------------|-----------------|----------------------------------------------------------|
-| a3.security-consulting | 보안 컨설팅     | 진단 방법론 체크리스트, 고객 유형별 lesson 템플릿        |
-| a3.incident-response   | 침해사고 대응   | Timeline 템플릿, IoC 노트(비식별 규칙 포함), Post-mortem |
-| a3.cloud-security      | 클라우드 보안   | CSP별 MOC, 설정 진단 항목 카드                           |
-| a3.privacy             | 개인정보 보호   | 법령·가이드 literature 노트, 영향평가 체크리스트         |
-| a3.ai-engineering      | AI 개발·AI 보안 | Brian Reference Pack D1의 사내 버전                      |
-| a3.dev                 | SW 개발         | ADR, 코드 리뷰 교훈, 기술 부채 노트                      |
+| **Pack**                | **Domain 예**   | **특화 요소**                                            |
+|-------------------------|-----------------|----------------------------------------------------------|
+| org.security-consulting | 보안 컨설팅     | 진단 방법론 체크리스트, 고객 유형별 lesson 템플릿        |
+| org.incident-response   | 침해사고 대응   | Timeline 템플릿, IoC 노트(비식별 규칙 포함), Post-mortem |
+| org.cloud-security      | 클라우드 보안   | CSP별 MOC, 설정 진단 항목 카드                           |
+| org.privacy             | 개인정보 보호   | 법령·가이드 literature 노트, 영향평가 체크리스트         |
+| org.ai-engineering      | AI 개발·AI 보안 | Brian Reference Pack D1의 조직 내 버전                   |
+| org.dev                 | SW 개발         | ADR, 코드 리뷰 교훈, 기술 부채 노트                      |
 
 ※ Org Pack의 Sub-MOC·용어는 각 팀 챔피언과 함께 P7에서 확정한다. 위 표는
 착수용 초안이다.
 
-# 6. Vault 표준
+6\. Vault 표준
 
-## 6.1 폴더 구조 (Pack이 10_Domains 하위를 생성)
+6.1 폴더 구조 (Pack이 10_Domains 하위를 생성)
 
 > \<Vault\>/
 >
@@ -483,7 +359,7 @@ Domain은 코드가 아니라 **선언(Pack)** 이다. 사용자는 Pack을 고�
 >
 > └── .myelin/ \# 색인, 로그 (git ignore)
 
-## 6.2 Frontmatter 스키마 v2
+6.2 Frontmatter 스키마 v2
 
 > ---
 >
@@ -518,9 +394,9 @@ myelin doctor 는 스키마 위반, origin: claude 이면서 미검증인 노트
 verified 노트가 링크하는 경우(fail-closed 위반), 고아 노트,
 classification: confidential + share: true 모순을 검출한다.
 
-# 7. Claude 연동 — Plugin · Guard · MCP
+7\. Claude 연동 — Plugin · Guard · MCP
 
-## 7.1 MYELIN for Claude Code (Plugin)
+7.1 MYELIN for Claude Code (Plugin)
 
 | **Skill**  | **최소 Level** | **동작**                                                         | **쓰기 범위**                      |
 |------------|----------------|------------------------------------------------------------------|------------------------------------|
@@ -532,7 +408,7 @@ classification: confidential + share: true 모순을 검출한다.
 | /review    | 1              | 주간 품질 보고서 (doctor + 지표)                                 | 50_Journal                         |
 | /ip-scan   | 3              | Cross-domain verified 노트에서 특허 후보 추출                    | 40_IP/candidates (로컬 LLM 라우팅) |
 
-## 7.2 Fail-closed Guard (PreToolUse Hook)
+7.2 Fail-closed Guard (PreToolUse Hook)
 
 Rev 1.0에서 CLAUDE.md의 “규칙” 이었던 쓰기 제한을 **실행 차단 장치** 로
 승격한다. Claude Code의 PreToolUse Hook은 도구 실행 직전에 호출되며,
@@ -593,7 +469,7 @@ Rev 1.0에서 CLAUDE.md의 “규칙” 이었던 쓰기 제한을 **실행 차�
 </tbody>
 </table>
 
-## 7.3 MYELIN MCP
+7.3 MYELIN MCP
 
 | **Tool**                   | **설명**                                        | **권한**                                 |
 |----------------------------|-------------------------------------------------|------------------------------------------|
@@ -603,20 +479,20 @@ Rev 1.0에서 CLAUDE.md의 “규칙” 이었던 쓰기 제한을 **실행 차�
 | list_domains / vault_stats | Pack·Domain·지표 조회                           | read                                     |
 | write_draft                | ai-drafts에 초안 생성                           | Level ≥ 1 + 설정에서 명시 허용 시        |
 
-#  8. MYELIN Emboss — 디자인 시스템
+8\. MYELIN Emboss — 디자인 시스템
 
 **백색 엠보(Neumorphism)** 를 기본 질감으로, 의미 있는 상태만 **Violet과
 Neon** 으로 발광시킨다. 원칙은 “표면은 조용히, 신호는 선명하게” —
 대부분의 화면은 그림자로만 구분되고, 사용자가 주목해야 할 곳에만 색이
 켜진다.
 
-<img src="media/image1.png"
+<img src="media/hub_mockup.png"
 style="width:6.25in;height:3.90625in" />
 
 그림 1. MYELIN Hub 컨셉 목업 — Raised 카드, Inset 검색창·활성 메뉴,
 Violet 주 버튼, Neon 상태 칩
 
-## 8.1 Design Tokens
+8.1 Design Tokens
 
 | **Token**       | **값**                                              | **용도**                                                                                      |
 |-----------------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------|
@@ -633,7 +509,7 @@ Violet 주 버튼, Neon 상태 칩
 | --neon-magenta  | \#FF3DCB                                            | **fail-closed 차단 / 경고** — 정책 위반, 차단 이벤트                                          |
 | --radius        | 28px (card) / 20px (control) / 999px (chip)         | 모서리                                                                                        |
 
-## 8.2 색의 의미 체계 (Semantic Mapping)
+8.2 색의 의미 체계 (Semantic Mapping)
 
 | **상태**       | **시각 표현**                 | **규칙**                                               |
 |----------------|-------------------------------|--------------------------------------------------------|
@@ -643,7 +519,7 @@ Violet 주 버튼, Neon 상태 칩
 | blocked / 위반 | Magenta 외곽선 배지           | Guard 차단, doctor 위반                                |
 | Domain 정체성  | Pack의 accent 토큰            | Domain Orb 테두리 glow                                 |
 
-## 8.3 컴포넌트
+8.3 컴포넌트
 
 | **컴포넌트**     | **형태**                             | **비고**                                                |
 |------------------|--------------------------------------|---------------------------------------------------------|
@@ -678,7 +554,7 @@ ai-draft…).</p>
 </tbody>
 </table>
 
-## 8.4 Token CSS (Hub · Obsidian 공용)
+8.4 Token CSS (Hub · Obsidian 공용)
 
 > :root {
 >
@@ -722,49 +598,25 @@ ai-draft…).</p>
 > .mx-badge--blocked { border:2px solid var(--magenta); color:#BE188C;
 > background:#FFEBF9; }
 
-# 9. A3 조직 확장
+9\. 조직 확장 (Team 모드)
 
-## 9.1 Team Commons — 공유의 원칙
+9.1 Team Commons — 공유의 원칙
+
+| **원칙**              | **내용**                                                                                                    |
+|-----------------------|-------------------------------------------------------------------------------------------------------------|
+| 개인 Vault 불가침     | 조직·관리자는 개인 Vault에 접근하지 않는다. 지표 수집도 opt-in 익명 집계만                                  |
+| Publish는 개인의 행위 | share: true + status: verified + classification ≤ internal 노트만 Hub에서 “Commons 제안” → Commons Git에 PR |
+| Commons 검토          | 각 Domain 챔피언이 PR 리뷰 (고객명·IP·기밀 비식별 확인) 후 merge                                            |
+| 출처 보존             | 공개 노트는 작성자·원 id 유지. 재사용 시 인용 링크로 기여가 보이게 — 기여가 평판이 되는 구조                |
+| Pack 진화             | 개인 Personal Pack 중 반복 사용되는 것은 Org Pack 후보로 제안                                               |
 
 <table>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 74%" />
+<col style="width: 100%" />
 </colgroup>
-<thead>
-<tr class="header">
-<th><strong>원칙</strong></th>
-<th><strong>내용</strong></th>
-</tr>
-</thead>
 <tbody>
 <tr class="odd">
-<td>개인 Vault 불가침</td>
-<td>조직·관리자는 개인 Vault에 접근하지 않는다. 지표 수집도 opt-in 익명
-집계만</td>
-</tr>
-<tr class="even">
-<td>Publish는 개인의 행위</td>
-<td>share: true + status: verified + classification ≤ internal 노트만
-Hub에서 “Commons 제안” → Commons Git에 PR</td>
-</tr>
-<tr class="odd">
-<td>Commons 검토</td>
-<td>각 Domain 챔피언이 PR 리뷰 (고객명·IP·기밀 비식별 확인) 후
-merge</td>
-</tr>
-<tr class="even">
-<td>출처 보존</td>
-<td>공개 노트는 작성자·원 id 유지. 재사용 시 인용 링크로 기여가 보이게 —
-기여가 평판이 되는 구조</td>
-</tr>
-<tr class="odd">
-<td>Pack 진화</td>
-<td>개인 Personal Pack 중 반복 사용되는 것은 Org Pack 후보로 제안</td>
-</tr>
-<tr class="even">
-<td colspan="2"><p><strong>사전 합의가 필요한 정책
-(HR·법무·보안)</strong></p>
+<td><p><strong>사전 합의가 필요한 정책 (HR·법무·보안)</strong></p>
 <p><strong>지식 소유권:</strong> 업무 중 작성한 노트(회사 자산)와 개인
 연구 노트의 구분 기준, 퇴사 시 처리.</p>
 <p><strong>외부 AI 사용 범위:</strong> 고객 데이터·진단 결과의 Claude
@@ -775,7 +627,7 @@ merge</td>
 </tbody>
 </table>
 
-## 9.2 Rollout 계획
+9.2 Rollout 계획
 
 | **단계** | **기간**       | **대상**                          | **목표**                            |
 |----------|----------------|-----------------------------------|-------------------------------------|
@@ -784,7 +636,7 @@ merge</td>
 | Wave 1   | +1개월         | 희망 팀 단위 (컨설팅·AI)          | 주간 verified 노트, Commons 첫 공개 |
 | Wave 2   | +2개월         | 전사 희망자                       | Commons 재사용 지표 측정            |
 
-## 9.3 교육 키트 (60분 워크숍)
+9.3 교육 키트 (60분 워크숍)
 
 - 10분 — 왜 MYELIN인가: 축적이 복리로 작동하는 구조, 사례(Brian
   Reference Pack)
@@ -797,15 +649,15 @@ merge</td>
 
 - 10분 — 공유 원칙·보안 정책·Q&A
 
-# 10. Claude Code Phase 구현 계획
+10\. Claude Code Phase 구현 계획
 
 이 장은 **Claude Code가 여러 세션에 걸쳐 끊김 없이 구현을 이어가도록**
 설계되었다. 본 문서를 저장소의 docs/spec/MYELIN_Rev2.0.md 로 넣고, 각
 Phase 절을 docs/phases/P{n}.md 로 분리해 사용한다.
 
-## 10.1 저장소 구조 (Monorepo)
+10.1 저장소 구조 (Monorepo)
 
-> myelin/ \# github.com/wdlab1958/myelin (private)
+> myelin/ \# github.com/wdlab1958/MYELIN
 >
 > ├── CLAUDE.md \# 저장소 작업 규칙 (부록 A)
 >
@@ -815,7 +667,7 @@ Phase 절을 docs/phases/P{n}.md 로 분리해 사용한다.
 >
 > ├── docs/{spec, phases, adr, reports}/
 >
-> ├── packs/{myelin.core, brian.physical-ai, a3.\*}/
+> ├── packs/{myelin.core, brian.physical-ai, org.\*}/
 >
 > ├── packages/
 >
@@ -835,51 +687,24 @@ Phase 절을 docs/phases/P{n}.md 로 분리해 사용한다.
 >
 > └── tests/{fixtures/vaults, e2e}/
 
-## 10.2 연속 작업 프로토콜
+10.2 연속 작업 프로토콜
+
+| **시점**       | **Claude Code가 하는 일**                                                                                |
+|----------------|----------------------------------------------------------------------------------------------------------|
+| 세션 시작      | CLAUDE.md → PHASE_STATE.md → docs/phases/P{현재}.md 순으로 읽고, 남은 Task를 Task 목록으로 복원          |
+| Task 단위 작업 | 하나의 Task = 하나의 검증 가능한 변경. 테스트 작성 → 구현 → make test 통과 → commit                      |
+| Task 종료      | PHASE_STATE.md 의 Done / Next / Blockers / Decisions 갱신 후 commit (세션이 끊겨도 다음 세션이 이어받음) |
+| 설계 결정      | 되돌리기 어려운 결정은 docs/adr/NNNN-\*.md 로 기록                                                       |
+| Phase 종료     | make gate P=n 통과 → docs/reports/P{n}.md 작성 → git tag phase-P{n} → **멈추고 사람 승인 요청**          |
+| 다음 Phase     | Brian이 “GO P{n+1}” 을 줄 때만 시작. 승인 없이 다음 Phase 착수 금지                                      |
 
 <table>
 <colgroup>
-<col style="width: 18%" />
-<col style="width: 81%" />
+<col style="width: 100%" />
 </colgroup>
-<thead>
-<tr class="header">
-<th><strong>시점</strong></th>
-<th><strong>Claude Code가 하는 일</strong></th>
-</tr>
-</thead>
 <tbody>
 <tr class="odd">
-<td>세션 시작</td>
-<td>CLAUDE.md → PHASE_STATE.md → docs/phases/P{현재}.md 순으로 읽고,
-남은 Task를 Task 목록으로 복원</td>
-</tr>
-<tr class="even">
-<td>Task 단위 작업</td>
-<td>하나의 Task = 하나의 검증 가능한 변경. 테스트 작성 → 구현 → make
-test 통과 → commit</td>
-</tr>
-<tr class="odd">
-<td>Task 종료</td>
-<td>PHASE_STATE.md 의 Done / Next / Blockers / Decisions 갱신 후 commit
-(세션이 끊겨도 다음 세션이 이어받음)</td>
-</tr>
-<tr class="even">
-<td>설계 결정</td>
-<td>되돌리기 어려운 결정은 docs/adr/NNNN-*.md 로 기록</td>
-</tr>
-<tr class="odd">
-<td>Phase 종료</td>
-<td>make gate P=n 통과 → docs/reports/P{n}.md 작성 → git tag phase-P{n}
-→ <strong>멈추고 사람 승인 요청</strong></td>
-</tr>
-<tr class="even">
-<td>다음 Phase</td>
-<td>Brian이 “GO P{n+1}” 을 줄 때만 시작. 승인 없이 다음 Phase 착수
-금지</td>
-</tr>
-<tr class="odd">
-<td colspan="2"><p><strong>세션 재개 명령</strong></p>
+<td><p><strong>세션 재개 명령</strong></p>
 <p>같은 작업을 이어갈 때: claude --continue (직전 세션) 또는 claude
 --resume (세션 선택).</p>
 <p>새 세션이어도 PHASE_STATE.md가 상태를 들고 있으므로 아래 한 줄로
@@ -890,7 +715,7 @@ test 통과 → commit</td>
 </tbody>
 </table>
 
-## 10.3 Phase 개요
+10.3 Phase 개요
 
 | **Phase** | **이름**                     | **기간** | **핵심 Gate**                                 |
 |-----------|------------------------------|----------|-----------------------------------------------|
@@ -901,13 +726,13 @@ test 통과 → commit</td>
 | P4        | MCP Server                   | 1주      | 경로 이탈 차단, p95 \< 300ms                  |
 | P5        | Emboss Design System + Theme | 1주      | 토큰 단일 원천, 대비 검사 통과                |
 | P6        | MYELIN Hub                   | 2주      | 온보딩·승격 e2e, 사람 행위 없는 쓰기 0        |
-| P7        | Commons & A3 Pilot           | 1.5주    | confidential publish 차단 100%, 파일럿 온보딩 |
+| P7        | Commons & Org Pilot          | 1.5주    | confidential publish 차단 100%, 파일럿 온보딩 |
 | P8        | Hardening & v1.0 Release     | 1주      | 위협모델 조치, 15분 온보딩, 상표 확인         |
 
 총 약 **10.5주** (Brian 단독 + Claude Code 기준). Phase는 순차이며, P5는
 P3·P4와 병렬 가능하다.
 
-## P0. Bootstrap (0.5주)
+P0. Bootstrap (0.5주)
 
 | **항목**         | **내용**                                                                                                                                                                                                                              |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -928,13 +753,13 @@ P3·P4와 병렬 가능하다.
 >
 > 모든 Task 완료 후 make gate P=0을 실행하고, 결과를 보고한 뒤 멈춰라.
 
-## P1. Core Model & Domain Pack (1주)
+P1. Core Model & Domain Pack (1주)
 
-| **항목**         | **내용**                                                                                                                                                                                     |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 목표             | Frontmatter 스키마 v2, 노트 파서, Pack 스키마·로더·검증기를 myelin-core에 구현한다.                                                                                                          |
-| 산출물           | Pydantic 모델(Note, Frontmatter, Pack, Domain) · JSON Schema export · Pack 로더(의존성 해석) · packs: myelin.core, brian.physical-ai, a3.security-consulting(초안) · fixtures vault 30+ 노트 |
-| Gate (통과 기준) | Pack 3종 검증 통과 · 파서 테스트 커버리지 ≥ 90% · 잘못된 Pack 10종 fixture 모두 명확한 오류 메시지                                                                                           |
+| **항목**         | **내용**                                                                                                                                                                                      |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 목표             | Frontmatter 스키마 v2, 노트 파서, Pack 스키마·로더·검증기를 myelin-core에 구현한다.                                                                                                           |
+| 산출물           | Pydantic 모델(Note, Frontmatter, Pack, Domain) · JSON Schema export · Pack 로더(의존성 해석) · packs: myelin.core, brian.physical-ai, org.security-consulting(초안) · fixtures vault 30+ 노트 |
+| Gate (통과 기준) | Pack 3종 검증 통과 · 파서 테스트 커버리지 ≥ 90% · 잘못된 Pack 10종 fixture 모두 명확한 오류 메시지                                                                                            |
 
 **Claude Code 착수 프롬프트**
 
@@ -953,7 +778,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P1 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P2. CLI Scaffolder (1주)
+P2. CLI Scaffolder (1주)
 
 | **항목**         | **내용**                                                                                                                               |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------------|
@@ -978,7 +803,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P2 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P3. Claude Code Plugin + Fail-closed Guard (1.5주)
+P3. Claude Code Plugin + Fail-closed Guard (1.5주)
 
 | **항목**         | **내용**                                                                                                                                                                                                             |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1003,7 +828,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P3 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P4. MYELIN MCP Server (1주)
+P4. MYELIN MCP Server (1주)
 
 | **항목**         | **내용**                                                                                              |
 |------------------|-------------------------------------------------------------------------------------------------------|
@@ -1027,7 +852,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P4 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P5. Emboss Design System + Obsidian Theme (1주)
+P5. Emboss Design System + Obsidian Theme (1주)
 
 | **항목**         | **내용**                                                                                                                                                  |
 |------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1052,7 +877,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P5 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P6. MYELIN Hub (2주)
+P6. MYELIN Hub (2주)
 
 | **항목**         | **내용**                                                                                                                                                                |
 |------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1077,11 +902,11 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P6 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P7. Commons & A3 Pilot (1.5주)
+P7. Commons & Org Pilot (1.5주)
 
 | **항목**         | **내용**                                                                                                                        |
 |------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| 목표             | Commons publish 흐름과 사내 Pack Registry를 만들고 파일럿을 운영한다.                                                           |
+| 목표             | Commons publish 흐름과 조직 내 Pack Registry를 만들고 파일럿을 운영한다.                                                        |
 | 산출물           | Commons Git 구조 · publish(PR 생성) 흐름 · 비식별 체크리스트 · Org Pack 2종 확정 · opt-in 익명 지표 · 파일럿 가이드·워크숍 자료 |
 | Gate (통과 기준) | confidential / share:false 노트 publish 차단 100% · 파일럿 5명 이상 온보딩 15분 이내 · 파일럿 피드백 리포트                     |
 
@@ -1102,7 +927,7 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P7 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-## P8. Hardening & v1.0 Release (1주)
+P8. Hardening & v1.0 Release (1주)
 
 | **항목**         | **내용**                                                                                                        |
 |------------------|-----------------------------------------------------------------------------------------------------------------|
@@ -1126,9 +951,9 @@ P3·P4와 병렬 가능하다.
 > git tag phase-P8 후 멈추고 승인을 요청하라. 실패하면 원인과 수정안을
 > 보고하라.
 
-# 11. 지표 (KPI)
+11\. 지표 (KPI)
 
-## 11.1 개인
+11.1 개인
 
 | **지표**       | **정의**                  | **목표 (3개월)**                        |
 |----------------|---------------------------|-----------------------------------------|
@@ -1139,7 +964,7 @@ P3·P4와 병렬 가능하다.
 | Cross-domain   | domain 2개 이상 노트 비율 | ≥ 15%                                   |
 | 재투입         | Vault 기반 산출물 수      | ≥ 2건/월                                |
 
-## 11.2 조직 (opt-in 익명 집계)
+11.2 조직 (opt-in 익명 집계)
 
 | **지표**     | **정의**                               | **목표 (Wave 1 종료)** |
 |--------------|----------------------------------------|------------------------|
@@ -1149,7 +974,7 @@ P3·P4와 병렬 가능하다.
 | 재사용       | Commons 노트가 타인 노트에 인용된 횟수 | ≥ 50 / 월              |
 | Pack 진화    | Personal → Org Pack 제안 건수          | ≥ 2                    |
 
-#  12. 위험과 대응
+12\. 위험과 대응
 
 | **위험**                   | **영향**       | **대응**                                                              |
 |----------------------------|----------------|-----------------------------------------------------------------------|
@@ -1161,7 +986,7 @@ P3·P4와 병렬 가능하다.
 | 단독 개발 유지보수 부담    | 지속성         | Pack = 데이터 원칙으로 코드 변경 최소화, 팀 챔피언에게 Pack 운영 위임 |
 | 상표 충돌                  | 리브랜딩 비용  | P8 이전 KIPRIS 확인, 대안명 준비                                      |
 
-#  부록 A. 저장소 CLAUDE.md
+부록 A. 저장소 CLAUDE.md
 
 > \# MYELIN — Repository Rules for Claude Code
 >
@@ -1199,7 +1024,7 @@ P3·P4와 병렬 가능하다.
 > \- 형식: "P{n}: \<type\>(\<scope\>): \<summary\>" 예) "P3:
 > feat(guard): block symlink escape"
 
-## 부록 B. PHASE_STATE.md 템플릿
+부록 B. PHASE_STATE.md 템플릿
 
 > \# PHASE_STATE
 >
@@ -1234,7 +1059,7 @@ P3·P4와 병렬 가능하다.
 >
 > \- Hub에서 Guard 차단 이벤트 표시 (P6)
 
-## 부록 C. 마스터 착수 프롬프트 (P0 첫 세션)
+부록 C. 마스터 착수 프롬프트 (P0 첫 세션)
 
 > 너는 MYELIN 프로젝트의 구현 엔지니어다. 첨부한
 > docs/spec/MYELIN_Rev2.0.md가 정본 명세다.
@@ -1254,11 +1079,9 @@ P3·P4와 병렬 가능하다.
 > P0 Gate를 통과하면 보고서를 쓰고 멈춰라. P1은 내가 "GO P1"이라고 할 때
 > 시작한다.
 
-## 부록 D. 구성원 Day 1 체크리스트
+부록 D. 구성원 Day 1 체크리스트
 
 - myelin init 실행 → 3+1 Domain 선택
-
-<!-- -->
 
 - Obsidian에서 Vault 열기 → Emboss Theme 적용
 

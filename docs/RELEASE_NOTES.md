@@ -3,7 +3,7 @@
 Personal Knowledge OS — powered by Obsidian + Claude. 정본 `docs/spec/MYELIN_Rev2.0.md`(WDLAB-MYELIN-SPEC Rev 2.0) 의 P0~P8 구현.
 
 ## 포함
-- **MYELIN Vault 표준** — Frontmatter v2, 폴더 표준(§6), Domain Pack 체계(Core / Reference `brian.physical-ai` / Org `a3.security-consulting`, `a3.incident-response` / Personal).
+- **MYELIN Vault 표준** — Frontmatter v2, 폴더 표준(§6), Domain Pack 체계(Core / Reference `brian.physical-ai` / Org `org.security-consulting`, `org.incident-response` / Personal).
 - **MYELIN CLI** — `init`(3+1 마법사) · `add-domain` · `doctor`(규칙 8종) · `stats` · `skills` · `interview-bank` · `publish` · `pack-propose` · `metrics` · `commons`.
 - **MYELIN for Claude Code** — Skill 7종(`/ingest /distill /interview /review /link /compose /ip-scan`), Level-gated Fail-closed Guard(Write/Edit/NotebookEdit + Bash), Vault `.claude/settings.json` 2차 방어.
 - **MYELIN MCP** — stdio, 읽기 전용 기본(`search_notes get_note query_frontmatter list_domains vault_stats`), opt-in `write_draft`, 기밀 비노출 기본.

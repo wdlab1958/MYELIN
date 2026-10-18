@@ -20,10 +20,10 @@ from myelin_core.schema import (
 )
 
 SPEC_PACK = {
-    "pack": "a3.security-consulting",
+    "pack": "org.security-consulting",
     "version": "1.0.0",
     "kind": "org",
-    "maintainer": "A3-AI WG",
+    "maintainer": "Example Org AI WG",
     "requires": ["myelin.core>=1.0"],
     "domains": [
         {
@@ -93,7 +93,7 @@ def test_unknown_field_forbidden() -> None:
         Pack.model_validate({**SPEC_PACK, "extra": 1})
 
 
-@pytest.mark.parametrize("name", ["Myelin.core", "core", "a3..x", "a3.", "-a.b", "a3.Sec"])
+@pytest.mark.parametrize("name", ["Myelin.core", "core", "org..x", "org.", "-a.b", "org.Sec"])
 def test_pack_name_pattern(name: str) -> None:
     with pytest.raises(ValidationError):
         Pack.model_validate({**SPEC_PACK, "pack": name})

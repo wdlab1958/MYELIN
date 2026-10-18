@@ -1,8 +1,8 @@
-# A3 Org Pack (초안) — 보안 컨설팅 (정본 §5.2 예시, §5.6). Sub-MOC·용어는 P7 에서 팀 챔피언과 확정한다.
-pack: a3.security-consulting
+# Org Pack (예시 · Example Org) (초안) — 보안 컨설팅 (정본 §5.2 예시, §5.6). Sub-MOC·용어는 P7 에서 팀 챔피언과 확정한다.
+pack: org.security-consulting
 version: 1.0.0
 kind: org
-maintainer: A3-AI WG
+maintainer: Example Org AI WG
 requires: [myelin.core>=1.0]
 description: 진단·컨설팅 업무 지식 — 방법론, 산출물, 고객 유형별 교훈
 domains:

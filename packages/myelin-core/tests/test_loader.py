@@ -11,7 +11,12 @@ from myelin_core import PackError, discover_packs, load_pack, resolve_packs
 from myelin_core.packs.loader import LoadedPack
 from myelin_core.schema import PackKind
 
-REAL_PACKS = ["myelin.core", "brian.physical-ai", "a3.security-consulting", "a3.incident-response"]
+REAL_PACKS = [
+    "myelin.core",
+    "brian.physical-ai",
+    "org.security-consulting",
+    "org.incident-response",
+]
 
 
 @pytest.mark.parametrize("name", REAL_PACKS)
@@ -58,7 +63,7 @@ def test_brian_reference_pack(packs_dir: Path) -> None:
 
 
 def test_a3_org_pack(packs_dir: Path) -> None:
-    lp = load_pack(packs_dir / "a3.security-consulting")
+    lp = load_pack(packs_dir / "org.security-consulting")
     assert lp.pack.kind is PackKind.ORG
     d = lp.pack.domains[0]
     assert d.id == "SEC-CONSULT" and d.classification_default.value == "internal"
@@ -67,7 +72,7 @@ def test_a3_org_pack(packs_dir: Path) -> None:
 
 
 def test_a3_incident_response_pack(packs_dir: Path) -> None:
-    lp = load_pack(packs_dir / "a3.incident-response")
+    lp = load_pack(packs_dir / "org.incident-response")
     d = lp.pack.domains[0]
     assert d.id == "IR" and d.accent == "magenta" and len(d.sub_mocs) == 6
     assert {p.stem for p in lp.template_files["templates"]} == {"timeline", "ioc", "post-mortem"}
@@ -77,10 +82,10 @@ def test_a3_incident_response_pack(packs_dir: Path) -> None:
 def test_discover_and_resolve_real(packs_dir: Path) -> None:
     reg = discover_packs([packs_dir])
     assert set(reg) == set(REAL_PACKS)
-    order = resolve_packs(["a3.security-consulting", "brian.physical-ai"], reg)
+    order = resolve_packs(["org.security-consulting", "brian.physical-ai"], reg)
     names = [lp.name for lp in order]
     assert names[0] == "myelin.core"  # dependency first
-    assert set(names) == {"myelin.core", "a3.security-consulting", "brian.physical-ai"}
+    assert set(names) == {"myelin.core", "org.security-consulting", "brian.physical-ai"}
     # requesting only core resolves to core alone; versions satisfied
     assert [lp.name for lp in resolve_packs(["myelin.core>=1.0"], reg)] == ["myelin.core"]
 

@@ -9,7 +9,7 @@
 |---|---|
 | A1 Vault 정본 | `10_Domains/`, `40_IP/`(confidential), `myelin.yaml`, `CLAUDE.md` — 사람 승인 영역 |
 | A2 AI 초안 영역 | `00_Inbox/ai-drafts/`, `_patches/`, `80_Outputs/drafts/`, `50_Journal/`, `40_IP/candidates/`(L3) |
-| A3 기밀 | `classification: confidential` 노트, `40_IP/**` |
+| 조직 기밀 | `classification: confidential` 노트, `40_IP/**` |
 | A4 Commons | 사내 git — 공개 승인 노트·Registry·익명 지표 |
 | A5 자격 | git 자격, `gh` 토큰, Claude 플랜 |
 
