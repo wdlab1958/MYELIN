@@ -11,6 +11,9 @@ export default async function globalSetup() {
   const repo = path.resolve(__dirname, "../../../..");
   const vault = mkdtempSync(path.join(tmpdir(), "myelin-e2e-"));
   const port = process.env.MYELIN_E2E_API_PORT ?? "8799";
+  // The Vault pre-commit device (ADR-0011 §5) runs `${MYELIN_BIN:-myelin} doctor --staged`; on CI
+  // runners `myelin` is not on PATH, so point it at the workspace venv for the tests' own commits.
+  process.env.MYELIN_BIN ??= path.join(repo, ".venv", "bin", "myelin");
   const env = { ...process.env, MYELIN_PACKS: path.join(repo, "packs") };
   const api: ChildProcess = spawn("uv", ["run", "myelin-hub", "--vault", vault, "--port", port, "--no-web"], {
     cwd: repo, env, stdio: ["ignore", "pipe", "pipe"],
