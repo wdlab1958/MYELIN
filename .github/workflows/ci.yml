@@ -36,7 +36,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: packages/myelin-hub/web/package-lock.json
+      - name: Install Hub web deps + Claude Code CLI (plugin validate)
+        run: |
+          npm ci --prefix packages/myelin-hub/web --no-audit --no-fund
+          npm install -g @anthropic-ai/claude-code
+      - run: uv sync --all-packages --group dev
       - name: Resolve current phase from PHASE_STATE.md
         id: phase
         run: echo "n=$(sed -n 's/^current_phase: P\([0-9]\)$/\1/p' PHASE_STATE.md)" >> "$GITHUB_OUTPUT"
       - run: make gate P=${{ steps.phase.outputs.n }}
+        env:
+          MYELIN_PERF: "1"
