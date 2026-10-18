@@ -1,12 +1,10 @@
 # PHASE_STATE
 
-current_phase: P6
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P7
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P5 완료. P6 Gate 통과(`make gate P=6`), 보고서 `docs/reports/P6.md`, 태그 `phase-P6`.
-> **다음 Phase(P7)는 Brian의 "GO P7" 승인 후에만 착수한다.** 승인 시 current_phase를 P7, status를 in_progress로 바꾸고 아래 Next를 이어간다.
-> 화면 스크린샷 `docs/reports/P6/*.png` (8장) — 정본 P6 착수 프롬프트 "화면별 완료 시 스크린샷" 항목.
+> P0~P6 완료(`phase-P0`~`phase-P6`). 2026-10-18 Brian "GO P7" 승인으로 P7 착수.
 
 ## Done
 ### P0
@@ -86,7 +84,7 @@ last_updated: 2026-10-18
 - [x] P6-T8 Playwright e2e: 신규 사용자 온보딩 → 첫 노트 승격 · 커밋 생성 확인
 - [x] P6-T9 사용자 클릭 없이 Vault 쓰기 0 검증(쓰기 경로 감사 테스트) · 스크린샷 docs/reports/P6/ · make gate P=6 · tag phase-P6
 
-## Next (P7 — 승인 대기)
+## Next
 - [ ] P7-T1 Commons Git 구조 정의 (packs registry + notes) · 사내 Pack Registry 포맷
 - [ ] P7-T2 publish 흐름 — share:true + verified + classification ≤ internal 검사 → PR 생성, 사용자 확인 단계 필수
 - [ ] P7-T3 비식별 체크리스트(고객명·IP·기밀) + publish 전 자동 스캔
