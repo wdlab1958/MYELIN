@@ -63,6 +63,7 @@ Vault 안의 Guard Hook이 실제로 막습니다. Claude가 이 설정 자체�
 | Dashboard | Verified·AI 초안·승격률(40~70% 목표)·Cross-domain, doctor 결과, 최근 git 기록 |
 | My Domains | Domain Map, Domain 추가 (3+1 규칙) |
 | Review Gate | 검토 대기 노트 → 원문 확인 → Promote / Reject |
+| 링크·MOC 제안 | `/myelin:link` 가 만든 patch의 diff 확인 → 적용 / 반려 (git commit) |
 | Domain Packs | 설치 가능한 Pack, pack.yaml 검증 |
 | Team Commons | (조직이 켠 경우) 공개 제안 |
 | Settings | Level, MCP 초안 쓰기, 익명 지표 동의, 기밀 경계 확인, 로컬 git |
@@ -80,5 +81,6 @@ myelin add-domain <Vault> --domain X --role research|growth|extra
 myelin stats <Vault> [--json]                myelin packs
 myelin commons link <Vault> <clone>          myelin commons check <Vault> <노트>
 myelin metrics <Vault> [--out file]          myelin-hub --vault <Vault> [--open]
+myelin commons propose-pack <Vault> <me.* Pack 폴더>   # 개인 Pack → Org Pack 후보 제안
 myelin-mcp --vault <Vault>
 ```

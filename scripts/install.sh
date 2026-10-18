@@ -9,7 +9,10 @@
 #   2) uv 로 고정된 의존성 설치 (uv.lock, --frozen)
 #   3) Node 18+ 가 있으면 Hub 웹 화면 빌드 (package-lock, npm ci)
 #   4) ~/.local/bin 에 myelin · myelin-hub · myelin-mcp 실행 파일(shim)
-# 하지 않는 일: sudo, 시스템 파일 수정, Vault 생성·수정, 네트워크로 노트 전송.
+#   5) (선택, 플래그를 줄 때만)
+#      --vault <경로>  Obsidian Emboss 테마를 <Vault>/.obsidian/themes/ 에 복사 (기존 파일이 다르면 건너뜀)
+#      --claude        Claude Code 플러그인 등록, --vault 와 함께면 MCP 서버(읽기 전용)도 등록
+# 하지 않는 일: sudo, 시스템 파일 수정, Vault 노트 생성·수정, 네트워크로 노트 전송.
 set -euo pipefail
 
 REPO="${MYELIN_REPO:-https://github.com/wdlab1958/MYELIN.git}"
@@ -17,10 +20,13 @@ PREFIX="${MYELIN_HOME:-$HOME/.local/share/myelin}"
 BIN="${MYELIN_BIN:-$HOME/.local/bin}"
 REF="${MYELIN_REF:-main}"
 WEB=1
+VAULT=""
+CLAUDE=0
 
 usage() {
   cat <<USAGE
 사용: install.sh [--source <git URL|경로>] [--ref <브랜치|태그|커밋>] [--prefix <설치 폴더>] [--bin <shim 폴더>] [--no-web]
+                  [--vault <Vault 경로>] [--claude]
   기본: --source $REPO --ref $REF --prefix $PREFIX --bin $BIN
 USAGE
 }
@@ -32,6 +38,8 @@ while [ $# -gt 0 ]; do
     --prefix) PREFIX="$2"; shift 2 ;;
     --bin) BIN="$2"; shift 2 ;;
     --no-web) WEB=0; shift ;;
+    --vault) VAULT="$2"; shift 2 ;;
+    --claude) CLAUDE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "✗ 알 수 없는 옵션: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -95,6 +103,36 @@ for cmd in myelin myelin-hub myelin-mcp; do
   printf '#!/bin/sh\nexec "%s" "$@"\n' "$target" > "$BIN/$cmd"
   chmod 0755 "$BIN/$cmd"
 done
+
+# ── 5. 선택 설정 (플래그를 줄 때만) ────────────────────────────────────
+if [ -n "$VAULT" ]; then
+  [ -f "$VAULT/myelin.yaml" ] || fail "$VAULT 는 MYELIN Vault가 아닙니다 (myelin.yaml 없음) — 먼저 온보딩하세요"
+  theme_dir="$VAULT/.obsidian/themes/MYELIN Emboss"
+  mkdir -p "$theme_dir"
+  for f in manifest.json theme.css; do
+    src="$PREFIX/theme/obsidian-myelin-emboss/$f"
+    dst="$theme_dir/$f"
+    if [ -e "$dst" ] && ! cmp -s "$src" "$dst"; then
+      echo "! $dst 가 이미 있고 내용이 다릅니다 — 덮어쓰지 않습니다 (직접 고친 테마일 수 있음)"
+    else
+      cp "$src" "$dst"
+    fi
+  done
+  say "Obsidian 테마 → $theme_dir (설정 › 모양 › 테마 › MYELIN Emboss)"
+fi
+if [ "$CLAUDE" = 1 ]; then
+  if command -v claude >/dev/null 2>&1; then
+    say "Claude Code 플러그인 등록"
+    claude plugin marketplace add "$PREFIX" || echo "! marketplace 등록 실패 — 수동: /plugin marketplace add wdlab1958/MYELIN"
+    claude plugin install myelin@myelin || echo "! 플러그인 설치 실패 — 수동: /plugin install myelin@myelin"
+    if [ -n "$VAULT" ]; then
+      say "MCP 서버 등록 (읽기 전용 기본)"
+      claude mcp add myelin -- "$BIN/myelin-mcp" --vault "$VAULT" || echo "! MCP 등록 실패(이미 있음?) — docs/guides/mcp.md"
+    fi
+  else
+    echo "! claude CLI가 없습니다 — Claude Code 설치 후 install.sh --claude 를 다시 실행하세요"
+  fi
+fi
 
 say "완료 — $("$BIN/myelin" --version)"
 case ":$PATH:" in

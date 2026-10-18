@@ -54,7 +54,10 @@ cd ~/org-commons && git remote add origin <조직 내부 git 서버의 비공개
 
 ## 6. 파일럿 · 지표
 - 운영 절차: [docs/pilot/guide.md](../pilot/guide.md), 60분 워크숍: [docs/pilot/workshop.md](../pilot/workshop.md).
-- 조직 지표(명세 §11.2)는 구성원이 제출한 `myelin metrics` 파일을 집계합니다. 구간화된 숫자뿐이므로 개인 비교에 쓰지 마세요.
+- 조직 지표(명세 §11.2)는 구성원이 제출한 `myelin metrics` 파일을 `myelin metrics-aggregate <폴더>` 로 주 단위 집계합니다.
+  익명 형식이 아닌 파일(추가 키·정확한 수·개인 Pack 이름)은 세지 않고 거부 목록에 나옵니다. 개인 비교에 쓰지 마세요.
+- Pack 진화: 구성원이 `myelin commons propose-pack` 으로 개인 Pack을 제안하면 Commons에 `propose/<pack>` 브랜치가 생깁니다.
+  챔피언이 검토해 `org.*` 이름으로 확정하고 `registry/packs.yaml` 에 등록합니다.
 
 ## 7. 보안 점검
 - 위협 모델: [docs/security/threat-model.md](../security/threat-model.md) — High 0.

@@ -22,6 +22,11 @@ myelin --version
 - 특정 버전: `bash MYELIN/scripts/install.sh --ref v1.0.0`
 - 갱신: 같은 명령을 다시 실행 (설치 폴더에 수정이 있으면 멈춥니다).
 - 의존성은 lockfile 그대로 설치합니다 (`uv sync --frozen`, `npm ci`).
+- 선택 설정 (Vault를 만든 뒤, 플래그를 줄 때만):
+  ```bash
+  bash MYELIN/scripts/install.sh --vault ~/MyVault            # Obsidian Emboss 테마 복사 (직접 고친 테마는 덮어쓰지 않음)
+  bash MYELIN/scripts/install.sh --vault ~/MyVault --claude   # + Claude Code 플러그인 등록 + MCP 서버(읽기 전용) 등록
+  ```
 
 ## 3. 첫 Vault — 온보딩 마법사 (10분)
 ```bash

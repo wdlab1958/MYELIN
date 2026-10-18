@@ -21,7 +21,7 @@ approved: "GO" — Desktop 기능 이식 (Brian, 2026-10-18 12:03)
 - [x] P9-T3 Hub Review Gate에서 patch 미리보기·적용·반려 (사람 클릭 + git commit)
 - [x] P9-T4 개인 Pack → Org Pack 제안 (`myelin commons propose-pack`, 확인 + 비식별 + 브랜치)
 - [x] P9-T5 익명 지표 집계 (`myelin metrics aggregate`, 익명성 검사)
-- [ ] P9-T6 install.sh 선택 설정: Obsidian 테마 복사, Claude Code 플러그인·MCP 등록 (opt-in 플래그)
+- [x] P9-T6 install.sh 선택 설정: Obsidian 테마 복사, Claude Code 플러그인·MCP 등록 (opt-in 플래그)
 - [ ] P9-T7 Gate · 보고서
 
 ## 사람 확인 대기 (v1.0.0 태그 조건)
