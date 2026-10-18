@@ -220,7 +220,14 @@ def test_web_serving(tmp_path: Path, service: HubService) -> None:
 def test_web_has_no_html_sinks() -> None:
     """노트 본문 등 Vault 내용은 텍스트로만 렌더링한다 (저장형 XSS 차단, STRIDE I7)."""
     root = Path(__file__).resolve().parents[2] / "web" / "src"
-    sinks = ("dangerouslySetInnerHTML", "innerHTML", "outerHTML", "eval(", "new Function", "style={")
+    sinks = (
+        "dangerouslySetInnerHTML",
+        "innerHTML",
+        "outerHTML",
+        "eval(",
+        "new Function",
+        "style={",
+    )
     found = [
         f"{p.name}: {s}"
         for p in root.rglob("*.ts*")
