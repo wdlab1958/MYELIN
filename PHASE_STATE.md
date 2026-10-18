@@ -1,10 +1,10 @@
 # PHASE_STATE
 
 current_phase: P8
-status: in_progress   # in_progress | gate_pending | awaiting_approval
+status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P6 완료(`phase-P0`~`phase-P6`). P7 구현 완료, Gate 의 사람 참여 항목 2개(파일럿 5명 ≤15분 · 피드백 리포트)는 **열린 채** — 2026-10-18 Brian 이 "GO P8" 로 P8 착수를 승인(파일럿은 병행 운영, 결과 기록 후 `make gate P=7` → `phase-P7` 태그).
+> **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음). **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
 
 ## Done
 ### P0
@@ -92,29 +92,27 @@ last_updated: 2026-10-18
 - [x] P7-T6 Org Pack 2종 확정 (팀 챔피언과) · Pack 진화 제안 흐름
 - [x] P7-T7 파일럿 가이드 · 60분 워크숍 자료(9.3) · Day 1 체크리스트(부록 D)
 - [ ] P7-T8 파일럿 5명+ 온보딩 15분 측정 · 피드백 리포트 · make gate P=7 · tag phase-P7
+### P8
+- [x] P8-T1 위협 모델(STRIDE) 문서 — Guard 우회, MCP 경로 이탈, Commons 유출, 공급망
+- [x] P8-T2 High 항목 조치 및 회귀 테스트
+- [x] P8-T3 설치 스크립트 (uv tool install, plugin 등록, MCP 설정, Theme 복사)
+- [x] P8-T4 사용자 가이드 · 관리자 가이드 · 릴리스 노트(알려진 제약: 다크 모드 미지원 등)
+- [x] P8-T5 KIPRIS 상표 검색(제9류·제42류) · 도메인 · GitHub 조직명 확인 결과 기록
+- [x] P8-T6 신규 사용자 설치→첫 verified 노트 < 15분 측정
+- [x] P8-T7 v1.0 태그 · 회고 · make gate P=8 · reports/P8.md
 
 ## Next
-- [ ] P7-T8(사람): 파일럿 운영 — `docs/guides/pilot-guide.md` 로 5~10명 온보딩, `scripts/pilot.py record --vault <참가자 Vault>` 로 기록(이름 미저장), `scripts/pilot.py report`
-- [ ] P7-T8(사람): `docs/reports/P7/pilot-feedback.md` 작성(TBD 제거), Org Pack 2종 챔피언 이름을 Registry 에 기입(`myelin commons add-pack … --champion`)
-- [ ] P7-T8: `make gate P=7` PASS → `docs/reports/P7.md` 갱신 → `git tag phase-P7` → 승인 요청
-### P8
-- [ ] P8-T1 위협 모델(STRIDE) 문서 — Guard 우회, MCP 경로 이탈, Commons 유출, 공급망
-- [ ] P8-T2 High 항목 조치 및 회귀 테스트
-- [ ] P8-T3 설치 스크립트 (uv tool install, plugin 등록, MCP 설정, Theme 복사)
-- [ ] P8-T4 사용자 가이드 · 관리자 가이드 · 릴리스 노트(알려진 제약: 다크 모드 미지원 등)
-- [ ] P8-T5 KIPRIS 상표 검색(제9류·제42류) · 도메인 · GitHub 조직명 확인 결과 기록
-- [ ] P8-T6 신규 사용자 설치→첫 verified 노트 < 15분 측정
-- [ ] P8-T7 v1.0 태그 · 회고 · make gate P=8 · reports/P8.md
+- [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
+- [ ] P8(사람): KIPRIS 직접 조회 결과 기입(제9류·제42류), 필요 시 결합형 명칭(MYELIN KOS) 결정
+- (P8 이후는 구현이 아니라 운영: 정본 §9.2 Rollout Wave 1·2)
 
 ## Blockers
-- **사람 참여 필요**: 파일럿 참가자 모집·운영(3주), 챔피언 지정. 코드/도구 측 블로커 없음.
-- CI green 은 GitHub 원격 push 후 확인 필요.
+- 사람 참여: 파일럿 운영(3주), 챔피언 지정, KIPRIS 조회. 코드 측 블로커 없음.
+- CI green 은 GitHub 원격 push 후 확인 필요(Node/Chrome 단계 추가 필요 — Backlog).
 
 ## Decisions (→ ADR)
-- ADR-0001~0009
-- ADR-0010 Commons 정책 — 별도 git 저장소 구조, 공개 하드 게이트(share+verified+≤internal, 40_IP 밖, confidential 링크 없음), 비식별 스캔(내장 7종 + deid.yaml 용어/정규식, 적중 시 차단·자동 치환 없음), 사용자 확인 필수(CLI y/--yes, Hub 체크+클릭, 코어 confirmed=True), 공개 = publish/<id> 브랜치 + 커밋 + PR(main 금지), 출처 보존 필드, Pack 진화 propose/<name>, 익명 지표 opt-in(허용 키 11개 스칼라, 익명성 가드), 온보딩 시간 계측, Org Pack 챔피언 미지정 = 초안
-- P7 결정(기록): 재공개 시도는 브랜치 존재로 거부("pending review"). golden 비교에서 `.myelin/` 제외(타임스탬프 이벤트). myelin.yaml 필드 추가 `commons.local`, `commons.metrics_opt_in`.
+- ADR-0001~0010 (변경 없음)
+- P8 결정(기록): 위협 모델 High 2건(T08 Hub Host/Origin 검증, T09 정적 서빙 경로 이탈) 조치 + 회귀 테스트. 스크립트 인터프리터 실행은 Vault settings.json 에서 ask(T02 완화). 설치는 `scripts/install.sh`(런처 = `uv --directory <repo> run …`, 기존 파일 보존, 테마 .bak). 로컬 plugin marketplace(`.claude-plugin/marketplace.json`, 이름 `myelin-local`), plugin 버전 1.0.0. 이름 확인: 미국 "MYELIN" 소프트웨어 상표 선출원(심사 중)·주요 도메인 점유·GitHub `myelin` 개인 계정 사용 중 → 사내 사용은 MYELIN 유지, 대외 공개 시 결합형. "설치→첫 verified" 자동 측정 1초 미만(캐시된 uv 기준; 신규 환경은 네트워크 의존).
 
-## Backlog (Phase 범위 밖)
-- P8: Team 모드 인증(Hub 비-loopback) · CI 에 Node/Chrome 단계 · 정본 Rev 2.1 제안(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단 규칙) · 위협 모델(Hub CSRF/Origin, Guard 한계, Commons 유출 경로) · 설치 스크립트(인터프리터 검증, npm 빌드, Registry 경로) · plugin/README marketplace 한 줄 · KIPRIS 상표 검색
-- P8+: Commons PR 자동 리뷰 체크(비식별 재스캔 CI) · Hub 에서 Registry 의 Pack 을 바로 설치(add-domain)
+## Backlog (v1.1+)
+- Team 모드 인증(Hub 비-loopback) · 다크 모드 토큰 · CI 에 Node 22/Chrome(e2e) 단계 · Commons CI 비식별 재스캔 · Hub 에서 Registry Pack 설치 · 20k+ Vault 색인 가속(safe 로더) · 정본 Rev 2.1 제안서(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단, 이름 결합형) · 로컬 임베딩 검색(선택)
