@@ -48,7 +48,9 @@ jobs:
       - run: uv sync --all-packages --group dev
       - name: Resolve current phase from PHASE_STATE.md
         id: phase
-        run: echo "n=$(sed -n 's/^current_phase: P\([0-9]\)$/\1/p' PHASE_STATE.md)" >> "$GITHUB_OUTPUT"
+        run: |
+          n="$(sed -n 's/^current_phase: P\([0-9]\)$/\1/p' PHASE_STATE.md)"
+          echo "n=${n}" >> "$GITHUB_OUTPUT"
       - run: make gate P=${{ steps.phase.outputs.n }}
         env:
           MYELIN_PERF: "1"
