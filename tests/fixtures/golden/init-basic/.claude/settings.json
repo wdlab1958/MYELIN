@@ -29,7 +29,11 @@
       "Bash(chown *)"
     ],
     "ask": [
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(uv run python *)",
+      "Bash(node *)"
     ],
     "defaultMode": "default"
   }

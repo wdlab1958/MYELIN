@@ -37,3 +37,11 @@ def test_allowed_dirs_cumulative() -> None:
         allowed_dirs(4)
     assert set(LEVEL_ALLOW) == {0, 1, 2, 3}
     assert [s.name for s in available_skills(1)] == ["ingest", "distill", "interview", "review"]
+
+
+def test_settings_ask_for_script_interpreters() -> None:
+    """Threat model T02 — script execution is not analysed by the Bash guard, so it asks."""
+    ask = claude_settings()["permissions"]["ask"]  # type: ignore[index]
+    assert {"Bash(python *)", "Bash(python3 *)", "Bash(uv run python *)", "Bash(node *)"} <= set(
+        ask
+    )

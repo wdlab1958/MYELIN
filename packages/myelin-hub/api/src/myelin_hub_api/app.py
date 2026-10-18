@@ -16,11 +16,45 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 from myelin_hub_api import __version__
 from myelin_hub_api.service import HubError, HubService
 
 INTENT_HEADER = "x-myelin-intent"
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "[::1]", "::1", "testserver"}
+
+
+def _host_only(value: str) -> str:
+    v = value.strip().lower()
+    if v.startswith("["):  # [::1]:port
+        return v.split("]")[0] + "]"
+    return v.rsplit(":", 1)[0] if v.count(":") == 1 else v
+
+
+class HostOriginGuard(BaseHTTPMiddleware):
+    """Threat model T08: refuse requests whose Host is not loopback (DNS rebinding) and any
+    browser request whose Origin is not loopback (cross-site). Non-browser clients send no
+    Origin."""
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        host = _host_only(request.headers.get("host", ""))
+        if host not in LOOPBACK_HOSTS:
+            return JSONResponse(
+                {"detail": f"MYELIN Hub serves localhost only (Host={host!r})"}, status_code=403
+            )
+        origin = request.headers.get("origin")
+        if origin:
+            o = origin.lower()
+            ohost = _host_only(o.split("://", 1)[-1]) if "://" in o else o
+            if ohost not in LOOPBACK_HOSTS:
+                return JSONResponse(
+                    {"detail": "cross-origin requests are refused"}, status_code=403
+                )
+        return await call_next(request)
+
+
 INTENT_VALUE = "user-click"
 WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
 
@@ -71,6 +105,7 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     app.state.service = svc
+    app.add_middleware(HostOriginGuard)
 
     @app.exception_handler(HubError)
     async def _hub_error(_: Request, exc: HubError) -> JSONResponse:
@@ -211,11 +246,14 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     if serve_web and (WEB_DIST / "index.html").exists():
         app.mount("/assets", StaticFiles(directory=WEB_DIST / "assets"), name="assets")
 
+        dist_root = WEB_DIST.resolve()
+
         @app.get("/{full_path:path}", include_in_schema=False)
         def spa(full_path: str) -> FileResponse:
-            candidate = WEB_DIST / full_path
-            if full_path and candidate.is_file():
+            # Threat model T09: only files resolving INSIDE dist are served; else SPA index.
+            candidate = (dist_root / full_path).resolve(strict=False)
+            if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
                 return FileResponse(candidate)
-            return FileResponse(WEB_DIST / "index.html")
+            return FileResponse(dist_root / "index.html")
 
     return app

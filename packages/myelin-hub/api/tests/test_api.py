@@ -5,6 +5,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from .conftest import CLICK, tree_hash
@@ -354,3 +355,48 @@ def test_onboarding_records_metrics(empty_client: TestClient) -> None:
     m = c.get("/api/metrics").json()
     assert [e["event"] for e in m["events"]] == ["onboard_start", "first_promote"]
     assert m["onboarding_minutes"] is not None and m["onboarding_minutes"] < 15
+
+
+def test_host_and_origin_guard(vault_root: Path) -> None:
+    """Threat model T08 — DNS rebinding / cross-site requests are refused."""
+    from myelin_hub_api.app import create_app
+
+    app = create_app(vault_root, serve_web=False)
+    with TestClient(app, base_url="http://127.0.0.1:8787") as c:
+        assert c.get("/api/health").status_code == 200
+        assert c.get("/api/health", headers={"Host": "evil.example.com"}).status_code == 403
+        assert (
+            c.get("/api/health", headers={"Host": "127.0.0.1.evil.example:8787"}).status_code == 403
+        )
+        assert c.get("/api/health", headers={"Origin": "http://evil.example"}).status_code == 403
+        assert c.get("/api/health", headers={"Origin": "http://localhost:5199"}).status_code == 200
+        assert c.get("/api/health", headers={"Host": "localhost:8787"}).status_code == 200
+        assert c.get("/api/health", headers={"Host": "[::1]:8787"}).status_code == 200
+        r = c.post("/api/review/promote/x", headers={**CLICK, "Origin": "http://evil.example"})
+        assert r.status_code == 403
+
+
+def test_static_no_path_traversal(
+    vault_root: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Threat model T09 — the SPA fallback never serves files outside web/dist."""
+    import myelin_hub_api.app as app_module
+
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text("<html>index</html>", encoding="utf-8")
+    (dist / "assets" / "a.js").write_text("js", encoding="utf-8")
+    (tmp_path / "secret.txt").write_text("SECRET", encoding="utf-8")
+    monkeypatch.setattr(app_module, "WEB_DIST", dist)
+    app = app_module.create_app(vault_root, serve_web=True)
+    with TestClient(app) as c:
+        assert c.get("/assets/a.js").text == "js"
+        assert "index" in c.get("/domains").text
+        for probe in (
+            "/../secret.txt",
+            "/%2e%2e/secret.txt",
+            "/assets/../../secret.txt",
+            "/..%2fsecret.txt",
+        ):
+            r = c.get(probe)
+            assert "SECRET" not in r.text, probe

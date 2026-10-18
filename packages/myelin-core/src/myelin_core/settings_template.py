@@ -54,7 +54,13 @@ def claude_settings() -> dict[str, object]:
         ),
         "permissions": {
             "deny": [*(f"Edit({p})" for p in HUMAN_ONLY_PATHS), *BASH_DENY],
-            "ask": ["Bash(git commit *)"],
+            "ask": [
+                "Bash(git commit *)",
+                "Bash(python *)",
+                "Bash(python3 *)",
+                "Bash(uv run python *)",
+                "Bash(node *)",
+            ],
             "defaultMode": "default",
         },
     }
