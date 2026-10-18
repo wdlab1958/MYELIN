@@ -1,3 +1,10 @@
+# MYELIN v1.1.0 — Release Notes (2026-10-18)
+
+## v1.1.0 추가
+- patch 적용이 **계획 → diff 미리보기 → digest 확인 → 적용** 으로 바뀌었다(ADR-0006 보강). `under` 로 제목 구획에 append, frontmatter patch 는 허용 키만. 적용/거부된 patch 는 `_patches/applied|rejected/` 에 남는다.
+- `scripts/install.sh --claude` 가 있을 때만 Claude Code plugin/MCP 를 등록한다(opt-in). `scripts/install_obsidian.sh` 가 Obsidian 을 설치하고 테마를 선선택한다. 새 Vault 는 Obsidian 테마가 미리 들어간 채 생성된다.
+- Obsidian: 노트 제목에 verified/ai-draft/blocked 상태 링·칩(`cssclasses`). 사용자 가이드(docx/xlsx/png), Obsidian 연동 가이드.
+
 # MYELIN v1.0.0 — Release Notes (2026-10-18)
 
 Personal Knowledge OS — powered by Obsidian + Claude. 정본 `docs/spec/MYELIN_Rev2.0.md`(WDLAB-MYELIN-SPEC Rev 2.0) 의 P0~P8 구현.

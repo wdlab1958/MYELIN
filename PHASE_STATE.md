@@ -1,10 +1,11 @@
 # PHASE_STATE
 
-current_phase: P8
+current_phase: P9
 status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음). **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
+> **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음).
+> **P9 (Desktop 라인 기능 이식, Brian "1항으로 처리" 승인 2026-10-18)**: GitHub `main` 을 이 라인(`fable-main`)으로 확정하고, Desktop 구현에만 있던 기능을 이식했다 — 아래 P9 섹션. 이후 Desktop·Code 병행은 하지 않기로 함. **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
 
 ## Done
 ### P0
@@ -100,6 +101,13 @@ last_updated: 2026-10-18
 - [x] P8-T5 KIPRIS 상표 검색(제9류·제42류) · 도메인 · GitHub 조직명 확인 결과 기록
 - [x] P8-T6 신규 사용자 설치→첫 verified 노트 < 15분 측정
 - [x] P8-T7 v1.0 태그 · 회고 · make gate P=8 · reports/P8.md
+
+### P9 — Desktop 라인 기능 이식 (v1.1.0)
+- [x] P9-T1 patches: `under` 제목 구획 append · `## set` 허용 키 집합(tags·source·projects·aliases·confidence) · plan(dry-run) → diff · digest · fail-closed 규칙(40_IP·confidential·verified→미검증 AI 링크·결과 frontmatter) · `_patches/applied|rejected/` 이동 (ADR-0006 보강)
+- [x] P9-T2 hub: `GET /api/patches`, `GET /api/patches/{name}/preview`(diff+digest), Apply 는 digest 일치 필수(불일치 409), Review 화면 미리보기 버튼·diff 표시·검사 결과
+- [x] P9-T3 commons: Pack 제안(확인·비식별·브랜치)·익명 지표 집계 — **이미 P7 에서 구현되어 있어 이식 불필요**(`myelin pack-propose`, `myelin metrics aggregate`)
+- [x] P9-T4 install: `--claude` opt-in(plugin/MCP 등록은 플래그를 줄 때만), `--vault` 테마 복사는 기존대로(.bak 백업)
+- [x] 검증: 417 tests · Playwright e2e · web build · ruff/mypy
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
