@@ -168,9 +168,53 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P3 tasks", phase_state_lists_next_phase_tasks(2)),
     ],
     3: [
-        Check("guard blocks 100% (outside/symlink/..)", not_implemented("허용 외 쓰기 차단 100%")),
-        Check("/ingest /distill output passes doctor", not_implemented("Skill e2e")),
-        Check("Level 0 hides write skills", not_implemented("Level 0 비활성")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "guard: write paths (outside/symlink/../hidden/level) 100%",
+            sh(["uv", "run", "pytest", "-q", "tests/plugin/test_guard_write.py"]),
+        ),
+        Check(
+            "guard: bash bypasses (redirect/tee/sed -i/mv/rm/git/inline) 100%",
+            sh(["uv", "run", "pytest", "-q", "tests/plugin/test_guard_bash.py"]),
+        ),
+        Check(
+            "guard: LEVEL_ALLOW in sync, hooks stdlib-only",
+            sh(["uv", "run", "pytest", "-q", "tests/plugin/test_guard_sync.py"]),
+        ),
+        Check(
+            "skills: 7 SKILL.md, outputs pass doctor, Level 0 disabled",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "tests/plugin/test_skills.py",
+                    "packages/myelin-cli/tests/test_cli_skills.py",
+                ]
+            ),
+        ),
+        Check(
+            "claude plugin validate --strict",
+            sh(["claude", "plugin", "validate", "./plugin", "--strict"]),
+        ),
+        Check(
+            "init golden (now includes .claude/settings.json)",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-cli/tests/test_golden.py::test_init_matches_golden",
+                ]
+            ),
+        ),
+        Check("ADR-0005 level-gated guard", adr_exists("0005", "level-gated-guard")),
+        Check("ADR-0006 patches format", adr_exists("0006", "patches-format")),
+        Check("PHASE_STATE has P4 tasks", phase_state_lists_next_phase_tasks(3)),
     ],
     4: [
         Check("path escape blocked", not_implemented("경로 이탈 차단")),
