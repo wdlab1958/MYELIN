@@ -1,0 +1,15 @@
+terms:
+  - term: 침해지표
+    aliases: [IoC, Indicator of Compromise]
+    domain: INCIDENT-RESP
+    definition: 공유 전 IP·도메인·해시는 반드시 비식별(defang·마스킹)한다
+  - term: 타임라인
+    aliases: [Timeline, 사고 타임라인]
+    domain: INCIDENT-RESP
+  - term: 사후 분석
+    aliases: [Post-mortem, 회고]
+    domain: INCIDENT-RESP
+    definition: 비난 없는(blameless) 원인 분석과 재발 방지 항목
+  - term: 격리
+    aliases: [Containment]
+    domain: INCIDENT-RESP

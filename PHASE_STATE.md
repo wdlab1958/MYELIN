@@ -1,7 +1,7 @@
 # PHASE_STATE
-current_phase: P7
+current_phase: P8
 status: in_progress            # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 10:20 KST
+last_updated: 2026-10-18 11:00 KST
 approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진행 승인
 
 ## Done
@@ -12,19 +12,19 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 - P4 — MCP Server: Gate PASS 6/6 (docs/reports/P4.md)
 - P5 — Emboss Design System: Gate PASS 8/8 (docs/reports/P5.md)
 - P6 — MYELIN Hub: Gate PASS 10/10 (docs/reports/P6.md)
+- P7 — Commons & Org Pilot: 자동 7/7 PASS · **사람 증거 2건 PEND** (파일럿 온보딩 결과, 피드백 리포트) — phase-P7 태그 보류 (docs/reports/P7.md)
 
-## Next (P7)
-- 선행 조건(사람): 명세 §9.1 정책 3종 합의 — **미확인**. 가장 보수적인 기본값으로 구현 (Commons 기본 off, 공개마다 사람 확인, 40_IP·confidential 공개 불가)
-- [x] P7-T1 scripts/gate.py 에 P7 Gate 검사 추가
-- [x] P7-T2 Commons Git 구조 · Pack Registry (조직 Pack은 별도 private 저장소)
-- [x] P7-T3 publish 흐름: verified + share:true + classification ≤ internal → Commons PR (Hub "Commons 제안")
-- [x] P7-T4 비식별 체크리스트 (고객명·IP·기밀) — 자동 검사 + 사람 확인
-- [ ] P7-T5 Org Pack 2종 확정 (챔피언 협업)
-- [ ] P7-T6 opt-in 익명 지표 수집
-- [ ] P7-T7 파일럿 가이드 · 60분 워크숍 자료
+## Next (P8 — 승인됨: "GO P7 & P8")
+- [ ] P8-T1 scripts/gate.py 에 P8 Gate 검사 추가
+- [ ] P8-T2 위협 모델(STRIDE) 문서와 조치 — High 0
+- [ ] P8-T3 설치 스크립트 · 설치 가이드 (+ 설치→첫 verified 자동 측정)
+- [ ] P8-T4 사용자 · 관리자 가이드
+- [ ] P8-T5 상표 · 도메인 확인 (KIPRIS 제9류·제42류, GitHub org명) 결과 기록
+- [ ] P8-T6 릴리스 노트 (알려진 제약) · v1.0.0
+- [ ] P8-T7 회고
 
 ## Blockers
-- (없음)
+- (P7 완료 조건) §9.1 정책 3종 합의 · 파일럿 5명+ 실측 `docs/pilot/results.yaml` · `docs/pilot/feedback.md` (status: final) · Org Pack 2종 챔피언 확정 — 사람
 
 ## Decisions (→ ADR)
 - ADR-0001: uv workspace 모노레포, core에만 도메인 로직, 미정의 Gate = FAIL

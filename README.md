@@ -59,6 +59,16 @@ uv run myelin-hub --vault ~/MyVault --open     # http://127.0.0.1:8765
 Vault가 없으면 온보딩 마법사가 뜹니다(`myelin init` 과 같은 로직). Claude가 `00_Inbox/ai-drafts` 에 남긴 초안은
 **Review Gate** 에서 원문을 확인한 뒤 사람이 verified 로 승격합니다 — [ADR-0008](docs/adr/0008-hub.md).
 
+## Team Commons (조직 공유, opt-in)
+
+```bash
+myelin commons init ~/org-commons --org "Example Org"   # 조직 내부 git 서버용 (비공개 저장소)
+myelin commons link ~/MyVault ~/org-commons              # 구성원: clone 후 연결
+```
+공개는 Hub **Team Commons** 화면에서만: 자격(verified + share + ≤ internal) → 비식별 자동 검사(차단) →
+본인 확인 5항목 → 제안 브랜치 → 별도 확인 후 push → 챔피언 PR 리뷰. 공개 과정에서 Vault 파일은 바뀌지 않습니다 —
+[ADR-0009](docs/adr/0009-commons.md). 지표는 opt-in이며 파일로만 만듭니다 (`myelin metrics`). 파일럿: [docs/pilot](docs/pilot/guide.md).
+
 ## 구성
 
 | 경로 | 구성요소 | Phase |
@@ -69,7 +79,8 @@ Vault가 없으면 온보딩 마법사가 뜹니다(`myelin init` 과 같은 로
 | `packages/myelin-mcp` | MYELIN MCP 서버 (읽기 전용 기본) | P4 |
 | `design/`, `theme/` | Emboss 디자인 시스템 · Obsidian Theme | P5 |
 | `packages/myelin-hub` | MYELIN Hub (FastAPI + React) | P6 |
-| `packs/` | Domain Packs — core / reference / org(example) | P1, P7 |
+| `packs/` | Domain Packs — core / reference / org(example 2종) | P1, P7 |
+| `myelin_core.commons` · `deid` · `metrics` | Team Commons · 비식별 · opt-in 익명 지표 | P7 |
 
 ## 문서
 

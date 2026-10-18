@@ -1,0 +1,10 @@
+domains:
+  INCIDENT-RESP:
+    - id: first-signal
+      q: 최근 사고에서 가장 먼저 이상을 알려 준 신호는 무엇이었나? 그 신호는 왜 늦게 보였나?
+      follow_ups:
+        - 그 신호를 더 일찍 보려면 무엇을 수집해야 하나?
+    - id: containment-tradeoff
+      q: 격리를 결정할 때 업무 중단과 확산 위험 사이에서 무엇을 기준으로 판단했나?
+    - id: playbook-gap
+      q: 플레이북에 없어서 즉석에서 판단해야 했던 단계는 무엇인가?

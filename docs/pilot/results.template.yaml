@@ -1,0 +1,10 @@
+# 파일럿 온보딩 결과 — 이 파일을 results.yaml 로 복사해 **실측값**으로 채운다.
+# 이름 대신 코드(P01…)를 쓴다. 노트 내용·Vault 경로는 적지 않는다.
+# Gate(P7): onboarding_minutes ≤ 15 인 참가자가 5명 이상.
+pilot: 2026-W43
+participants:
+  - code: P01
+    team: 컨설팅            # 팀 단위까지만
+    os: macOS               # macOS | Windows(WSL) | Linux
+    onboarding_minutes: 0   # scripts/pilot_time.py 출력값 (0 = 미측정)
+    blocked_at: ""          # 15분 초과 시 막힌 곳 한 줄
