@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+EMBOSS_ALL = " && ".join(f"python3 scripts/emboss.py {cmd}" for cmd in ("check", "a11y", "lint"))
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,13 @@ def phase_state_lists_next_phase_tasks(n: int) -> Callable[[], tuple[bool, str]]
         )
 
     return _run
+
+
+def _threat_model_high_zero() -> tuple[bool, str]:
+    text = (ROOT / "docs/security/threat-model.md").read_text(encoding="utf-8")
+    rows = [ln for ln in text.splitlines() if ln.startswith("| T")]
+    open_high = [ln.split("|")[1].strip() for ln in rows if "**High**" in ln and "조치" not in ln]
+    return (not open_high, f"{len(rows)} threats, open High: {open_high or 0}")
 
 
 def phase_docs_complete() -> tuple[bool, str]:
@@ -430,9 +438,71 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P8 tasks", phase_state_lists_next_phase_tasks(7)),
     ],
     8: [
-        Check("threat model: 0 High open", not_implemented("위협모델 High 0")),
-        Check("install → first verified < 15min", not_implemented("15분 온보딩")),
-        Check("KIPRIS/domain/GitHub name check recorded", not_implemented("상표 확인")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check("threat model: 0 High open", _threat_model_high_zero),
+        Check(
+            "threat model: High fixes have regression tests",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-hub/api/tests/test_api.py",
+                    "-k",
+                    "host_and_origin or path_traversal",
+                ]
+            ),
+        ),
+        Check(
+            "install.sh: idempotent, never clobbers",
+            sh(["uv", "run", "pytest", "-q", "tests/test_install.py"]),
+        ),
+        Check(
+            "plugin + local marketplace validate --strict",
+            sh(["claude", "plugin", "validate", ".", "--strict"]),
+        ),
+        Check("supply chain: uv.lock up to date", sh(["uv", "lock", "--check"])),
+        Check(
+            "install → first verified note < 15 min (measured)",
+            sh(["uv", "run", "python", "scripts/time_to_first_verified.py"]),
+        ),
+        Check(
+            "naming check recorded (KIPRIS/USPTO/domain/GitHub)",
+            lambda: (
+                (ROOT / "docs/reports/P8/naming-check.md").exists(),
+                "docs/reports/P8/naming-check.md",
+            ),
+        ),
+        Check(
+            "guides + release notes present",
+            lambda: (
+                all(
+                    (ROOT / p).exists()
+                    for p in (
+                        "docs/guides/user-guide.md",
+                        "docs/guides/admin-guide.md",
+                        "docs/RELEASE_NOTES.md",
+                        "CHANGELOG.md",
+                    )
+                ),
+                "user-guide · admin-guide · RELEASE_NOTES · CHANGELOG",
+            ),
+        ),
+        Check(
+            "release notes list known limitations",
+            lambda: (
+                "다크 모드" in (ROOT / "docs/RELEASE_NOTES.md").read_text(encoding="utf-8"),
+                "다크 모드 미지원 명시",
+            ),
+        ),
+        Check(
+            "web: typecheck + build",
+            sh(["npm", "run", "--prefix", "packages/myelin-hub/web", "build"]),
+        ),
+        Check("emboss: tokens in sync · a11y · lint", sh(["bash", "-c", EMBOSS_ALL])),
     ],
 }
 

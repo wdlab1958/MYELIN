@@ -17,6 +17,9 @@
 #   make hub             run the Hub (API + built web) on VAULT=<path>, PORT=8787
 #   make web             install + build the Hub web app
 #   make e2e             Playwright e2e (Chrome channel) with screenshots → docs/reports/P6/
+#   make install         run scripts/install.sh (VAULT=<path>)
+#   make ttfv            measure install → first verified note (< 15 min gate)
+#   make release         full gate P=8 then tag v1.0.0 (manual confirm)
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
@@ -29,7 +32,7 @@ ifneq ($(SYSTEM_PY),)
 export UV_PYTHON ?= $(SYSTEM_PY)
 endif
 
-.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp emboss a11y emboss-lint gallery hub web e2e check clean
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp emboss a11y emboss-lint gallery hub web e2e install ttfv check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -95,6 +98,12 @@ hub: sync
 
 e2e:
 	npm run --prefix packages/myelin-hub/web e2e:screens
+
+install:
+	scripts/install.sh --vault $(VAULT)
+
+ttfv: sync
+	$(UV) run python scripts/time_to_first_verified.py
 
 CHROME ?= $(shell command -v google-chrome google-chrome-stable chromium chromium-browser 2>/dev/null | head -1)
 gallery:
