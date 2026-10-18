@@ -572,7 +572,75 @@ def p6_checks() -> list[Check]:
 HUB_API_TESTS = "packages/myelin-hub/api/tests"
 
 
+# ── P7 — Commons & Org Pilot ────────────────────────────────────────────
+PILOT_RESULTS = ROOT / "docs/pilot/results.yaml"
+PILOT_FEEDBACK = ROOT / "docs/pilot/feedback.md"
+PILOT_MIN_PEOPLE = 5
+PILOT_MAX_MINUTES = 15
+
+
+def p7_pilot_onboarding() -> bool:
+    """사람 증거: 파일럿 5명 이상, 설치→첫 verified 노트 15분 이내 (docs/pilot/results.yaml)."""
+    if not PILOT_RESULTS.is_file():
+        print(
+            f"    ! 없음: {PILOT_RESULTS.relative_to(ROOT)}"
+            " (템플릿: docs/pilot/results.template.yaml)"
+        )
+        return False
+    from myelin_core.yamlio import load_yaml
+
+    data = load_yaml(PILOT_RESULTS.read_text(encoding="utf-8"), "results.yaml", ValueError)
+    people = data.get("participants", []) if isinstance(data, dict) else []
+    ok = [p for p in people if isinstance(p, dict) and 0 < p.get("onboarding_minutes", 99) <= 15]
+    print(f"    · 15분 이내 온보딩 {len(ok)}명 / 기록 {len(people)}명")
+    return len(ok) >= PILOT_MIN_PEOPLE
+
+
+def p7_pilot_feedback() -> bool:
+    """사람 증거: 파일럿 피드백 리포트 (docs/pilot/feedback.md, `status: final`)."""
+    if not PILOT_FEEDBACK.is_file():
+        print(f"    ! 없음: {PILOT_FEEDBACK.relative_to(ROOT)}")
+        return False
+    return "status: final" in PILOT_FEEDBACK.read_text(encoding="utf-8")
+
+
+PILOT_ONBOARDING = "HUMAN pilot: >=5 people onboarded <= 15 min"
+PILOT_FEEDBACK_CHECK = "HUMAN pilot feedback report (final)"
+
+
+def p7_checks() -> list[Check]:
+    return [
+        ("exists: docs/adr/0009-commons.md", exists("docs/adr/0009-commons.md")),
+        (
+            "core commons/deid/metrics tests",
+            guarded(p3_pytest("packages/myelin-core/tests/commons")),
+        ),
+        (
+            "publish blocked 100%: confidential / share:false / unverified / 40_IP",
+            guarded(_pytest_required("packages/myelin-core/tests/commons", "block_matrix")),
+        ),
+        ("hub commons API (confirm step, no vault write)", guarded(p3_pytest(HUB_API_TESTS))),
+        (
+            "e2e: Commons 제안 needs explicit confirmation",
+            guarded(_pytest_required("tests/e2e", "commons")),
+        ),
+        ("pilot guide + workshop + results template", guarded(p7_pilot_docs)),
+        (PILOT_ONBOARDING, guarded(p7_pilot_onboarding)),
+        (PILOT_FEEDBACK_CHECK, guarded(p7_pilot_feedback)),
+        ("PHASE_STATE lists P8 tasks", next_phase_tasks_listed(8)),
+    ]
+
+
+def p7_pilot_docs() -> bool:
+    need = ("guide.md", "workshop.md", "results.template.yaml", "feedback.template.md")
+    missing = [n for n in need if not (ROOT / "docs/pilot" / n).is_file()]
+    if missing:
+        print(f"    ! 없음: {missing}")
+    return not missing
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P7": p7_checks,
     "P6": p6_checks,
     "P5": p5_checks,
     "P4": p4_checks,
@@ -601,13 +669,24 @@ def main(argv: list[str]) -> int:
             print(f"  SKIP  {name.ljust(width)}  (CI에 도구 없음 — 로컬 Gate에서 확인)")
             skipped.append(name)
             continue
+        if in_ci and name.startswith("HUMAN"):
+            print(f"  SKIP  {name.ljust(width)}  (사람 증거 — 로컬 Gate에서 판정)")
+            skipped.append(name)
+            continue
         ok = fn()
         results.append((name, ok))
-        print(f"  {'PASS' if ok else 'FAIL'}  {name.ljust(width)}")
+        label = "PASS" if ok else ("PEND" if name.startswith("HUMAN") else "FAIL")
+        print(f"  {label}  {name.ljust(width)}")
     failed = [n for n, ok in results if not ok]
     print(f"\ngate {phase}: {len(results) - len(failed)}/{len(results)} passed")
     if failed:
-        print(f"gate {phase}: FAIL")
+        human = [n for n in failed if n.startswith("HUMAN")]
+        if human and len(human) == len(failed):
+            print(
+                f"gate {phase}: FAIL — 자동 검사는 모두 통과, 사람 증거 {len(human)}건 대기 (PEND)"
+            )
+        else:
+            print(f"gate {phase}: FAIL")
         return 1
     if skipped:
         print(f"gate {phase}: PASS (CI: local-only {len(skipped)}건 제외, 완료 판정은 로컬)")

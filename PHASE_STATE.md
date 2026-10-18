@@ -1,9 +1,8 @@
 # PHASE_STATE
-current_phase: P6
-status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
+current_phase: P7
+status: in_progress            # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18 10:20 KST
-approved: "GO P6" (Brian, 2026-10-18 09:32)
-gate: P6 PASS (docs/reports/P6.md)
+approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진행 승인
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
@@ -14,9 +13,9 @@ gate: P6 PASS (docs/reports/P6.md)
 - P5 — Emboss Design System: Gate PASS 8/8 (docs/reports/P5.md)
 - P6 — MYELIN Hub: Gate PASS 10/10 (docs/reports/P6.md)
 
-## Next (P7 — "GO P7" 승인 후 시작)
-- 선행 조건(사람): 명세 §9.1 정책 3종(지식 소유권, 외부 AI 사용 범위, 직무발명) 합의
-- [ ] P7-T1 scripts/gate.py 에 P7 Gate 검사 추가
+## Next (P7)
+- 선행 조건(사람): 명세 §9.1 정책 3종 합의 — **미확인**. 가장 보수적인 기본값으로 구현 (Commons 기본 off, 공개마다 사람 확인, 40_IP·confidential 공개 불가)
+- [x] P7-T1 scripts/gate.py 에 P7 Gate 검사 추가
 - [ ] P7-T2 Commons Git 구조 · Pack Registry (조직 Pack은 별도 private 저장소)
 - [ ] P7-T3 publish 흐름: verified + share:true + classification ≤ internal → Commons PR (Hub "Commons 제안")
 - [ ] P7-T4 비식별 체크리스트 (고객명·IP·기밀) — 자동 검사 + 사람 확인
