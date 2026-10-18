@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -56,19 +57,31 @@ def _hidden(rel: Path) -> bool:
     return any(part.startswith(".") for part in rel.parts)
 
 
-def scan_vault(root: Path) -> VaultScan:
-    scan = VaultScan(root=root)
+def is_note_path(rel: Path) -> bool:
+    """doctor·stats·MCP 색인이 공유하는 '지식 노트' 판정 (ADR-0005 보정)."""
+    return (
+        rel.suffix == ".md"
+        and not _hidden(rel)
+        and len(rel.parts) > 1
+        and rel.parts[0] in CONTENT_DIRS
+        and not rel.as_posix().startswith(SKIP_PREFIXES)
+    )
+
+
+def iter_files(root: Path) -> Iterator[tuple[Path, Path]]:
+    """숨김이 아닌 모든 파일 (절대경로, 상대경로)."""
     for path in sorted(root.rglob("*")):
         rel = path.relative_to(root)
-        if not path.is_file() or _hidden(rel):
-            continue
+        if path.is_file() and not _hidden(rel):
+            yield path, rel
+
+
+def scan_vault(root: Path) -> VaultScan:
+    scan = VaultScan(root=root)
+    for path, rel in iter_files(root):
         scan.files.add(path.name.lower())
         posix = rel.as_posix()
-        if (
-            path.suffix != ".md"
-            or rel.parts[0] not in CONTENT_DIRS
-            or posix.startswith(SKIP_PREFIXES)
-        ):
+        if not is_note_path(rel):
             continue
         try:
             scan.notes.append(parse_note_file(path, root=root))

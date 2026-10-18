@@ -25,3 +25,6 @@ llm:
 commons:
   enabled: false
   remote: null
+# MCP 서버(Claude Desktop 등 연결)는 기본 읽기 전용. true면 ai-drafts 초안 쓰기 허용.
+mcp:
+  write_drafts: false

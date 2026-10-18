@@ -88,6 +88,12 @@ class Commons(_Strict):
     remote: str | None = None
 
 
+class McpSettings(_Strict):
+    """MYELIN MCP 서버 (ADR-0006). 기본은 읽기 전용."""
+
+    write_drafts: bool = False
+
+
 class VaultConfig(_Strict):
     myelin: Literal[1] = 1
     owner: Owner
@@ -97,6 +103,7 @@ class VaultConfig(_Strict):
     level: Annotated[int, Field(ge=0, le=3)] = 1
     llm: LlmRouting = Field(default_factory=LlmRouting)
     commons: Commons = Field(default_factory=Commons)
+    mcp: McpSettings = Field(default_factory=McpSettings)
 
     @field_validator("packs")
     @classmethod
@@ -186,6 +193,9 @@ def render_config(cfg: VaultConfig) -> str:
         "commons:",
         f"  enabled: {'true' if cfg.commons.enabled else 'false'}",
         f"  remote: {_q(cfg.commons.remote) if cfg.commons.remote else 'null'}",
+        "# MCP 서버(Claude Desktop 등 연결)는 기본 읽기 전용. true면 ai-drafts 초안 쓰기 허용.",
+        "mcp:",
+        f"  write_drafts: {'true' if cfg.mcp.write_drafts else 'false'}",
     ]
     return "\n".join(lines) + "\n"
 

@@ -51,6 +51,19 @@
       "title": "LlmRouting",
       "type": "object"
     },
+    "McpSettings": {
+      "additionalProperties": false,
+      "description": "MYELIN MCP 서버 (ADR-0006). 기본은 읽기 전용.",
+      "properties": {
+        "write_drafts": {
+          "default": false,
+          "title": "Write Drafts",
+          "type": "boolean"
+        }
+      },
+      "title": "McpSettings",
+      "type": "object"
+    },
     "Owner": {
       "additionalProperties": false,
       "properties": {
@@ -170,6 +183,9 @@
     },
     "llm": {
       "$ref": "#/$defs/LlmRouting"
+    },
+    "mcp": {
+      "$ref": "#/$defs/McpSettings"
     },
     "myelin": {
       "const": 1,

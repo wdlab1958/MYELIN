@@ -4,7 +4,13 @@ version = "0.0.1"
 description = "MYELIN MCP server — read-only Vault search and lookup"
 license = "Apache-2.0"
 requires-python = ">=3.12"
-dependencies = ["myelin-core"]
+dependencies = [
+    "mcp>=2.3,<3",
+    "myelin-core",
+]
+
+[project.scripts]
+myelin-mcp = "myelin_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]

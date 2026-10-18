@@ -389,7 +389,56 @@ def p3_checks() -> list[Check]:
     ]
 
 
+def p4_default_read_only() -> bool:
+    import asyncio
+    import tempfile
+
+    from myelin_mcp.server import build_server
+
+    async def tools(vault: Path) -> set[str]:
+        return {t.name for t in await build_server(vault).list_tools()}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        vault = Path(tmp) / "v"
+        code, out = _run_cli(["init", str(vault), *GOLDEN_ARGS])
+        if code != 0:
+            print(out)
+            return False
+        names = asyncio.run(tools(vault))
+        expected = {"search_notes", "get_note", "query_frontmatter", "list_domains", "vault_stats"}
+        return names == expected
+
+
+def p4_search_perf() -> bool:
+    import subprocess
+
+    res = subprocess.run(
+        [sys.executable, "scripts/bench_mcp.py", "--notes", "5000", "--p95-ms", "300"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=600,
+    )
+    print("    " + res.stdout.strip().splitlines()[-1] if res.stdout.strip() else "")
+    return res.returncode == 0
+
+
+def p4_checks() -> list[Check]:
+    return [
+        ("exists: docs/adr/0006-mcp-server.md", exists("docs/adr/0006-mcp-server.md")),
+        (
+            "mcp tests (tools, privacy, escapes, stdio e2e)",
+            guarded(p3_pytest("packages/myelin-mcp")),
+        ),
+        ("default server is read-only (5 tools, no write_draft)", guarded(p4_default_read_only)),
+        ("search p95 < 300ms on 5,000 notes", guarded(p4_search_perf)),
+        ("exists: docs/guides/mcp.md", exists("docs/guides/mcp.md")),
+        ("PHASE_STATE lists P5 tasks", next_phase_tasks_listed(5)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P4": p4_checks,
     "P0": p0_checks,
     "P1": p1_checks,
     "P2": p2_checks,
