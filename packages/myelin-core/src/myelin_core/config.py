@@ -105,6 +105,8 @@ class LLM(_Strict):
 class Commons(_Strict):
     enabled: bool = False
     remote: str | None = None
+    local: str | None = None  # path of the local Commons clone used by publish
+    metrics_opt_in: bool = False  # §11.2 anonymous metrics (ADR-0010)
 
     @model_validator(mode="after")
     def _remote_when_enabled(self) -> Commons:
