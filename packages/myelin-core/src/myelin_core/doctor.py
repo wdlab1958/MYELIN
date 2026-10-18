@@ -183,7 +183,8 @@ def run_doctor(
                     "fail-closed",
                     "error",
                     rel,
-                    f"origin: claude 초안은 AI 쓰기 범위({', '.join(AI_NOTE_SCOPES)}) 에만 있어야 한다",
+                    "origin: claude 초안은 AI 쓰기 범위에만 있어야 한다: "
+                    + ", ".join(AI_NOTE_SCOPES),
                 )
             )
         for key in fm.extra_fields:
