@@ -35,7 +35,9 @@ def run_hook(
 ) -> HookResult:
     payload = event if isinstance(event, str) else json.dumps(event, ensure_ascii=False)
     full_env = {
-        k: v for k, v in os.environ.items() if k not in ("MYELIN_VAULT", "CLAUDE_PROJECT_DIR")
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("MYELIN_VAULT", "CLAUDE_PROJECT_DIR", "MYELIN_LLM")
     }
     full_env.update(env or {})
     proc = subprocess.run(

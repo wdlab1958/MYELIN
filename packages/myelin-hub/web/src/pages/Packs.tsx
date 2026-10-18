@@ -22,22 +22,23 @@ export default function Packs({ onChanged }: { onChanged: () => void }) {
   const [text, setText] = useState<string>(TEMPLATE);
   const [check, setCheck] = useState<string>("");
   const [editable, setEditable] = useState<boolean>(true);
+  const [copyFrom, setCopyFrom] = useState<string | null>(null); // registry pack whose taxonomy/templates come along
   const editor = useRef<HTMLDivElement>(null);
   const load = () => get<PackRow[]>("/api/packs").then(setPacks);
   useEffect(() => { void load(); }, []);
   const open = async (p: PackRow) => {
     const src = await get<{ pack_yaml: string; editable: boolean }>(`/api/packs/${p.name}`);
-    setName(p.name); setText(src.pack_yaml); setEditable(src.editable);
+    setName(p.name); setText(src.pack_yaml); setEditable(src.editable); setCopyFrom(null);
     setCheck(src.editable ? `${p.name} 을 불러왔다 — 아래에서 편집 후 저장` : `${p.name} 은 ${p.kind} Pack — 읽기 전용(Registry 에서 관리). 바꾸려면 새 개인 Pack 으로 복사한다`);
     editor.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const copyAsPersonal = () => {
     const slug = name.replace(/^[a-z0-9]+\./, "");
-    setName(`me.${slug}`); setText(text.replace(/^pack:.*$/m, `pack: me.${slug}`).replace(/^kind:.*$/m, "kind: personal").replace(/^maintainer:.*$/m, "maintainer: me"));
+    setCopyFrom(name); setName(`me.${slug}`); setText(text.replace(/^pack:.*$/m, `pack: me.${slug}`).replace(/^kind:.*$/m, "kind: personal").replace(/^maintainer:.*$/m, "maintainer: me"));
     setEditable(true); setCheck(`me.${slug} 으로 복사했다 — 검증 후 저장`);
   };
   const validate = async () => { const r = await post<{ ok: boolean; error?: string; domains?: string[] }>("/api/packs/validate", { pack_yaml: text }); setCheck(r.ok ? `ok · domains ${r.domains?.join(", ")}` : `오류: ${r.error}`); };
-  const save = async () => { try { const r = await userPut<{ commit: string }>(`/api/packs/${name}`, { pack_yaml: text }); setCheck(`저장됨 · commit ${r.commit.slice(0, 7)}`); await load(); onChanged(); } catch (e) { setCheck(`저장 실패: ${String(e)}`); } };
+  const save = async () => { try { const r = await userPut<{ commit: string }>(`/api/packs/${encodeURIComponent(name)}`, { pack_yaml: text, copy_from: copyFrom }); setCheck(`저장됨 · commit ${r.commit.slice(0, 7)}`); await load(); onChanged(); } catch (e) { setCheck(`저장 실패: ${String(e)}`); } };
   return (
     <>
       <h1 className="hub-h1">Domain Packs</h1>
@@ -55,7 +56,7 @@ export default function Packs({ onChanged }: { onChanged: () => void }) {
       <h2 className="hub-h2" ref={editor}>Pack 편집기 · <span className="mx-mono">{name}</span> {!editable && <span className="mx-chip mx-chip--unverified">읽기 전용</span>}</h2>
       <div className="hub-row" style={{ marginBottom: "var(--mx-space-3)" }}>
         <input className="mx-input" style={{ maxWidth: 320 }} value={name} onChange={(e) => setName(e.target.value)} aria-label="pack name" />
-        <button type="button" className="mx-btn" onClick={() => { setName("me.my-domain"); setText(TEMPLATE); setEditable(true); setCheck(""); }}>새 개인 Pack</button>
+        <button type="button" className="mx-btn" onClick={() => { setName("me.my-domain"); setText(TEMPLATE); setEditable(true); setCopyFrom(null); setCheck(""); }}>새 개인 Pack</button>
         {!editable && <button type="button" className="mx-btn" onClick={copyAsPersonal}>개인 Pack 으로 복사</button>}
         <button type="button" className="mx-btn" onClick={validate}>검증</button>
         <button type="button" className="mx-btn-primary" onClick={save} disabled={!editable} data-testid="pack-save">저장 (commit)</button>

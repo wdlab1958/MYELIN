@@ -46,7 +46,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard vault={vault} />} />
           <Route path="/domains" element={<Domains vault={vault} />} />
-          <Route path="/review" element={<Review onChanged={refresh} />} />
+          <Route path="/review" element={<Review vault={vault} onChanged={refresh} />} />
           <Route path="/packs" element={<Packs onChanged={refresh} />} />
           <Route path="/settings" element={<Settings vault={vault} onChanged={refresh} />} />
           <Route path="*" element={<Navigate to="/" replace />} />

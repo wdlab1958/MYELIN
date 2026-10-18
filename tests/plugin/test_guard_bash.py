@@ -30,14 +30,14 @@ ALLOWED_L1 = [
     "echo hi > 00_Inbox/ai-drafts/x.md",
     "echo hi >> 50_Journal/w.md",
     "tee 00_Inbox/ai-drafts/t.md < /dev/null",
-    "python3 scripts/thing.py",
     "ls > /dev/null 2>&1",
     "cat a.md 2>&1 | wc -l",
     "echo a; echo b",
-    "mkdir -p 00_Inbox/ai-drafts/sub",
     "touch 50_Journal/today.md",
 ]
 BLOCKED_L1 = [
+    "python3 scripts/thing.py",  # script inside the Vault (relative to cwd)
+    "mkdir -p 00_Inbox/ai-drafts/sub",  # only .md notes may be created
     "echo hi > 10_Domains/D1/note.md",
     "echo hi >> myelin.yaml",
     "cat x > CLAUDE.md",
@@ -83,6 +83,9 @@ BLOCKED_L1 = [
     "git rm 10_Domains/D1/note.md",
     "git mv a b",
     "git rebase main",
+    "git commit --no-verify -m x",  # ADR-0011 §5: pre-commit device bypass is human-only
+    "git commit -n -m x",
+    "git commit -qn -m x",
     "git pull",
     "git switch main",
     "sudo rm -rf /",
@@ -124,8 +127,11 @@ def test_level_matrix_bash(tmp_path: Path) -> None:
     assert run_hook(B, bash("echo x > 80_Outputs/drafts/d.md"), {"MYELIN_VAULT": str(v2)}).allowed
     assert run_hook(B, bash("echo x > 40_IP/candidates/i.md"), {"MYELIN_VAULT": str(v2)}).blocked
     v3 = make_vault(tmp_path / "v3", level=3)
-    assert run_hook(B, bash("echo x > 40_IP/candidates/i.md"), {"MYELIN_VAULT": str(v3)}).allowed
-    assert run_hook(B, bash("echo x > 40_IP/final.md"), {"MYELIN_VAULT": str(v3)}).blocked
+    local = {"MYELIN_VAULT": str(v3), "MYELIN_LLM": "local"}
+    assert run_hook(B, bash("echo x > 40_IP/candidates/i.md"), local).allowed
+    assert run_hook(B, bash("echo x > 40_IP/final.md"), local).blocked
+    # EXTERNAL session: Level 3 does not unlock 40_IP (ADR-0011)
+    assert run_hook(B, bash("echo x > 40_IP/candidates/i.md"), {"MYELIN_VAULT": str(v3)}).blocked
 
 
 @pytest.mark.parametrize(

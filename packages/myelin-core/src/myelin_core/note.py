@@ -131,6 +131,8 @@ def parse_note(text: str, path: Path | None = None) -> Note:
         loaded = _yaml().load(io.StringIO(yaml_text))
     except YAMLError as exc:
         raise NoteParseError(f"frontmatter is not valid YAML: {exc}", path) from None
+    except RecursionError:  # e.g. thousands of nested brackets — hostile or corrupt input
+        raise NoteParseError("frontmatter is nested too deeply", path) from None
     if loaded is None:
         raise NoteParseError("frontmatter block is empty", path)
     if not isinstance(loaded, CommentedMap):
@@ -141,6 +143,8 @@ def parse_note(text: str, path: Path | None = None) -> Note:
         raise NoteParseError(
             f"frontmatter schema violation:\n{format_validation_error(exc)}", path
         ) from None
+    except RecursionError:
+        raise NoteParseError("frontmatter is nested too deeply", path) from None
     return Note(
         frontmatter=fm, body=body, raw_frontmatter=loaded, path=path, links=extract_wikilinks(body)
     )

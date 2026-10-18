@@ -3,34 +3,58 @@
 - Every path a client passes is resolved and must stay inside the Vault root (symlinks
   resolved, `..`/absolute rejected) — fail-closed.
 - Confidential notes (classification: confidential, or anything under 40_IP/) are hidden from
-  search results and returned body-less by get_note unless `mcp.expose_confidential: true`.
+  search results and returned body-less by get_note unless `mcp.expose_confidential: true`
+  **and** the server process is LOCAL (`MYELIN_LLM=local`, ADR-0011 §3). An external process
+  that finds the flag on warns on stderr once and behaves as `expose_confidential: false`.
 - write_draft exists only when `mcp.write_draft: true` AND `level >= 1`; it creates new files
   in 00_Inbox/ai-drafts only, never overwrites, origin claude / status draft.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import re
+import threading
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from datetime import date, datetime
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
 from myelin_core.index import VaultIndex, open_index
+from myelin_core.levels import LLM_ENV, LLM_LOCAL, is_local_session
 from myelin_core.render import make_note_id, render_template
 from myelin_core.schema.frontmatter import Classification, NoteType
 from myelin_core.vault import AI_DRAFTS, IP, TEMPLATES, Vault
 
 REDACTED = "[confidential — body withheld by MYELIN MCP policy (mcp.expose_confidential: false)]"
+# C0/DEL controls, backslash (path separator on Windows) and Unicode bidi controls are never
+# allowed in a draft title: it becomes a file name.
+UNSAFE_TITLE_RE = re.compile("[\\x00-\\x1f\\x7f\\\\\\u202a-\\u202e\\u2066-\\u2069]")
 
 
 class MCPError(ValueError):
     """Raised for client-facing errors (bad path, policy, bad argument)."""
 
 
+def _serialized[**P, T](fn: Callable[P, T]) -> Callable[P, T]:
+    """Run the tool under the service lock: one SQLite connection, possibly many worker threads."""
+
+    @wraps(fn)
+    def inner(*args: P.args, **kwargs: P.kwargs) -> T:
+        self = args[0]
+        assert isinstance(self, VaultService)
+        with self._lock:
+            return fn(*args, **kwargs)
+
+    return inner
+
+
 @dataclass
 class VaultService:
     vault: Vault
     index: VaultIndex
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
 
     @classmethod
     def open(cls, root: Path, *, refresh: bool = True) -> VaultService:
@@ -40,7 +64,20 @@ class VaultService:
     # ------------------------------------------------------------------ policy helpers
     @property
     def expose_confidential(self) -> bool:
-        return self.vault.config.mcp.expose_confidential
+        """Effective policy: the owner's opt-in counts only in a LOCAL process (ADR-0011 §3)."""
+        return self.vault.config.mcp.expose_confidential and is_local_session()
+
+    def routing_warning(self) -> str | None:
+        """Why `mcp.expose_confidential: true` is being ignored, or None when nothing is ignored."""
+        if self.vault.config.mcp.expose_confidential and not is_local_session():
+            return (
+                "myelin-mcp: myelin.yaml mcp.expose_confidential: true 는 무시됩니다 — "
+                f"이 프로세스는 외부 LLM 세션입니다 ({LLM_ENV}={LLM_LOCAL} 아님). "
+                "confidential/40_IP 는 검색에서 "
+                "제외되고 본문은 가려집니다 (ADR-0011 §3). 로컬 모델 세션에서만 "
+                f"{LLM_ENV}={LLM_LOCAL} 로 기동하세요."
+            )
+        return None
 
     @property
     def write_enabled(self) -> bool:
@@ -65,6 +102,7 @@ class VaultService:
             raise MCPError(f"path escapes the Vault: {ref!r}") from None
 
     # ------------------------------------------------------------------ tools
+    @_serialized
     def refresh(self) -> dict[str, int]:
         r = self.index.refresh()
         return {
@@ -75,6 +113,7 @@ class VaultService:
             "errors": r.errors,
         }
 
+    @_serialized
     def search_notes(
         self,
         query: str,
@@ -98,6 +137,7 @@ class VaultService:
             raise MCPError(str(exc)) from None
         return [h.to_dict() for h in hits if not self._hidden(h.note.path, h.note.classification)]
 
+    @_serialized
     def get_note(self, ref: str) -> dict[str, Any]:
         self.index.refresh()
         note = self.index.get(ref)
@@ -114,9 +154,19 @@ class VaultService:
         else:
             d["body"] = self.index.body(note.path) or ""
             d["redacted"] = False
-        d["backlinks"] = self.index.backlinks(Path(note.path).stem)
+        d["backlinks"] = [
+            src for src in self.index.backlinks(Path(note.path).stem) if not self._hidden_path(src)
+        ]
         return d
 
+    def _hidden_path(self, path: str) -> bool:
+        """True when the note at `path` must not be named to the client (title leaks via path)."""
+        if self.expose_confidential:
+            return False
+        n = self.index.get(path)
+        return self._hidden(path, n.classification if n is not None else "")
+
+    @_serialized
     def query_frontmatter(self, **filters: Any) -> list[dict[str, Any]]:
         self.index.refresh()
         limit = int(filters.pop("limit", 100))
@@ -130,6 +180,7 @@ class VaultService:
             raise MCPError(f"bad filter: {exc}") from None
         return [n.to_dict() for n in rows if not self._hidden(n.path, n.classification)]
 
+    @_serialized
     def list_domains(self) -> dict[str, Any]:
         counts = self.index.domains()
         cfg = self.vault.config
@@ -158,6 +209,7 @@ class VaultService:
             ),
         }
 
+    @_serialized
     def vault_stats(self, today: date | None = None) -> dict[str, Any]:
         self.index.refresh()
         st = self.index.stats(today or date.today())
@@ -165,6 +217,7 @@ class VaultService:
         d["kpi"] = [{"kpi": k, "value": v, "target": t} for k, v, t in st.kpi_rows()]
         return d
 
+    @_serialized
     def write_draft(
         self,
         title: str,
@@ -187,6 +240,8 @@ class VaultService:
         title = title.strip()
         if not title or "/" in title or title.startswith(".") or len(title) > 120:
             raise MCPError("title must be 1-120 chars, no '/' and not hidden")
+        if UNSAFE_TITLE_RE.search(title):
+            raise MCPError("title must not contain control, backslash or bidi characters")
         for d in domain or []:
             if d not in self.vault.config.domains.all_ids:
                 raise MCPError(f"domain {d!r} is not configured in this Vault")

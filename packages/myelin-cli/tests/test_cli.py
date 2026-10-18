@@ -164,3 +164,32 @@ def test_doctor_exit_codes_on_fixtures(
     # stats shows a parse-error warning on the seeded vault
     assert run(["stats", "--vault", seeded, "--today", "2026-10-18"]) == 0
     assert "could not be parsed" in capsys.readouterr().out
+
+
+def test_init_and_add_domain_commit_to_git(
+    tmp_path: Path, packs_dir: Path, fixed_now: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """정본 §3: 모든 변경은 Git commit — CLI init 은 저장소를 만들고 add-domain 은 커밋을 남긴다."""
+    import subprocess
+
+    vault = tmp_path / "v"
+    assert run(_init_args(vault, packs_dir)) == 0
+    assert "[myelin:init]" in capsys.readouterr().out
+    assert (vault / ".git").is_dir()
+    log = subprocess.run(
+        ["git", "log", "--format=%s"], cwd=vault, capture_output=True, text=True, check=True
+    ).stdout.splitlines()
+    assert log == ["[myelin:init] vault created"]
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=vault, capture_output=True, text=True, check=True
+    ).stdout
+    assert status == ""  # .myelin/ is ignored, everything else committed
+    assert run(["add-domain", "D2", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 0
+    log = subprocess.run(
+        ["git", "log", "--format=%s"], cwd=vault, capture_output=True, text=True, check=True
+    ).stdout.splitlines()
+    assert log[0] == "[myelin:add-domain] D2"
+    # --no-git keeps the old behaviour (no repository)
+    v2 = tmp_path / "v2"
+    assert run([*_init_args(v2, packs_dir), "--no-git"]) == 0
+    assert not (v2 / ".git").exists()

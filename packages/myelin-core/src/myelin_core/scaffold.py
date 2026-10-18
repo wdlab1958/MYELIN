@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+import shutil
+import stat
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +25,7 @@ from myelin_core.vault import (
     OBSIDIAN_THEME_NAME,
     RUNTIME,
     STANDARD_DIRS,
+    SYSTEM,
     TAXONOMY_MD,
     TEMPLATES,
     Vault,
@@ -57,6 +61,31 @@ def obsidian_files(theme_dir: Path | None = None) -> dict[str, str]:
         OBSIDIAN_APPEARANCE: OBSIDIAN_APPEARANCE_BODY,
     }
 
+
+# ADR-0011 §5 — Vault git pre-commit device (works outside Claude Code: Obsidian Git, terminal, …)
+HOOKS_DIR = f"{SYSTEM}/hooks"
+PRE_COMMIT = f"{HOOKS_DIR}/pre-commit"
+PRE_COMMIT_MARKER = "myelin-pre-commit"
+PRE_COMMIT_BODY = f"""#!/bin/sh
+# {PRE_COMMIT_MARKER} v1 — MYELIN Vault 승인 장치 (ADR-0011 §5).
+# `myelin init` / `myelin doctor --install-hook` 가 .git/hooks/pre-commit 으로 복사한다.
+# 스테이지된 노트에 ERROR 급 doctor 위반이 있으면 커밋을 거부한다:
+#   origin: claude 노트가 Level 의 AI 쓰기 범위 밖 · verified 인데 reviewed 없음 ·
+#   confidential + share: true · frontmatter 스키마 위반 · 미등록 domain.
+# 사람이 의도적으로 건너뛸 때만: git commit --no-verify
+set -u
+ROOT=$(git rev-parse --show-toplevel) || exit 1
+VAULT="${{MYELIN_VAULT:-$ROOT}}"
+# shellcheck disable=SC2086 — MYELIN_BIN may carry arguments ("python -m myelin_cli")
+set -- ${{MYELIN_BIN:-myelin}}
+if ! command -v "$1" >/dev/null 2>&1; then
+  echo "MYELIN pre-commit: '$1' 을 찾을 수 없습니다 — MYELIN CLI 를 설치하거나" >&2
+  echo "  MYELIN_BIN 을 지정하세요. 판단 불가 → 커밋 거부 (fail-closed)." >&2
+  echo "  사람이 의도적으로 건너뛸 때: git commit --no-verify" >&2
+  exit 1
+fi
+exec "$@" doctor --staged --vault "$VAULT"
+"""
 
 GITIGNORE = ".gitignore"
 GITIGNORE_BODY = (
@@ -153,8 +182,63 @@ def plan_init(cfg: MyelinConfig, packs: list[LoadedPack], now: datetime) -> Scaf
     plan.files[TAXONOMY_MD] = render_taxonomy_md(_taxonomy_entries(packs), now)  # type: ignore[arg-type]
     plan.files[CLAUDE_MD] = render_claude_md(cfg, packs, now, None, ai_write_allow=AI_WRITE_ALLOW)
     plan.files[CLAUDE_SETTINGS] = render_claude_settings()
+    plan.files[PRE_COMMIT] = PRE_COMMIT_BODY
     plan.files.update(obsidian_files())
     return plan
+
+
+def _git_hooks_dir(root: Path) -> Path:
+    """`git rev-parse --git-path hooks` (worktrees, core.hooksPath); fallback `.git/hooks`."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--git-path", "hooks"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        hooks = Path(proc.stdout.strip())
+        return hooks if hooks.is_absolute() else root / hooks
+    except (OSError, subprocess.CalledProcessError):
+        return root / ".git" / "hooks"
+
+
+def install_git_hook(root: Path) -> Path:
+    """Install `90_System/hooks/pre-commit` into the Vault repo's hooks dir (chmod 755).
+
+    Fail-closed: refuses when the Vault is not a git repository, and never overwrites a foreign
+    pre-commit hook (one without the MYELIN marker). A missing `90_System/hooks/pre-commit`
+    is (re)created from the template; an existing one is kept as the user's copy.
+    Returns the installed hook path. Shared by the CLI and (to be wired) the Hub's ensure_git.
+    """
+    root = Path(root).resolve()
+    if not (root / ".git").exists():
+        raise ScaffoldError(f"{root} 은 git 저장소가 아닙니다 — 먼저 `git init` 하세요")
+    source = root / PRE_COMMIT
+    if not source.exists():
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(PRE_COMMIT_BODY, encoding="utf-8")
+    elif PRE_COMMIT_MARKER not in source.read_text(encoding="utf-8", errors="replace"):
+        raise ScaffoldError(f"{PRE_COMMIT} 은 MYELIN 이 만든 hook 이 아닙니다 — 덮어쓰지 않습니다")
+    _chmod_exec(source)
+    hooks_dir = _git_hooks_dir(root)
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    dest = hooks_dir / "pre-commit"
+    if dest.exists() and PRE_COMMIT_MARKER not in dest.read_text(
+        encoding="utf-8", errors="replace"
+    ):
+        raise ScaffoldError(
+            f"{dest} 에 다른 pre-commit hook 이 있습니다 — 덮어쓰지 않습니다. "
+            f"직접 합치거나 {PRE_COMMIT} 를 호출하도록 추가하세요"
+        )
+    shutil.copyfile(source, dest)
+    _chmod_exec(dest)
+    return dest
+
+
+def _chmod_exec(path: Path) -> None:
+    mode = path.stat().st_mode
+    path.chmod(mode | stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
 
 def init_vault(
@@ -181,6 +265,7 @@ def init_vault(
         target.parent.mkdir(parents=True, exist_ok=True)
         with target.open("x", encoding="utf-8") as fh:  # 'x' = exclusive create; never overwrite
             fh.write(content)
+    _chmod_exec(root / PRE_COMMIT)
     return plan
 
 

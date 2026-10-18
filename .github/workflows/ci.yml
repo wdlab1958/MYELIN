@@ -54,3 +54,11 @@ jobs:
       - run: make gate P=${{ steps.phase.outputs.n }}
         env:
           MYELIN_PERF: "1"
+      - name: Hub e2e (Playwright on the runner's Chrome — onboarding → promote → patches → commons)
+        run: npm run --prefix packages/myelin-hub/web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-results
+          path: packages/myelin-hub/web/test-results/
+          if-no-files-found: ignore

@@ -37,8 +37,8 @@ def test_get_note_redacts_confidential(service: VaultService) -> None:
     )
 
 
-def test_expose_confidential_opt_in(vault_root: Path) -> None:
-    set_mcp(vault_root, expose=True)
+def test_expose_confidential_opt_in(vault_root: Path, local_session: None) -> None:
+    set_mcp(vault_root, expose=True)  # honoured only because the process is LOCAL (ADR-0011)
     svc = VaultService.open(vault_root)
     n = svc.get_note("40_IP/candidates/Agentic CAD 검증 루프.md")
     assert n["redacted"] is False and "Agentic" in n["body"]

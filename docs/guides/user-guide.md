@@ -27,11 +27,16 @@ CLI 로 하려면 `myelin init --vault ~/Vaults/me`. 둘 다 같은 로직이다
 3. Hub › Inbox / Review Gate 에서 **Promote**(verified) 또는 Reject.
 4. 주 1회 `/myelin:review` → 지표와 doctor 할 일. `myelin doctor` 는 언제든.
 5. 경험은 `/myelin:interview` 로 lesson 노트에.
+6. **승격은 읽은 뒤에**: Review Gate 의 Promote 는 "내용 읽기" 로 본문을 연 뒤에만 켜진다. 읽지 않은 승격은 장치가 막는다.
+7. **환류**: `/myelin:compose` 로 만든 산출물에는 `## 환류 후보` 절이 생긴다. `/myelin:distill 80_Outputs/drafts/<산출물>.md` 로 그 절을 원자 노트 초안으로 되돌리고 Review Gate 에서 승격한다. 산출물 안에만 남은 지식은 다시 쓰이지 않는다.
+8. **강도(myelin ×N)**: Dashboard 와 My Domains 의 노트 표에 노트별 강도가 텍스트로 보인다. 1 = verified, 2 = 두 곳 이상에서 링크되거나 산출물 재료로 쓰임, 3 = Commons 에서 인용됨. Dashboard 의 "재사용 비율"·"재투입 소요일"·"산출물당 재료 수" 가 목표를 벗어나면 "목표 이탈" 이 뜬다(ADR-0012).
 
 ## 4. Claude Code 에서
 - Vault 폴더에서 `claude` 실행. plugin 이 설치되어 있으면 `/myelin:ingest` 등이 보인다(없으면 `claude --plugin-dir <repo>/plugin`).
 - Guard 가 사람 승인 영역(`10_Domains/`, `40_IP/`, `90_System/`, `myelin.yaml`) 쓰기를 차단한다. 차단 메시지가 뜨면 우회하지 말고 `_patches/` 제안(Level ≥ 2)으로.
 - MCP(`search_notes`, `get_note` …)는 읽기 전용. confidential 노트는 본문을 돌려주지 않는다.
+- **기밀은 외부 LLM 에 가지 않는다(장치)**: 세션에 `MYELIN_LLM=local` 이 없으면 Claude Code 는 `40_IP/**` 와 `classification: confidential` 노트를 Read/Grep/Glob/Write 할 수 없다(Guard 차단). 로컬 LLM 세션에서만 `MYELIN_LLM=local` 을 켠다. MCP 서버도 로컬 프로세스가 아니면 `expose_confidential` 을 무시한다(ADR-0011).
+- **Claude Code 밖에서 바꾼 것도 커밋 시점에 검사된다**: `myelin init` 이 Vault 에 git pre-commit 훅을 설치한다(`myelin doctor --staged`). `origin: claude` 노트가 허용 범위 밖에 있거나 검토 없이 verified 면 커밋이 거부된다. 기존 Vault 는 `myelin doctor --install-hook`.
 
 ## 5. Obsidian
 MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 **테마 + 파일 규약**이다. 상세는 [`docs/guides/obsidian-setup.md`](obsidian-setup.md).
@@ -45,7 +50,8 @@ MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 **테마 + 파일 �
 ## 6. 공유 (Commons)
 - 공개하고 싶은 verified 노트에 `share: true`. Hub › Review Gate › **Commons 후보** 에서 비식별 검사 → 확인 체크 → "Commons 제안" → 브랜치/PR → 챔피언 merge.
 - 고객명·IP·시스템명을 쓰지 않는다. 쓰면 제안이 차단된다.
-- `myelin.yaml commons.metrics_opt_in: true` 로 익명 지표(숫자만)를 보낼 수 있다. 기본은 꺼짐.
+- Hub 에서 "push 하고 PR 을 만든다" 를 체크하면 브랜치 push 와 PR(`gh`) 까지 한 번에 간다. 체크하지 않으면 로컬 브랜치까지만 만들고 다음 명령을 안내한다. 원격은 Settings › Commons 의 `commons.remote` 를 쓴다.
+- **두 정체성**: Commons 노트에는 작성자 이름과 원 노트 id 가 **실명**으로 남아 기여가 평판이 된다(Commons 집계의 `top_contributors`, 노트별 인용 수). 반면 `myelin.yaml commons.metrics_opt_in: true` 로 보내는 지표는 owner 해시와 숫자·id 목록만이며 기본은 꺼짐.
 
 ## 7. 명령 요약
 `myelin init | add-domain | doctor | stats | skills | interview-bank | publish | pack-propose | metrics | commons` · `myelin-mcp --vault` · `myelin-hub --vault`

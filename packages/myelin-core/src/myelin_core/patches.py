@@ -46,6 +46,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
+from ruamel.yaml.error import YAMLError
 
 from myelin_core.note import (
     NoteParseError,
@@ -111,7 +112,12 @@ def parse_patch(text: str, path: Path | None = None) -> Patch:
         yaml_text, body = split_frontmatter(text)
     except NoteParseError as exc:
         raise PatchError(f"{path}: {exc}") from None
-    data = YAML(typ="safe").load(io.StringIO(yaml_text))
+    try:
+        data = YAML(typ="safe").load(io.StringIO(yaml_text))
+    except YAMLError as exc:
+        raise PatchError(f"{path}: patch frontmatter is not valid YAML: {exc}") from None
+    except RecursionError:
+        raise PatchError(f"{path}: patch frontmatter is nested too deeply") from None
     if not isinstance(data, dict):
         raise PatchError(f"{path}: patch frontmatter must be a mapping")
     sections: dict[str, str] = {}
@@ -134,7 +140,38 @@ def parse_patch(text: str, path: Path | None = None) -> Patch:
 
 
 def read_patch(path: Path) -> Patch:
-    return parse_patch(path.read_text(encoding="utf-8"), path)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise PatchError(f"{path}: not UTF-8: {exc}") from None
+    except OSError as exc:
+        raise PatchError(f"{path}: cannot read patch: {exc}") from None
+    return parse_patch(text, path)
+
+
+def check_patch_name(name: str) -> None:
+    """`<slug>.patch.md`, one path component, fits a filename (fail-closed on anything else)."""
+    if (
+        not name.endswith(".patch.md")
+        or "/" in name
+        or "\\" in name
+        or "\x00" in name
+        or name.startswith(".")
+        or len(name.encode("utf-8")) > 255
+    ):
+        raise PatchError(f"bad patch name {name!r}")
+
+
+def history_dest(vault_root: Path, group_dir: str, name: str) -> Path:
+    """Where a patch lands in `_patches/applied|rejected/` — never overwrites earlier history."""
+    base = vault_root / group_dir
+    dest = base / name
+    stem = name[: -len(".patch.md")]
+    n = 2
+    while dest.exists():
+        dest = base / f"{stem} ({n}).patch.md"
+        n += 1
+    return dest
 
 
 def digest(text: str) -> str:
@@ -243,13 +280,12 @@ def _apply_frontmatter(text: str, set_text: str, target: str) -> str:
 
 def plan_patch(vault_root: Path, name: str) -> PatchPlan:
     """Dry-run: parse the patch, check fail-closed rules, compute the resulting text + diff."""
-    if "/" in name or not name.endswith(".patch.md"):
-        raise PatchError(f"bad patch name {name!r}")
+    check_patch_name(name)
     pfile = vault_root / PATCHES / name
     if not pfile.is_file():
         raise PatchError(f"patch not found: {name}")
+    patch = read_patch(pfile)
     patch_text = pfile.read_text(encoding="utf-8")
-    patch = parse_patch(patch_text, pfile)
     target_path = (vault_root / patch.target).resolve(strict=False)
     try:
         target_rel = target_path.relative_to(vault_root.resolve()).as_posix()
@@ -324,26 +360,28 @@ def apply_plan(vault_root: Path, plan: PatchPlan) -> list[str]:
     tmp.write_text(plan.result, encoding="utf-8")
     tmp.replace(target)
     src = vault_root / PATCHES / plan.name
-    dest = vault_root / APPLIED_DIR / plan.name
+    dest = history_dest(vault_root, APPLIED_DIR, plan.name)
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(_with_status(plan.patch_text, "applied"), encoding="utf-8")
     src.unlink()
-    return [plan.target, f"{PATCHES}/{plan.name}", f"{APPLIED_DIR}/{plan.name}"]
+    return [plan.target, f"{PATCHES}/{plan.name}", dest.relative_to(vault_root).as_posix()]
 
 
 def reject_patch(vault_root: Path, name: str) -> list[str]:
     """Move a proposed patch to _patches/rejected/ with status: rejected. Returns touched paths."""
-    if "/" in name or not name.endswith(".patch.md"):
-        raise PatchError(f"bad patch name {name!r}")
+    check_patch_name(name)
     src = vault_root / PATCHES / name
     if not src.is_file():
         raise PatchError(f"patch not found: {name}")
-    text = src.read_text(encoding="utf-8")
-    dest = vault_root / REJECTED_DIR / name
+    try:
+        payload = _with_status(src.read_text(encoding="utf-8"), "rejected").encode("utf-8")
+    except UnicodeDecodeError:
+        payload = src.read_bytes()  # junk can still be rejected: archived verbatim
+    dest = history_dest(vault_root, REJECTED_DIR, name)
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(_with_status(text, "rejected"), encoding="utf-8")
+    dest.write_bytes(payload)
     src.unlink()
-    return [f"{PATCHES}/{name}", f"{REJECTED_DIR}/{name}"]
+    return [f"{PATCHES}/{name}", dest.relative_to(vault_root).as_posix()]
 
 
 def list_patches(vault_root: Path) -> list[dict[str, Any]]:

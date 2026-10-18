@@ -16,6 +16,7 @@ The Guard (`plugin/hooks/guard_write.py`, stdlib only) carries a copy of LEVEL_A
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 from myelin_core.vault import AI_DRAFTS, IP_CANDIDATES, JOURNAL, OUTPUT_DRAFTS, PATCHES
@@ -55,6 +56,16 @@ LEVEL_ALLOW: dict[int, tuple[str, ...]] = {
 }
 
 LEVEL_NAMES = {0: "read-only", 1: "drafts", 2: "link-patch", 3: "scheduled review"}
+
+# ADR-0011 기밀 라우팅: a process/session is LOCAL iff the operator exported MYELIN_LLM=local.
+# The Guard (`plugin/hooks/guard_common.py`) carries a copy of these two constants.
+LLM_ENV = "MYELIN_LLM"
+LLM_LOCAL = "local"
+
+
+def is_local_session() -> bool:
+    """True only for the exact value `local`; unset/empty/other spellings are EXTERNAL."""
+    return os.environ.get(LLM_ENV) == LLM_LOCAL
 
 
 def available_skills(level: int) -> list[Skill]:

@@ -164,15 +164,19 @@ def test_vault_discovery_order(vault: Path, tmp_path: Path) -> None:
         (2, "80_Outputs/drafts/x.md", True),
         (2, "40_IP/candidates/x.md", False),
         (2, "80_Outputs/final.md", False),
-        (3, "40_IP/candidates/x.md", True),
+        (3, "40_IP/candidates/x.md", True),  # LOCAL session only (ADR-0011)
         (3, "40_IP/x.md", False),
         (3, "10_Domains/D1/x.md", False),
     ],
 )
 def test_level_matrix(tmp_path: Path, level: int, rel: str, ok: bool) -> None:
     v = make_vault(tmp_path / f"v{level}", level=level)
-    r = run_hook(W, ev("Write", str(v / rel)), {"MYELIN_VAULT": str(v)})
+    env = {"MYELIN_VAULT": str(v), "MYELIN_LLM": "local"}
+    r = run_hook(W, ev("Write", str(v / rel)), env)
     assert r.allowed is ok, f"level={level} rel={rel}: {r.stderr}"
+    # EXTERNAL session (MYELIN_LLM unset): identical except that 40_IP/** is always blocked
+    r = run_hook(W, ev("Write", str(v / rel)), {"MYELIN_VAULT": str(v)})
+    assert r.allowed is (ok and not rel.startswith("40_IP/")), f"external {rel}: {r.stderr}"
 
 
 def test_bad_or_missing_level_blocks(vault: Path) -> None:
@@ -186,7 +190,8 @@ def test_bad_or_missing_level_blocks(vault: Path) -> None:
 
 
 def test_notebook_edit_uses_notebook_path(vault: Path) -> None:
-    good = {
+    # notebook_path is inspected like file_path; .ipynb is not a note, so it is blocked everywhere
+    not_md = {
         "tool_name": "NotebookEdit",
         "tool_input": {"notebook_path": str(vault / "00_Inbox/ai-drafts/n.ipynb")},
     }
@@ -194,8 +199,10 @@ def test_notebook_edit_uses_notebook_path(vault: Path) -> None:
         "tool_name": "NotebookEdit",
         "tool_input": {"notebook_path": str(vault / "10_Domains/D1/n.ipynb")},
     }
-    assert run_hook(W, good, {"MYELIN_VAULT": str(vault)}).allowed
-    assert run_hook(W, bad, {"MYELIN_VAULT": str(vault)}).blocked
+    r = run_hook(W, not_md, {"MYELIN_VAULT": str(vault)})
+    assert r.blocked and ".md" in r.stderr
+    r = run_hook(W, bad, {"MYELIN_VAULT": str(vault)})
+    assert r.blocked and "사람 승인 영역" in r.stderr
     assert run_hook(
         W,
         {"tool_name": "MultiEdit", "tool_input": {"file_path": "50_Journal/x.md"}},

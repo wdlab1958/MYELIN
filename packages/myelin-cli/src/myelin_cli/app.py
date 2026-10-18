@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
@@ -32,17 +33,24 @@ from myelin_core.commons import (
     registry,
 )
 from myelin_core.config import ConfigError, Domains, MyelinConfig, Owner
-from myelin_core.doctor import run_doctor
+from myelin_core.doctor import run_doctor, run_doctor_staged
 from myelin_core.levels import LEVEL_NAMES, skill_table
 from myelin_core.metrics import (
     aggregate,
+    aggregate_reuse,
     org_metrics,
     payload_is_anonymous,
     record_event,
     write_metrics_to_commons,
 )
 from myelin_core.packs.loader import PackError, discover_packs
-from myelin_core.scaffold import ScaffoldError, VaultExistsError, add_domain, init_vault
+from myelin_core.scaffold import (
+    ScaffoldError,
+    VaultExistsError,
+    add_domain,
+    init_vault,
+    install_git_hook,
+)
 from myelin_core.stats import compute_stats
 from myelin_core.vault import Vault, default_pack_roots
 
@@ -69,6 +77,98 @@ PacksOpt = Annotated[
 JsonOpt = Annotated[bool, typer.Option("--json", help="JSON 출력")]
 
 EXIT_OK, EXIT_FINDINGS, EXIT_USAGE = 0, 1, 2
+
+
+def _self_bin() -> str:
+    """How the Vault pre-commit hook should invoke *this* CLI (`MYELIN_BIN`, ADR-0011 §5)."""
+    return f"{sys.executable} -m myelin_cli"
+
+
+def _git_commit_vault(root: Path, message: str) -> str | None:
+    """정본 §3 "모든 변경은 Git commit": make the Vault a repo on first use and commit.
+
+    Mirrors the Hub's ensure_git. When the repo is created, the Vault pre-commit device
+    (`90_System/hooks/pre-commit` → `.git/hooks/pre-commit`, ADR-0011 §5) is installed, so every
+    later commit — from any tool — runs `myelin doctor --staged`. Returns the commit hash, or None
+    when git is unavailable (the Vault is still valid — the user is told to run `git init`).
+    """
+    root = root.resolve()
+    try:
+        if not (root / ".git").exists():
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+            for k, val in (("user.name", "MYELIN"), ("user.email", "myelin@local")):
+                has = subprocess.run(["git", "config", "--get", k], cwd=root, capture_output=True)
+                if has.returncode != 0:
+                    subprocess.run(["git", "config", k, val], cwd=root, check=True)
+            install_git_hook(root)
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", message, "--allow-empty"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            env={**os.environ, "MYELIN_BIN": _self_bin()},  # the hook runs this very CLI
+        )
+        head = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=root, check=True, capture_output=True
+        )
+        return head.stdout.decode().strip()
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or b"").decode(errors="replace").strip() if exc.stderr else ""
+        typer.echo(
+            f"  (git commit 생략: {exc}{' — ' + detail if detail else ''} — "
+            "직접 `git add -A && git commit` 하세요)"
+        )
+        return None
+    except (OSError, ScaffoldError) as exc:
+        typer.echo(
+            f"  (git commit 생략: {exc} — 직접 `git init && git add -A && git commit` 하세요)"
+        )
+        return None
+
+
+def _staged_notes(root: Path) -> tuple[list[str], dict[str, bytes]]:
+    """Staged (added/copied/modified/renamed) files as Vault-relative paths + their staged text.
+
+    Paths come from `git diff --cached -z` relative to the repo top level (the Vault may be nested
+    in a larger repo); contents are the *index* blobs (`git show :path`), not the working tree.
+    """
+    try:
+        top = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        raw = subprocess.run(
+            ["git", "diff", "--cached", "--name-only", "-z", "--diff-filter=ACMR"],
+            cwd=root,
+            capture_output=True,
+            check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        _die(f"git 저장소가 아니거나 git 을 실행할 수 없습니다: {exc}")
+        raise AssertionError from None
+    top_path = Path(top).resolve()
+    rels: list[str] = []
+    blobs: dict[str, bytes] = {}
+    for item in raw.split(b"\0"):
+        if not item:
+            continue
+        name = item.decode("utf-8", errors="surrogateescape")
+        try:
+            rel = (top_path / name).resolve().relative_to(root.resolve()).as_posix()
+        except ValueError:
+            continue  # staged outside the Vault (nested Vault in a bigger repo)
+        blob = subprocess.run(
+            ["git", "show", f":{name}"], cwd=top_path, capture_output=True, check=False
+        )
+        if blob.returncode != 0:
+            continue
+        rels.append(rel)
+        blobs[rel] = blob.stdout
+    return rels, blobs
 
 
 def _now() -> datetime:
@@ -160,6 +260,9 @@ def init(
         bool, typer.Option("--non-interactive", "-y", help="질문 없이 플래그만 사용")
     ] = False,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="만들 파일 목록만 출력")] = False,
+    git: Annotated[
+        bool, typer.Option("--git/--no-git", help="git init + 첫 commit ([myelin:init])")
+    ] = True,
 ) -> None:
     """새 Vault 를 만든다 (3+1 Domain 마법사). 기존 파일이 있으면 중단한다 — 덮어쓰지 않는다."""
     interactive = not non_interactive and _is_tty()
@@ -243,6 +346,10 @@ def init(
         f"  Domains: {', '.join(cfg.domains.all_ids)} · Packs: {', '.join(cfg.pack_names)} "
         f"· Level {cfg.level}"
     )
+    if git:
+        commit = _git_commit_vault(vault, "[myelin:init] vault created")
+        if commit:
+            typer.echo(f"  git: main @ {commit} ([myelin:init])")
     typer.echo(
         "  다음: Obsidian 에서 Vault 열기 → Claude Code 를 Vault 폴더에서 실행 → `myelin doctor`"
     )
@@ -271,6 +378,10 @@ def add_domain_cmd(
     except (ScaffoldError, PackError, ValueError) as exc:
         _die(str(exc))
     typer.echo(f"✔ Domain {domain_id} 추가 (extra). 변경: {', '.join(touched)}")
+    if (v.root / ".git").exists():
+        commit = _git_commit_vault(v.root, f"[myelin:add-domain] {domain_id}")
+        if commit:
+            typer.echo(f"  git: {commit} ([myelin:add-domain])")
 
 
 # ----------------------------------------------------------------------------------- doctor
@@ -281,21 +392,58 @@ def doctor(
     vault: VaultOpt = Path(),
     as_json: JsonOpt = False,
     strict: Annotated[bool, typer.Option("--strict", help="warning 도 실패로 취급")] = False,
+    staged: Annotated[
+        bool,
+        typer.Option(
+            "--staged",
+            help="git 에 스테이지된 노트만 검사 (pre-commit hook 용). ERROR 가 있으면 exit 1",
+        ),
+    ] = False,
+    install_hook: Annotated[
+        bool,
+        typer.Option(
+            "--install-hook",
+            help="90_System/hooks/pre-commit 을 .git/hooks/pre-commit 으로 (재)설치하고 끝낸다",
+        ),
+    ] = False,
     packs_dir: PacksOpt = None,
 ) -> None:
     """Vault 무결성 점검 — 규칙 8종. 오류가 있으면 exit 1."""
     v = _open_vault(vault)
-    report = run_doctor(v, pack_roots=_roots(v.root, packs_dir))
+    if install_hook:
+        try:
+            dest = install_git_hook(v.root)
+        except ScaffoldError as exc:
+            _die(str(exc))
+        typer.echo(f"✔ pre-commit hook 설치: {dest} (myelin doctor --staged)")
+        return
+    if staged:
+        rels, blobs = _staged_notes(v.root)
+        report = run_doctor_staged(
+            v,
+            rels,
+            contents=lambda rel: blobs[rel].decode("utf-8"),  # strict: not UTF-8 → schema error
+            pack_roots=_roots(v.root, packs_dir),
+        )
+    else:
+        report = run_doctor(v, pack_roots=_roots(v.root, packs_dir))
     if as_json:
         typer.echo(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
     else:
         for f in report.findings:
             typer.echo(f"{f.severity.upper():<7} {f.rule:<18} {f.path}: {f.message}")
         summary = ", ".join(f"{k}={n}" for k, n in report.by_rule().items()) or "no findings"
+        mode = " (staged)" if staged else ""
         typer.echo(
-            f"doctor: {report.notes_scanned} notes · {len(report.errors)} errors · "
+            f"doctor{mode}: {report.notes_scanned} notes · {len(report.errors)} errors · "
             f"{len(report.warnings)} warnings · {summary}"
         )
+        if staged and report.errors:
+            typer.echo(
+                "MYELIN pre-commit: 위 ERROR 를 고친 뒤 다시 커밋하세요 "
+                "(사람이 의도적으로 건너뛸 때만 git commit --no-verify)",
+                err=True,
+            )
     failed = bool(report.errors) or (strict and bool(report.warnings))
     raise typer.Exit(EXIT_FINDINGS if failed else EXIT_OK)
 
@@ -601,19 +749,25 @@ def metrics_aggregate(
 ) -> None:
     """Commons metrics/ 를 주 단위로 집계한다 (§11.2 표)."""
     data = aggregate(commons)
+    reuse = aggregate_reuse(commons)
     if as_json:
-        typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
+        typer.echo(json.dumps({"weeks": data, **reuse}, ensure_ascii=False, indent=2))
         return
     typer.echo(
-        f"{'week':<10}{'users':>6}{'active':>7}{'ratio':>7}{'pub':>5}{'prop':>5}"
+        f"{'week':<10}{'users':>6}{'active':>7}{'ratio':>7}{'pub':>5}{'prop':>5}{'reuse':>6}"
         "  onboarding median / ≤15"
     )
     for week, r in data.items():
         typer.echo(
             f"{week:<10}{r['users']:>6}{r['active_users']:>7}{r['active_ratio']:>7}"
-            f"{r['published']:>5}{r['pack_proposals']:>5}"
+            f"{r['published']:>5}{r['pack_proposals']:>5}{r.get('reuse', 0):>6}"
             f"  {r['onboarding_minutes_median']} / {r['onboarding_within_15']}"
         )
+    typer.echo(f"reuse total (§11.2 재사용): {reuse['reuse_total']}")
+    if reuse["top_contributors"]:
+        typer.echo("top contributors (기여 = 평판, ADR-0012):")
+        for c in reuse["top_contributors"][:10]:
+            typer.echo(f"  {c['author']:<20} published {c['published']:>3}  cited {c['cited']:>3}")
 
 
 def run(argv: list[str]) -> int:

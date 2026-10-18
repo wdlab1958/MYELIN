@@ -11,6 +11,8 @@ async function request<T>(method: string, url: string, body?: unknown, userClick
   return data as T;
 }
 
+/** Encode a Vault-relative path for use inside a URL path: each segment separately, so `#`, `?`, `%` in titles survive. */
+export const refPath = (rel: string) => rel.split("/").map(encodeURIComponent).join("/");
 export const get = <T,>(url: string) => request<T>("GET", url);
 /** Only call from an onClick handler: the header is the UI's promise that a human clicked. */
 export const userPost = <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {}, true);
@@ -22,11 +24,17 @@ export type VaultSummary = {
   domains?: Record<string, string>; packs?: string[]; mcp?: { write_draft: boolean; expose_confidential: boolean };
   skills?: { skill: string; min_level: number; enabled: boolean; write_scope: string; summary: string }[];
   git?: { repo: boolean; clean: boolean; changes: string[] };
+  commons?: {
+    configured: boolean; error: string | null; local: string | null; enabled: boolean; remote: string | null; metrics_opt_in: boolean;
+    published_count?: number; cited_total?: number;
+  };
 };
 export type Stats = {
-  as_of: string; notes: number; kpi: { kpi: string; value: number | null; target: string }[];
+  as_of: string; notes: number; kpi: { kpi: string; value: string | number | null; target: string; status: "ok" | "alert" | null }[];
   by_status: Record<string, number>; by_origin: Record<string, number>; by_domain: Record<string, number>;
   guard_blocks_7d: number; review_queue: number; parse_errors: number;
+  /** ADR-0012 myelin strength histogram ("0".."3") and reuse KPIs */
+  by_strength?: Record<string, number>; reuse_ratio?: number | null; reuse_lag_days?: number | null; compose_sources_avg?: number | null;
 };
 export type Domain = {
   id: string; role: string; notes: number; verified: number; moc: string | null; name?: string; accent?: string;
@@ -40,6 +48,8 @@ export const obsidianNew = (abs: string) => `obsidian://new?path=${encodeURIComp
 export type NoteRow = {
   path: string; id: string; title: string; type: string; status: string; origin: string; domains: string[]; tags: string[];
   created: string; reviewed: string | null; classification: string; doctor_ok?: boolean; error?: string;
+  /** ADR-0012 reuse counters: strength 0 = not verified · 1 verified · 2 reused · 3 hub / cited in Commons */
+  inbound?: number; output_uses?: number; commons_cited?: number; strength?: number;
 };
 export type PatchRow = {
   file: string; target?: string; kind?: string; under?: string | null; skill?: string; rationale?: string; status: string; group?: string;
@@ -55,4 +65,10 @@ export type PackRow = {
 export type Candidate = {
   path: string; title: string; eligible: boolean; ok: boolean; reasons: string[];
   deid_hits: { kind: string; line: number; excerpt: string }[];
+  /** already in the Commons clone, and how often others cite that copy (ADR-0012) */
+  published?: boolean; cited?: number;
+};
+export type PublishResult = {
+  branch: string; commit: string; dest: string; pushed: boolean; pr_url: string | null;
+  push_error?: string | null; pr_error?: string | null; next_step?: string | null;
 };

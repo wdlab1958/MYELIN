@@ -1,7 +1,7 @@
 ---
 name: distill
 description: Inbox 노트를 원자(evergreen) 노트로 분해하고 frontmatter·중복·용어를 정리해 00_Inbox/ai-drafts 에 초안을 만든다. Level ≥ 1.
-argument-hint: "<Inbox 노트 경로 | 비우면 00_Inbox 전체 목록 제시>"
+argument-hint: "<Inbox 노트 경로 | 80_Outputs 산출물 경로(환류) | 비우면 00_Inbox 전체 목록 제시>"
 allowed-tools: Read, Glob, Grep, Bash(myelin *), Bash(git add *), Bash(git commit *), Write
 ---
 
@@ -17,6 +17,12 @@ allowed-tools: Read, Glob, Grep, Bash(myelin *), Bash(git add *), Bash(git commi
 5. `90_System/templates/evergreen.md` 로 각 노트를 `00_Inbox/ai-drafts/<제목>.md` 에 만든다. `source` 에는 원 Inbox 노트 링크 `"[[원 노트 제목]]"` 를 넣고, 서로 관련된 노트끼리 `## 연결` 에 링크한다. Domain 은 원 노트의 domain 을 상속(없으면 공통 규약 4).
 6. 원 Inbox 노트는 **수정하거나 지우지 않는다**. 대신 보고에 "원 노트 처리 제안: 99_Archive 이동" 을 적는다(사람이 수행).
 7. `myelin doctor` → error 0 확인 → 생성 파일·중복 판정·용어 제안을 표로 보고.
+
+## 환류 (산출물 → 원자 노트) — "축적이 복리로" 의 되돌아오는 반쪽
+인자가 `80_Outputs/` 아래의 산출물(설계서·제안서·보고서·특허 초안)이면 **환류 모드**로 동작한다. 산출물을 쓰면서 새로 알게 된 것은 산출물 안에만 남으면 다시 쓰이지 않는다. 절차 2~7 을 그대로 따르되 다음이 다르다.
+- 추출 대상은 산출물의 `## 환류 후보` 절(/compose 가 남긴다)과 본문에서 **재료 노트에 없던 주장·교훈·결정**이다. 이미 `source` 의 노트에 있는 내용은 만들지 않는다(중복 검사 3).
+- 노트 유형은 교훈이면 `lesson`, 재사용 가능한 주장이면 `evergreen`, 결정이면 `adr`. `source` 에 산출물 링크 `"[[산출물 제목]]"` 를 넣고 `tags` 에 `refeed` 를 추가한다.
+- 보고에 "환류 N건 → Review Gate 에서 승격" 을 적는다. 승격되면 Hub 의 강도(재사용) 지표에 반영된다.
 
 ## 출력 노트 형식 (evergreen)
 ```markdown

@@ -162,3 +162,18 @@ def test_gallery_uses_only_tokens_and_labels_states() -> None:
     ):
         assert m.group(1).strip(), m.group(0)
     assert html.count("mx-btn-primary") == 1  # Primary 는 화면당 1개
+
+
+def test_hub_pages_one_primary_button_and_labelled_states() -> None:
+    """§8.3 가드레일: 화면당 Primary Button 1개, 상태 칩·배지에는 항상 텍스트 라벨."""
+    pages = sorted((ROOT / "packages/myelin-hub/web/src/pages").glob("*.tsx"))
+    assert pages
+    for page in pages:
+        src = page.read_text(encoding="utf-8")
+        assert src.count("mx-btn-primary") <= 1, f"{page.name}: more than one primary button"
+        # a chip/badge element must carry visible text, never color alone
+        for m in re.finditer(
+            r'<span className=\{?"(mx-chip|mx-badge--blocked)[^>]*>(.*?)</span>', src
+        ):
+            inner = m.group(2)
+            assert inner.strip(), f"{page.name}: empty state chip/badge: {m.group(0)[:80]}"

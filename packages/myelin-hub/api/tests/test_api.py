@@ -86,6 +86,8 @@ def test_writes_require_user_click(client: TestClient, vault_root: Path) -> None
     assert client.put("/api/settings", json={}).status_code == 403
     assert client.put("/api/packs/me.x", json={"pack_yaml": "x"}).status_code == 403
     assert client.post("/api/patches/x.patch.md/apply").status_code == 403
+    assert client.post("/api/patches/x.patch.md/reject").status_code == 403
+    assert client.post("/api/commons/publish/x.md", json={"confirmed": True}).status_code == 403
     assert client.post("/api/onboarding", json={"name": "x", "primary": "D1"}).status_code == 403
     assert tree_hash(vault_root) == before
 

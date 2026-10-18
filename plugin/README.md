@@ -18,7 +18,7 @@ Layout follows `docs/adr/0002-plugin-spec.md`.
 ```
 /plugin install myelin --marketplace wdlab1958/myelin
 ```
-(Claude Code 2.1.275+, 저장소 `.claude-plugin/marketplace.json` 기준. 로컬 체크아웃: `claude plugin marketplace add <repo path>` 후 동일.)
+(Claude Code 2.1.295+, 저장소 `.claude-plugin/marketplace.json` 기준. 로컬 체크아웃: `claude plugin marketplace add <repo path>` 후 동일.)
 
 ## 로컬 테스트
 ```bash

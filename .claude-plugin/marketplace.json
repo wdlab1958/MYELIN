@@ -7,7 +7,7 @@
       "name": "myelin",
       "source": "./plugin",
       "description": "MYELIN for Claude Code — Personal Knowledge OS skills + fail-closed write guard",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "productivity"
     }
   ]

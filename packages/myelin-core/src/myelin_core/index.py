@@ -13,10 +13,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import threading
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -25,7 +26,7 @@ from typing import Any
 
 from myelin_core.note import NoteParseError, parse_note
 from myelin_core.schema.frontmatter import Classification
-from myelin_core.stats import Stats
+from myelin_core.stats import NoteRef, Reuse, Stats, compute_reuse, reuse_metrics
 from myelin_core.vault import INBOX, OUTPUTS, RUNTIME, Vault
 
 SCHEMA_VERSION = 1
@@ -166,6 +167,47 @@ def _like(token: str) -> str:
     return f"%{esc}%"
 
 
+SNIPPET_WIDTH = 120
+
+
+def make_snippet(body: str, tokens: Sequence[str], width: int = SNIPPET_WIDTH) -> str:
+    """~`width` chars of `body` around the first token hit, hits wrapped in `[ ]`, `…` when cut.
+
+    Replaces FTS5 `snippet()`, which is quadratic in document size: one 5 MB note made every
+    search stall for minutes. This is a single linear scan (case-insensitive substring, which is
+    exactly what the trigram tokenizer matches).
+    """
+    words = sorted({t for t in tokens if t}, key=len, reverse=True)
+    low = body.lower()
+    hits = [i for i in (low.find(w.lower()) for w in words) if i >= 0]
+    start = min(hits) if hits else 0
+    begin = max(0, start - width // 3)
+    end = min(len(body), begin + width)
+    window = body[begin:end].replace("\n", " ")
+    if words:
+        pattern = re.compile("|".join(re.escape(w) for w in words), re.IGNORECASE)
+        window = pattern.sub(lambda m: f"[{m.group(0)}]", window)
+    return ("…" if begin > 0 else "") + window + ("…" if end < len(body) else "")
+
+
+class _Rows:
+    """Result rows fetched eagerly under the connection lock (cursor-compatible subset)."""
+
+    __slots__ = ("_rows",)
+
+    def __init__(self, rows: list[Any]) -> None:
+        self._rows = rows
+
+    def fetchone(self) -> Any:
+        return self._rows[0] if self._rows else None
+
+    def fetchall(self) -> list[Any]:
+        return list(self._rows)
+
+    def __iter__(self) -> Iterator[Any]:
+        return iter(self._rows)
+
+
 class _LockedConnection:
     """sqlite3.Connection facade that serialises every call with an RLock (thread-safe sharing)."""
 
@@ -181,13 +223,17 @@ class _LockedConnection:
     def row_factory(self, value: Any) -> None:
         self._conn.row_factory = value
 
-    def execute(self, sql: str, params: Sequence[Any] | None = None) -> sqlite3.Cursor:
+    def execute(self, sql: str, params: Sequence[Any] | None = None) -> _Rows:
+        # Rows are materialised INSIDE the lock: a cursor consumed after the lock is released
+        # races other threads' statements ("bad parameter or other API misuse").
         with self._lock:
-            return self._conn.execute(sql, params or ())
+            cur = self._conn.execute(sql, params or ())
+            return _Rows(cur.fetchall() if cur.description else [])
 
-    def executemany(self, sql: str, seq: Iterable[Sequence[Any]]) -> sqlite3.Cursor:
+    def executemany(self, sql: str, seq: Iterable[Sequence[Any]]) -> _Rows:
         with self._lock:
-            return self._conn.executemany(sql, seq)
+            self._conn.executemany(sql, seq)
+            return _Rows([])
 
     def executescript(self, script: str) -> sqlite3.Cursor:
         with self._lock:
@@ -268,8 +314,11 @@ class VaultIndex:
         with self.conn:
             for p in self.vault.iter_note_paths():
                 rel = self.vault.rel(p)
+                try:
+                    st = p.stat()
+                except OSError:
+                    continue  # vanished between walk and stat → dropped as "removed" below
                 seen.add(rel)
-                st = p.stat()
                 sig = (st.st_mtime_ns, st.st_size)
                 if known.get(rel) == sig or known_err.get(rel) == sig:
                     unchanged += 1
@@ -277,6 +326,8 @@ class VaultIndex:
                 existed = rel in known or rel in known_err
                 try:
                     self._upsert(p, rel, sig)
+                except OSError:
+                    continue  # vanished between stat and read → picked up by the next refresh
                 except NoteParseError as exc:
                     self._delete(rel)
                     self.conn.execute(
@@ -447,17 +498,23 @@ class VaultIndex:
             like_sql += " AND (n.title LIKE ? ESCAPE '\\' OR n.body LIKE ? ESCAPE '\\')"
             like_args += [_like(t), _like(t)]
         if match is not None:
-            rows = self.conn.execute(
-                f"""
-                SELECT n.*, snippet(notes_fts, 2, '[', ']', '…', 12) AS snip,
-                       bm25(notes_fts, 4.0, 1.0, 2.0) AS rank
-                FROM notes_fts JOIN notes n ON n.path = notes_fts.path
-                WHERE notes_fts MATCH ? AND {where}{like_sql}
-                ORDER BY rank LIMIT ?
-                """,
-                [match, *args, *like_args, limit],
-            ).fetchall()
-            return [SearchHit(_row_to_note(r), r["snip"], float(r["rank"])) for r in rows]
+            try:
+                rows = self.conn.execute(
+                    f"""
+                    SELECT n.*, bm25(notes_fts, 4.0, 1.0, 2.0) AS rank
+                    FROM notes_fts JOIN notes n ON n.path = notes_fts.path
+                    WHERE notes_fts MATCH ? AND {where}{like_sql}
+                    ORDER BY rank LIMIT ?
+                    """,
+                    [match, *args, *like_args, limit],
+                ).fetchall()
+            except sqlite3.OperationalError as exc:  # e.g. NUL byte inside a quoted FTS token
+                raise ValueError(f"invalid search query: {exc}") from None
+            tokens = query.split()
+            return [
+                SearchHit(_row_to_note(r), make_snippet(r["body"], tokens), float(r["rank"]))
+                for r in rows
+            ]
         rows = self.conn.execute(
             f"SELECT n.*, substr(n.body, 1, 120) AS snip, 0.0 AS rank FROM notes n "
             f"WHERE {where}{like_sql} ORDER BY n.reviewed DESC, n.created DESC LIMIT ?",
@@ -494,8 +551,35 @@ class VaultIndex:
             )
         ]
 
+    # ------------------------------------------------------------------ reuse (ADR-0012)
+    def _refs(self) -> list[NoteRef]:
+        rows = self.conn.execute("SELECT path, id, title, status, created, source FROM notes")
+        targets: dict[str, list[str]] = {}
+        for lk in self.conn.execute("SELECT src, target FROM links ORDER BY src, target"):
+            targets.setdefault(lk["src"], []).append(lk["target"])
+        return [
+            NoteRef(
+                path=r["path"],
+                id=r["id"],
+                title=r["title"],
+                status=r["status"],
+                created=r["created"],
+                source=tuple(json.loads(r["source"])),
+                targets=tuple(targets.get(r["path"], ())),
+            )
+            for r in rows
+        ]
+
+    def reuse(self, commons_cited: Mapping[str, int] | None = None) -> dict[str, Reuse]:
+        """Per-note reuse counters + myelin strength keyed by path (one pass over notes+links).
+
+        `commons_cited` maps original note id → citations of its Commons copy (see
+        `myelin_core.commons.commons_reuse`); None/empty when no Commons clone is configured.
+        """
+        return compute_reuse(self._refs(), commons_cited)
+
     # ------------------------------------------------------------------ stats (index-based §11.1)
-    def stats(self, today: date) -> Stats:
+    def stats(self, today: date, commons_cited: Mapping[str, int] | None = None) -> Stats:
         rows = self.conn.execute(
             "SELECT path, status, origin, type, created, reviewed, domains FROM notes"
         ).fetchall()
@@ -533,6 +617,8 @@ class VaultIndex:
             for r in rows
             if r["path"].startswith(OUTPUTS + "/") and month_ago < r["created"] <= today.isoformat()
         )
+        refs = self._refs()
+        rm = reuse_metrics(refs, compute_reuse(refs, commons_cited))
         return Stats(
             as_of=today.isoformat(),
             notes=total,
@@ -547,6 +633,10 @@ class VaultIndex:
             by_type=dict(sorted(Counter(r["type"] for r in rows).items())),
             by_domain=self.domains(),
             parse_errors=len(self.parse_errors()),
+            reuse_ratio=rm.reuse_ratio,
+            reuse_lag_days=rm.reuse_lag_days,
+            compose_sources_avg=rm.compose_sources_avg,
+            by_strength=rm.by_strength,
         )
 
 
@@ -569,6 +659,7 @@ __all__ = [
     "SearchHit",
     "VaultIndex",
     "fts_query",
+    "make_snippet",
     "open_index",
 ]
 _ = os  # keep os for potential platform tweaks (documented no-op)

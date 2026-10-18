@@ -31,13 +31,14 @@ def decide(ev: dict) -> int:
     ti = ev.get("tool_input")
     if not isinstance(ti, dict):
         raise BlockedError("tool_input 이 없습니다 — 차단")
-    raw = ti.get("file_path") or ti.get("notebook_path")
-    if not isinstance(raw, str):
+    # NotebookEdit targets notebook_path; if both keys are present, every one must pass.
+    raws = [ti.get(k) for k in ("file_path", "notebook_path") if k in ti]
+    if not raws or not all(isinstance(r, str) for r in raws):
         raise BlockedError("file_path/notebook_path 가 없습니다 — 차단")
     vault = find_vault(ev)
     level = vault_level(vault)
-    rel = resolve_inside(vault, raw)
-    check_allowed(rel, level, raw)
+    for raw in raws:
+        check_allowed(resolve_inside(vault, raw), level, raw)
     return ALLOW
 
 

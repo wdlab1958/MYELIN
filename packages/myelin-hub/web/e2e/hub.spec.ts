@@ -27,12 +27,23 @@ test.describe.serial("신규 사용자 온보딩 → 첫 노트 승격", () => {
     await page.getByTestId("input-name").fill("E2E Tester");
     await page.getByTestId("select-primary").selectOption("D1");
     await page.getByTestId("select-research").selectOption("D3");
+    // 직접 정의한 Domain 을 Growth 로 — 개인 Pack(me.my-domains) 경로를 함께 검증한다
+    await page.getByTestId("custom-id").fill("cloud sec");
+    await page.getByTestId("custom-name").fill("클라우드 보안");
+    await page.getByTestId("custom-submocs").fill("IAM, 네트워크, 로깅");
+    await page.getByTestId("custom-add").click();
+    await expect(page.getByTestId("onboarding-error")).toHaveCount(0);
+    await page.getByTestId("select-growth").selectOption("CLOUD-SEC");
     await shot(page, "00-onboarding");
     await page.getByTestId("onboarding-submit").click();
     await expect(page.getByTestId("kpi-grid")).toBeVisible({ timeout: 30_000 });
     const state = JSON.parse(readFileSync(path.join(__dirname, ".e2e-state.json"), "utf-8"));
     expect(existsSync(path.join(state.vault, "myelin.yaml"))).toBeTruthy();
     expect(existsSync(path.join(state.vault, ".git"))).toBeTruthy();
+    expect(existsSync(path.join(state.vault, "packs", "me.my-domains", "pack.yaml"))).toBeTruthy();
+    expect(existsSync(path.join(state.vault, "10_Domains", "CLOUD-SEC", "_MOC.md"))).toBeTruthy();
+    const domains = (await (await fetch(`${API}/api/domains`)).json()) as { id: string; role: string; pack?: string }[];
+    expect(domains.find((d) => d.id === "CLOUD-SEC")).toMatchObject({ role: "growth", pack: "me.my-domains" });
     await shot(page, "01-dashboard");
   });
 
@@ -64,6 +75,9 @@ test.describe.serial("신규 사용자 온보딩 → 첫 노트 승격", () => {
     await page.goto("/review");
     const row = page.getByTestId("draft-row").first();
     await expect(row).toContainText("MYELIN 시작하기");
+    await expect(row.getByTestId("promote")).toBeDisabled(); // 읽음 확인 장치: 본문을 열기 전에는 승격 불가
+    await row.getByTestId("draft-read").click();
+    await expect(row.getByTestId("draft-body")).toContainText("MYELIN");
     await row.getByTestId("promote").click();
     await expect(page.getByTestId("promoted-card")).toContainText("myelinated");
     await expect(page.getByTestId("review-toast")).toContainText("commit");

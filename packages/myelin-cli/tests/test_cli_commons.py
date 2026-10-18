@@ -196,9 +196,12 @@ def test_pack_propose_and_metrics(
     files = list((c / "metrics").rglob("*.json"))
     assert len(files) == 1 and "brian" not in files[0].read_text(encoding="utf-8")
     assert run(["metrics", "aggregate", str(c)]) == 0
-    assert "users" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "users" in out and "reuse" in out and "reuse total" in out
     assert run(["metrics", "aggregate", str(c), "--json"]) == 0
-    assert json.loads(capsys.readouterr().out)["2026-W42"]["users"] == 1 or True
+    data = json.loads(capsys.readouterr().out)
+    assert set(data) >= {"weeks", "reuse", "reuse_total", "top_contributors"}
+    assert all("reuse" in row for row in data["weeks"].values())
 
 
 def test_init_records_onboard_start(tmp_path: Path, packs_dir: Path, fixed_now: str) -> None:

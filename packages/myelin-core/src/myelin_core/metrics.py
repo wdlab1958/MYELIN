@@ -4,6 +4,9 @@
   (timestamps only; never note content).
 - `org_metrics(vault)` computes the §11.2 contribution of ONE vault as counts/booleans keyed by an
   anonymous owner hash. `payload_is_anonymous()` is the guard used by tests and by the publisher.
+- ADR-0012: the payload also carries the reuse KPIs (numbers) and `cited_commons_ids` — the
+  `published_from` ids of Commons notes this vault cites (ids only, never titles/paths). This is
+  what lets `aggregate()` measure §11.2 "재사용" (Commons 노트가 타인 노트에 인용된 횟수).
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from myelin_core.index import open_index
+from myelin_core.schema.frontmatter import NOTE_ID_RE
 from myelin_core.vault import RUNTIME, Vault
 
 EVENTS_FILE = f"{RUNTIME}/metrics.jsonl"
@@ -30,7 +34,14 @@ ALLOWED_KEYS = {
     "level",
     "packs_count",
     "generated",
+    # ADR-0012 reuse KPIs (numbers) + cited Commons ids (ids only)
+    "reuse_ratio",
+    "reuse_lag_days",
+    "compose_sources_avg",
+    "cited_commons_ids",
 }
+# the one list-valued key: note ids (NOTE_ID_RE) of Commons notes this vault cites
+LIST_KEYS = {"cited_commons_ids"}
 
 
 def record_event(vault_root: Path, event: str, **data: Any) -> None:
@@ -63,21 +74,41 @@ def onboarding_minutes(vault_root: Path) -> float | None:
     return round((float(first) - float(start)) / 60, 2)
 
 
+def commons_clone(vault: Vault) -> Path | None:
+    """The configured local Commons clone when it exists (myelin.yaml commons.local), else None."""
+    local = vault.config.commons.local
+    if not local:
+        return None
+    p = Path(local).expanduser()
+    return p if (p / ".git").exists() else None
+
+
 def org_metrics(
     vault: Vault, today: date | None = None, owner: str | None = None
 ) -> dict[str, Any]:
-    from myelin_core.commons import owner_hash  # local import: commons imports metrics indirectly
+    from myelin_core.commons import (  # local import: commons imports metrics indirectly
+        commons_citations,
+        commons_reuse,
+        owner_hash,
+    )
 
     today = today or date.today()
+    me = owner or owner_hash(vault)
+    clone = commons_clone(vault)
+    cited_ids: list[str] = []
+    cited_mine: dict[str, int] | None = None
+    if clone is not None:
+        cited_ids = sorted(commons_citations(vault, clone))
+        cited_mine = commons_reuse(clone, exclude_owner=owner_hash(vault))
     with open_index(vault) as idx:
-        st = idx.stats(today)
+        st = idx.stats(today, commons_cited=cited_mine)
         rows = idx.query(
             status="verified", reviewed_from=(today - timedelta(days=7)).isoformat(), limit=1000
         )
     evs = events(vault.root)
     week = f"{today.isocalendar().year}-W{today.isocalendar().week:02d}"
     return {
-        "owner": owner or owner_hash(vault),
+        "owner": me,
         "week": week,
         "active": len(rows) >= 1,
         "verified_7d": len(rows),
@@ -88,6 +119,10 @@ def org_metrics(
         "level": vault.config.level,
         "packs_count": len(vault.config.pack_names),
         "generated": datetime.now().isoformat(timespec="seconds"),
+        "reuse_ratio": st.reuse_ratio,
+        "reuse_lag_days": st.reuse_lag_days,
+        "compose_sources_avg": st.compose_sources_avg,
+        "cited_commons_ids": cited_ids,
     }
 
 
@@ -97,7 +132,12 @@ def payload_is_anonymous(payload: dict[str, Any], vault: Vault | None = None) ->
     for k, v in payload.items():
         if k not in ALLOWED_KEYS:
             problems.append(f"unexpected key {k!r}")
-        if isinstance(v, dict | list):
+        if k in LIST_KEYS:
+            if not isinstance(v, list) or any(
+                not isinstance(i, str) or not NOTE_ID_RE.match(i) for i in v
+            ):
+                problems.append(f"{k}: must be a list of note ids")
+        elif isinstance(v, dict | list):
             problems.append(f"{k}: nested value not allowed")
     text = json.dumps(payload, ensure_ascii=False)
     if vault is not None:
@@ -127,14 +167,26 @@ def write_metrics_to_commons(vault: Vault, commons: Path, today: date | None = N
 
 
 def aggregate(commons: Path) -> dict[str, Any]:
-    """Sum metrics/*/<week>.json into the §11.2 org table."""
+    """Sum metrics/*/<week>.json into the §11.2 org table (week → row).
+
+    `reuse` (ADR-0012) = citations of Commons notes reported that week, summed across owners
+    (§11.2 "재사용 ≥ 50/월"). Per-note totals and `top_contributors` are in `aggregate_reuse()`
+    (kept apart so this table stays one flat row per week).
+    """
     files = sorted(Path(commons).glob("metrics/*/*.json"))
     payloads = [json.loads(f.read_text(encoding="utf-8")) for f in files]
     weeks: dict[str, dict[str, Any]] = {}
     for p in payloads:
         w = weeks.setdefault(
             p["week"],
-            {"owners": set(), "active": 0, "published": 0, "proposals": 0, "onboarding": []},
+            {
+                "owners": set(),
+                "active": 0,
+                "published": 0,
+                "proposals": 0,
+                "onboarding": [],
+                "reuse": 0,
+            },
         )
         w["owners"].add(p["owner"])
         w["active"] += int(bool(p.get("active")))
@@ -142,6 +194,8 @@ def aggregate(commons: Path) -> dict[str, Any]:
         w["proposals"] += int(p.get("proposals") or 0)
         if p.get("onboarding_minutes") is not None:
             w["onboarding"].append(float(p["onboarding_minutes"]))
+        cited = p.get("cited_commons_ids")
+        w["reuse"] += len(cited) if isinstance(cited, list) else 0
     out = {}
     for week, w in sorted(weeks.items()):
         n = len(w["owners"])
@@ -155,5 +209,19 @@ def aggregate(commons: Path) -> dict[str, Any]:
                 sorted(w["onboarding"])[len(w["onboarding"]) // 2] if w["onboarding"] else None
             ),
             "onboarding_within_15": sum(1 for m in w["onboarding"] if m <= 15),
+            "reuse": w["reuse"],
         }
     return out
+
+
+def aggregate_reuse(commons: Path) -> dict[str, Any]:
+    """Org-level reuse (ADR-0012): `reuse` = original id → citations across owners + Commons
+    notes, `top_contributors` = [{author, published, cited}] sorted by cited desc."""
+    from myelin_core.commons import commons_reuse, contributors
+
+    reuse = commons_reuse(commons)
+    return {
+        "reuse": reuse,
+        "reuse_total": sum(reuse.values()),
+        "top_contributors": contributors(commons),
+    }

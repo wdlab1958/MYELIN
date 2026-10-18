@@ -24,6 +24,7 @@ import json
 import re
 import shutil
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -34,6 +35,7 @@ from ruamel.yaml import YAML
 from myelin_core.note import Note, NoteParseError, dump_note, read_note
 from myelin_core.packs.loader import PackError, load_pack
 from myelin_core.schema.frontmatter import Classification, Status
+from myelin_core.stats import source_refs
 from myelin_core.vault import IP, Vault
 
 REGISTRY_INDEX = "registry/index.yaml"
@@ -303,6 +305,9 @@ class PublishResult:
     dest: str
     pushed: bool
     pr_url: str | None
+    # why push / PR did not happen (the commit on the publish branch is kept either way)
+    push_error: str | None = None
+    pr_error: str | None = None
 
 
 def owner_hash(vault: Vault) -> str:
@@ -321,11 +326,18 @@ def publish_note(
     push: bool = False,
     open_pr: bool = False,
     now: datetime | None = None,
+    remote: str | None = None,
 ) -> PublishResult:
     """Copy a publishable note into the Commons clone on branch publish/<id> and commit.
 
     `confirmed` must be True: it is the caller's statement that a human reviewed the check
     (CLI prompt / Hub confirmation). Without it nothing is written (fail-closed).
+
+    `push`/`open_pr` are best effort AFTER the commit exists: a failed push (no `origin`, no
+    network, auth) or a missing `gh` never loses the commit — the result carries
+    `pushed=False` / `pr_url=None` with `push_error` / `pr_error` so the caller can print the
+    manual `git push` / `gh pr create` step. When the clone has no `origin`, `remote`
+    (myelin.yaml `commons.remote`) is added as `origin` before pushing.
     """
     if not confirmed:
         raise CommonsError("publish requires explicit human confirmation (confirmed=True)")
@@ -378,21 +390,211 @@ def publish_note(
         )
         commit = _git(commons, "rev-parse", "HEAD").stdout.strip()
         pushed = False
-        pr_url = None
+        pr_url: str | None = None
+        push_error: str | None = None
+        pr_error: str | None = None
         if push:
-            _git(commons, "push", "-u", "origin", branch)
-            pushed = True
-            if open_pr and shutil.which("gh"):
-                proc = subprocess.run(
-                    ["gh", "pr", "create", "--fill", "--head", branch, "--base", base],
-                    cwd=commons,
-                    capture_output=True,
-                    text=True,
-                )
-                pr_url = proc.stdout.strip() or None
+            pushed, push_error = push_branch(commons, branch, remote=remote)
+            if pushed and open_pr:
+                pr_url, pr_error = open_pull_request(commons, branch, base)
+            elif open_pr:
+                pr_error = "push 가 되지 않아 PR 을 열 수 없다"
     finally:
         _git(commons, "checkout", "-q", base, check=False)
-    return PublishResult(branch, commit, dest_rel, pushed, pr_url)
+    return PublishResult(branch, commit, dest_rel, pushed, pr_url, push_error, pr_error)
+
+
+def ensure_origin(commons: Path, remote: str | None) -> str | None:
+    """Return the clone's `origin` URL, adding `remote` as origin when none is set (gap M9)."""
+    proc = _git(commons, "remote", "get-url", "origin", check=False)
+    if proc.returncode == 0 and proc.stdout.strip():
+        return proc.stdout.strip()
+    if remote:
+        _git(commons, "remote", "add", "origin", remote)
+        return remote
+    return None
+
+
+def push_branch(
+    commons: Path, branch: str, *, remote: str | None = None
+) -> tuple[bool, str | None]:
+    """`git push -u origin <branch>` → (pushed, error). Never raises on a failed push."""
+    try:
+        if ensure_origin(commons, remote) is None:
+            return False, "Commons clone 에 origin 이 없다 (myelin.yaml commons.remote 를 설정한다)"
+        _git(commons, "push", "-u", "origin", branch)
+    except CommonsError as exc:
+        return False, str(exc)
+    return True, None
+
+
+def open_pull_request(commons: Path, branch: str, base: str) -> tuple[str | None, str | None]:
+    """`gh pr create` for an already pushed branch → (pr_url, error). Never raises."""
+    if not shutil.which("gh"):
+        return None, "gh CLI 가 설치되어 있지 않다"
+    try:
+        proc = subprocess.run(
+            ["gh", "pr", "create", "--fill", "--head", branch, "--base", base],
+            cwd=commons,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return None, f"gh pr create failed: {exc}"
+    if proc.returncode != 0:
+        return None, f"gh pr create failed: {proc.stderr.strip() or proc.stdout.strip()}"
+    return proc.stdout.strip() or None, None
+
+
+def manual_next_step(commons: Path, res: PublishResult) -> str | None:
+    """Korean instruction for what the human still has to do; None when the PR is open."""
+    if res.pr_url:
+        return None
+    if not res.pushed:
+        why = f" ({res.push_error})" if res.push_error else ""
+        return (
+            f"브랜치가 로컬 Commons clone 에만 있다{why}. 터미널에서: "
+            f"cd {commons} && git push -u origin {res.branch} && "
+            f"gh pr create --fill --head {res.branch}"
+        )
+    why = f" ({res.pr_error})" if res.pr_error else ""
+    return (
+        f"브랜치는 push 되었지만 PR 이 열리지 않았다{why}. 터미널에서: "
+        f"cd {commons} && gh pr create --fill --head {res.branch} "
+        "— 또는 원격 저장소 웹에서 PR 을 연다"
+    )
+
+
+# ----------------------------------------------------------------------------- citations (ADR-0012)
+@dataclass(frozen=True)
+class CommonsNote:
+    """A note published to the Commons clone (`notes/<DOMAIN>/<id>-<slug>.md`)."""
+
+    path: str  # Commons-relative
+    id: str  # frontmatter id in the Commons copy
+    published_from: str  # original note id (= id unless the copy was re-keyed)
+    author: str
+    title: str
+    targets: tuple[str, ...]
+    source: tuple[str, ...]
+
+    def cited_by(self, title: str, targets: set[str], source: Sequence[str]) -> bool:
+        """Does a note with this body-link `targets` / `source:` list cite this Commons note?"""
+        if self.title in targets:
+            return True
+        keys = {self.id, self.published_from, self.title}
+        return any(k in keys for k in source_refs(source)) or any(
+            self.id in s or self.published_from in s for s in source
+        )
+
+
+def commons_notes(commons: Path) -> list[CommonsNote]:
+    """Parse every published note in the clone's working tree (unparsable files are skipped)."""
+    root = Path(commons) / "notes"
+    out: list[CommonsNote] = []
+    if not root.is_dir():
+        return out
+    for p in sorted(root.rglob("*.md")):
+        try:
+            note = read_note(p)
+        except (NoteParseError, OSError):
+            continue
+        raw = note.raw_frontmatter
+        out.append(
+            CommonsNote(
+                path=p.relative_to(commons).as_posix(),
+                id=note.id,
+                published_from=str(raw.get("published_from") or note.id),
+                author=str(raw.get("author") or ""),
+                title=note.title,
+                targets=tuple(sorted(note.link_targets)),
+                source=tuple(note.frontmatter.source),
+            )
+        )
+    return out
+
+
+def commons_citations(vault: Vault, commons: Path) -> dict[str, int]:
+    """Commons note (keyed by original id) → number of THIS vault's notes citing it.
+
+    A citation is a body wikilink to the Commons note's title, or a `source:` entry naming its
+    id / title. Notes this vault published itself (the original id lives here) are skipped: the
+    §11.2 "재사용" KPI counts citations by OTHER people's notes ("타인 노트에 인용된 횟수").
+    """
+    published = commons_notes(commons)
+    if not published:
+        return {}
+    notes, _ = vault.read_all()
+    own_ids = {n.id for n in notes}
+    counts: dict[str, int] = {}
+    for cn in published:
+        if cn.published_from in own_ids:
+            continue
+        n_cited = sum(
+            1 for n in notes if cn.cited_by(n.title, n.link_targets, n.frontmatter.source)
+        )
+        if n_cited:
+            counts[cn.published_from] = counts.get(cn.published_from, 0) + n_cited
+    return counts
+
+
+def _metrics_payloads(commons: Path) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for f in sorted(Path(commons).glob("metrics/*/*.json")):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict):
+            out.append(data)
+    return out
+
+
+def commons_reuse(commons: Path, *, exclude_owner: str | None = None) -> dict[str, int]:
+    """Original note id → citations of its Commons copy, aggregated across the organisation.
+
+    Sources (ADR-0012): (1) `cited_commons_ids` reported in `metrics/<owner>/*.json` — each
+    citing owner counts once per note (weekly files repeat, owners do not), `exclude_owner`
+    drops the caller's own report; (2) other Commons notes in the clone citing it.
+    """
+    commons = Path(commons)
+    citing_owners: dict[str, set[str]] = {}
+    for payload in _metrics_payloads(commons):
+        owner = str(payload.get("owner") or "")
+        if not owner or owner == exclude_owner:
+            continue
+        ids = payload.get("cited_commons_ids")
+        if isinstance(ids, list):
+            for i in ids:
+                if isinstance(i, str):
+                    citing_owners.setdefault(i, set()).add(owner)
+    counts: dict[str, int] = {k: len(v) for k, v in citing_owners.items()}
+    published = commons_notes(commons)
+    for cn in published:
+        n_cited = sum(
+            1
+            for other in published
+            if other.path != cn.path and cn.cited_by(other.title, set(other.targets), other.source)
+        )
+        if n_cited:
+            counts[cn.published_from] = counts.get(cn.published_from, 0) + n_cited
+    return dict(sorted(counts.items()))
+
+
+def contributors(commons: Path) -> list[dict[str, Any]]:
+    """`top_contributors` (정본 §9.1 기여가 평판이 된다): {author, published, cited} per author.
+
+    `author` is the public Commons `author` field (real name by design); nothing here goes
+    into the anonymous metrics payloads.
+    """
+    reuse = commons_reuse(commons)
+    rows: dict[str, dict[str, Any]] = {}
+    for cn in commons_notes(commons):
+        r = rows.setdefault(cn.author, {"author": cn.author, "published": 0, "cited": 0})
+        r["published"] += 1
+        r["cited"] += reuse.get(cn.published_from, 0)
+    return sorted(rows.values(), key=lambda r: (-r["cited"], -r["published"], r["author"]))
 
 
 def propose_pack(vault: Vault, pack_dir: Path, commons: Path, *, confirmed: bool) -> PublishResult:
@@ -448,6 +650,7 @@ def propose_pack(vault: Vault, pack_dir: Path, commons: Path, *, confirmed: bool
 __all__ = [
     "BUILTIN_PATTERNS",
     "CommonsError",
+    "CommonsNote",
     "DeidHit",
     "DeidRule",
     "PublishCheck",
@@ -455,11 +658,18 @@ __all__ = [
     "add_pack_to_registry",
     "candidates",
     "check_publishable",
+    "commons_citations",
+    "commons_notes",
+    "commons_reuse",
+    "contributors",
+    "ensure_origin",
     "init_commons",
+    "manual_next_step",
+    "open_pull_request",
     "owner_hash",
     "propose_pack",
     "publish_note",
+    "push_branch",
     "registry",
     "scan_text",
 ]
-_ = json  # reserved for registry JSON export

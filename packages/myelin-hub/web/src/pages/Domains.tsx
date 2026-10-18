@@ -7,16 +7,28 @@ export default function Domains({ vault }: { vault: VaultSummary }) {
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [sub, setSub] = useState<string | null>(null);
   const [hits, setHits] = useState<SearchHit[] | null>(null);
-  useEffect(() => { void get<Domain[]>("/api/domains").then((d) => { setDomains(d); setSelected(d[0] ?? null); }); }, []);
+  // Every fetch ignores its result once the effect is stale: a late /api/domains (StrictMode double
+  // effect, slow API) must not reset the Orb the user already picked, and a slow /api/notes for the
+  // previous Domain must not overwrite the current one's list.
+  useEffect(() => {
+    let alive = true;
+    void get<Domain[]>("/api/domains").then((d) => { if (!alive) return; setDomains(d); setSelected((cur) => cur ?? d[0] ?? null); });
+    return () => { alive = false; };
+  }, []);
   useEffect(() => {
     if (!selected) return;
+    let alive = true;
     setSub(null); setHits(null);
-    void get<NoteRow[]>(`/api/notes?domain=${encodeURIComponent(selected.id)}&limit=50`).then(setNotes);
+    void get<NoteRow[]>(`/api/notes?domain=${encodeURIComponent(selected.id)}&limit=50`).then((n) => { if (alive) setNotes(n); });
+    return () => { alive = false; };
   }, [selected]);
   const pickSub = async (name: string) => {
     if (sub === name) { setSub(null); setHits(null); return; }
     setSub(name);
-    try { setHits(await get<SearchHit[]>(`/api/search?q=${encodeURIComponent(name)}&limit=20`)); } catch { setHits([]); }
+    try {
+      const h = await get<SearchHit[]>(`/api/search?q=${encodeURIComponent(name)}&limit=20`);
+      setSub((cur) => { if (cur === name) setHits(h); return cur; });
+    } catch { setHits([]); }
   };
   const abs = (rel: string) => `${vault.root}/${rel}`;
   const subInfo = selected?.sub_moc_notes?.find((s) => s.name === sub);
@@ -58,22 +70,36 @@ export default function Domains({ vault }: { vault: VaultSummary }) {
               <h4 style={{ margin: "var(--mx-space-3) 0 var(--mx-space-2)" }}>"{sub}" 검색 결과 {hits ? hits.length : "…"}</h4>
               {hits && hits.length === 0 && <div className="mx-muted">아직 이 주제의 노트가 없다. /myelin:ingest 나 /myelin:distill 로 첫 노트를 만든다.</div>}
               {hits && hits.length > 0 && (
-                <table className="mx-table"><thead><tr><th>제목</th><th>status</th><th>경로</th></tr></thead>
+                <table className="mx-table"><thead><tr><th>제목</th><th>status</th><th>강도</th><th>경로</th></tr></thead>
                   <tbody>{hits.map((h) => (
-                    <tr key={h.path}><td><a href={obsidianOpen(abs(h.path))}>{h.title}</a></td><td><span className={"mx-chip " + chip(h)}>{h.status}</span></td><td className="mx-mono mx-muted">{h.path}</td></tr>
+                    <tr key={h.path}><td><a href={obsidianOpen(abs(h.path))}>{h.title}</a></td><td><span className={"mx-chip " + chip(h)}>{h.status}</span></td><td><StrengthChip n={h} /></td><td className="mx-mono mx-muted">{h.path}</td></tr>
                   ))}</tbody></table>
               )}
             </div>
           )}
           <h3>노트</h3>
-          <table className="mx-table"><thead><tr><th>제목</th><th>type</th><th>status</th><th>origin</th><th>created</th></tr></thead>
+          <table className="mx-table" data-testid="domain-notes"><thead><tr><th>제목</th><th>type</th><th>status</th><th>강도</th><th>origin</th><th>created</th></tr></thead>
             <tbody>{notes.map((n) => (
-              <tr key={n.path}><td><a href={obsidianOpen(abs(n.path))} title="Obsidian 에서 열기">{n.title}</a></td><td>{n.type}</td><td><span className={"mx-chip " + chip(n)}>{n.status}</span></td><td>{n.origin}</td><td className="mx-mono">{n.created}</td></tr>
+              <tr key={n.path}><td><a href={obsidianOpen(abs(n.path))} title="Obsidian 에서 열기">{n.title}</a></td><td>{n.type}</td><td><span className={"mx-chip " + chip(n)}>{n.status}</span></td><td><StrengthChip n={n} /></td><td>{n.origin}</td><td className="mx-mono">{n.created}</td></tr>
             ))}</tbody></table>
         </article>
       )}
     </>
   );
+}
+
+/** Myelin strength (ADR-0012) — always a text label, never colour alone: 0 = "—", 1..3 = "myelin ×N". */
+export function strengthLabel(n: { strength?: number }): string {
+  const s = n.strength ?? 0;
+  return s <= 0 ? "—" : `myelin ×${s}`;
+}
+
+export function StrengthChip({ n }: { n: NoteRow }) {
+  const s = n.strength ?? 0;
+  const detail = `inbound ${n.inbound ?? 0} · outputs ${n.output_uses ?? 0} · commons ${n.commons_cited ?? 0}`;
+  if (s <= 0) return <span className="mx-muted" title={detail} data-testid="strength-0">—</span>;
+  const cls = s >= 2 ? "mx-chip--verified" : "mx-chip--unverified";
+  return <span className={"mx-chip " + cls} title={detail} data-testid={`strength-${s}`}>{strengthLabel(n)}</span>;
 }
 
 export function chip(n: { status: string; origin: string }): string {

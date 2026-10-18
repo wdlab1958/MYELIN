@@ -10,6 +10,13 @@ body { margin: 0; background: var(--mx-surface); color: var(--mx-ink); font-fami
 .hub-side { padding: var(--mx-space-5) var(--mx-space-4); position: sticky; top: 0; height: 100vh; }
 .hub-main { padding: var(--mx-space-6) var(--mx-space-6) var(--mx-space-7); max-width: 1200px; }
 .hub-grid { display: grid; gap: var(--mx-space-5); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+/* Settings: 세 번째(Skill 개방) 카드는 표가 들어가므로 오른쪽으로 넓게 잡는다 */
+.hub-grid--settings { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
+.hub-grid--settings .hub-card--table { grid-column: 1 / -1; }
+@media (max-width: 1180px) { .hub-grid--settings { grid-template-columns: repeat(2, minmax(220px, 1fr)); } }
+@media (max-width: 760px) { .hub-grid--settings { grid-template-columns: 1fr; } }
+.hub-card--table { overflow-x: auto; }
+.hub-card--table .mx-table th, .hub-card--table .mx-table td { white-space: nowrap; }
 .hub-row { display: flex; flex-wrap: wrap; gap: var(--mx-space-3); align-items: center; }
 .hub-stack { display: grid; gap: var(--mx-space-3); }
 .hub-h1 { font-size: var(--mx-font-size-xl); margin: 0 0 var(--mx-space-2); }

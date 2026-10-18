@@ -7,6 +7,7 @@ lock-protected so worker-thread execution is safe.
 
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -17,29 +18,30 @@ from mcp.server.mcpserver import MCPServer
 from myelin_mcp import __version__
 from myelin_mcp.service import MCPError, VaultService
 
+# ADR-0011 §3: an EXTERNAL process must not even advertise that confidential content exists.
 INSTRUCTIONS = (
     "MYELIN Personal Knowledge OS — read-only access to one Obsidian Vault. "
     "Notes have Frontmatter v2 (id/type/domain/status/origin/classification). "
     "status: verified notes are human-approved; origin: claude + status: draft are AI drafts. "
-    "Confidential notes are withheld unless the Vault owner enabled exposure. "
     "Never claim to have modified the Vault: only write_draft (if present) creates files, and only "
     "in 00_Inbox/ai-drafts."
+)
+INSTRUCTIONS_LOCAL = (
+    INSTRUCTIONS + " This is a LOCAL-model session (MYELIN_LLM=local): classification: "
+    "confidential notes and 40_IP/** are included; never relay them to an external service."
 )
 
 
 def build_server(service: VaultService) -> MCPServer:
     server = MCPServer(
         name="myelin",
-        instructions=INSTRUCTIONS,
+        instructions=INSTRUCTIONS_LOCAL if service.expose_confidential else INSTRUCTIONS,
         version=__version__,
     )
 
     @server.tool(
         name="search_notes",
-        description=(
-            "Full-text search (FTS5) over the Vault. Filters: domain, status, type. "
-            "Confidential notes hidden by policy."
-        ),
+        description="Full-text search (FTS5) over the Vault. Filters: domain, status, type.",
     )
     async def search_notes(
         query: str,
@@ -158,5 +160,8 @@ def _guard[T](fn: Callable[[], T]) -> T:
 def serve(vault: Path) -> None:
     """Run the server on stdio (the only transport MYELIN supports — ADR-0007 §1)."""
     service = VaultService.open(vault)
+    warning = service.routing_warning()
+    if warning:
+        print(warning, file=sys.stderr, flush=True)
     server = build_server(service)
     server.run(transport="stdio")

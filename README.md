@@ -17,7 +17,9 @@
 | **Phase-gated Autonomy** | `myelin.yaml level` 0~3 에 따라 Skill·허용 경로 누적 개방 |
 | **HITL Oversight** | verified 승격·패치 적용·Commons 공개는 Hub 에서 **사람의 클릭**으로만, commit 으로 기록 |
 | **Thin Additive Routing Shell** | Domain 은 코드가 아니라 **Pack(YAML)**. Domain 추가에 코드 변경 없음 |
-| **Personal Ownership** | Vault 는 개인 소유. 조직은 열람하지 않고 지표는 opt-in 익명 집계만 |
+| **Personal Ownership** | Vault 는 개인 소유. 조직은 열람하지 않고 지표는 opt-in 익명 집계만. Commons 기여는 실명으로 남아 인용 집계가 평판이 된다 |
+| **Compounding (복리)** | verified 는 시작. 노트별 강도(myelin ×1~3)·재사용 비율·재투입 소요일을 재고, 산출물의 `## 환류 후보` 를 `/distill` 로 되돌리는 환류 경로가 있다(정본 Rev 2.1 부록) |
+| **Confidential Routing** | `MYELIN_LLM=local` 세션만 `40_IP/**`·confidential 을 읽고 쓴다. 외부 세션은 Guard(Read/Grep/Glob/Write)와 MCP 가 차단. Vault pre-commit 훅이 Claude Code 밖의 커밋도 검사 |
 | **Low-friction Onboarding** | 설치→첫 verified 노트 15분 이내(자동 측정 포함) |
 
 ## 2. 구성 요소 (정본 §2.3 제품군)
@@ -57,7 +59,7 @@ myelin-hub --vault ~/Vaults/me               # http://127.0.0.1:8787 → 온보�
 Obsidian 이 없으면 `scripts/install_obsidian.sh --vault ~/Vaults/me` (Debian/Ubuntu: 공식 .deb 설치 + Emboss 테마 선선택 + Vault 열기).
 CLI 로만: `myelin init --vault ~/Vaults/me` → Obsidian 에서 열기 → Vault 폴더에서 `claude` → `/myelin:ingest <자료>` → `/myelin:distill` → Hub 에서 Promote.
 
-요구 사항: Python 3.12, [uv](https://docs.astral.sh/uv/), git, Node 22 (Hub 웹), [Claude Code](https://claude.com/claude-code) 2.1.275+ (plugin/MCP), Google Chrome (e2e 선택).
+요구 사항: Python 3.12, [uv](https://docs.astral.sh/uv/), git, Node 22 (Hub 웹), [Claude Code](https://claude.com/claude-code) 2.1.295+ (plugin/MCP — hook `onFailure: block` 은 2.1.295 부터), Google Chrome (e2e 선택).
 
 ## 4. 명령 요약
 
@@ -93,7 +95,7 @@ Claude Code: `/myelin:ingest` `/myelin:distill` `/myelin:interview` (Level ≥ 1
 
 ```bash
 make sync          # uv sync (Makefile 이 /usr/bin/python3.12 를 UV_PYTHON 으로 고정 — 혼합 pyenv 회피)
-make check         # ruff + mypy --strict + pytest (406 tests)
+make check         # ruff + mypy --strict + pytest (1,070+ tests)
 make gate P=8      # Phase gate (각 Phase 의 통과 기준을 스크립트로 고정, 미구현 Phase 는 fail-closed)
 make web · make e2e · make hub VAULT=…   # Hub 빌드 · Playwright e2e(스크린샷) · Hub 실행
 make emboss · make a11y · make emboss-lint · make gallery   # 디자인 토큰 생성·대비·하드코딩 lint·갤러리 스크린샷
@@ -130,6 +132,8 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 | [0008](docs/adr/0008-emboss-contrast-adjustments.md) | 정본 §8.1 세 토큰(muted·lime-ink·cyan-ink) 을 4.5:1 기준으로 조정 |
 | [0009](docs/adr/0009-hub-write-policy.md) | Hub 쓰기 = 클릭 헤더 필수, 동작 6종 = commit 6종, welcome 초안, localhost 전용 |
 | [0010](docs/adr/0010-commons-policy.md) | Commons 공개 게이트·비식별·확인 단계·브랜치/PR·Pack 진화·익명 지표·온보딩 계측 |
+| [0011](docs/adr/0011-confidential-routing-devices.md) | 기밀 라우팅 장치화: `MYELIN_LLM=local` 세션만 `40_IP/**`·confidential 접근, Read/Grep/Glob Guard, MCP 강제, Vault pre-commit 훅 |
+| [0012](docs/adr/0012-myelin-strength-and-reuse-metrics.md) | 미엘린 강도 0~3, 재사용 KPI 3종, Commons 인용 집계·top_contributors, Hub push/PR |
 
 ## 9. 문서
 
@@ -150,7 +154,7 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 
 ## 11. 알려진 제약 · 남은 일
 
-- 다크 모드 미지원(§8.3 가드레일 5) · Team 모드 인증 없음(Hub 는 localhost 전용) · Bash Guard 는 스크립트 파일 실행 부작용 미검사(settings.json ask) · 비식별 스캔은 휴리스틱(챔피언 리뷰 2중) · MCP 기밀 노출은 소유자 opt-in.
+- 다크 모드 미지원(§8.3 가드레일 5) · Team 모드 인증 없음(Hub 는 localhost 전용) · Bash Guard 는 Vault 밖 스크립트·패키지 설치·네트워크 송신은 검사하지 않음(settings.json ask + 커밋 이력 사후 감사) · 비식별 스캔은 휴리스틱(챔피언 리뷰 2중) · MCP 기밀 노출은 소유자 opt-in.
 - **사람 참여 항목**: P7 파일럿 5명 온보딩·피드백 기록(`scripts/pilot.py`) → `make gate P=7` → `phase-P7` 태그 · KIPRIS 국내 상표 직접 조회 결과 기입 · Commons 챔피언 지정 · 정본 §9.2 Rollout Wave 1·2.
 - 브랜드명 MYELIN 은 사내용 가칭(미국 동일 명칭 소프트웨어 상표 선출원 심사 중, 주요 도메인 점유). 대외 공개 시 결합형 `MYELIN KOS` 검토.
 

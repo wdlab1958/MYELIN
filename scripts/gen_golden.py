@@ -20,6 +20,7 @@ NOW = "2026-10-18T09:00"
 ARGS = [
     "init",
     "--non-interactive",
+    "--no-git",  # the snapshot is the scaffold only; git objects are not reproducible bytes
     "--name",
     "Brian",
     "--team",

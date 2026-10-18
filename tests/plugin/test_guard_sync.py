@@ -53,13 +53,22 @@ def test_hooks_are_stdlib_only() -> None:
                 assert n in stdlib or n == "guard_common", f"{script.name} imports non-stdlib {n!r}"
 
 
-def test_hooks_json_wires_both_guards() -> None:
+def test_hooks_json_wires_all_guards() -> None:
     cfg = json.loads((HOOKS / "hooks.json").read_text(encoding="utf-8"))
     pre = cfg["hooks"]["PreToolUse"]
     matchers = {h["matcher"]: h["hooks"][0] for h in pre}
-    assert set(matchers) == {"Write|Edit|MultiEdit|NotebookEdit", "Bash"}
+    assert set(matchers) == {"Write|Edit|MultiEdit|NotebookEdit", "Bash", "Read|Grep|Glob"}
     for m, h in matchers.items():
         assert h["type"] == "command" and h["command"] == "python3"
         assert h["args"][0].startswith("${CLAUDE_PLUGIN_ROOT}/hooks/guard_")
         assert h["onFailure"] == "block" and h["timeout"] <= 10, m
     assert matchers["Bash"]["args"][0].endswith("guard_bash.py")
+    assert matchers["Read|Grep|Glob"]["args"][0].endswith("guard_read.py")  # ADR-0011
+
+
+def test_llm_routing_constants_in_sync() -> None:
+    """ADR-0011: the Guard's copy of the LOCAL-session switch equals myelin_core.levels."""
+    from myelin_core.levels import LLM_ENV, LLM_LOCAL
+
+    common = _load("guard_common")
+    assert (common.LLM_ENV, common.LLM_LOCAL) == (LLM_ENV, LLM_LOCAL) == ("MYELIN_LLM", "local")

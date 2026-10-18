@@ -55,8 +55,8 @@ STANDARD_DIRS: tuple[str, ...] = (
 AI_WRITE_ALLOW: tuple[str, ...] = (AI_DRAFTS, PATCHES, OUTPUT_DRAFTS, JOURNAL)
 # directories excluded from note scanning
 SKIP_DIRS: frozenset[str] = frozenset(
-    {RUNTIME, ".git", ".obsidian", ".claude", "node_modules", "_patches"}
-)
+    {RUNTIME, ".git", ".obsidian", ".claude", "node_modules", "_patches", "packs"}
+)  # <Vault>/packs holds personal Packs (templates are not notes)
 NON_NOTE_FILES: frozenset[str] = frozenset({"CLAUDE.md", "README.md"})
 
 
@@ -101,6 +101,18 @@ def default_pack_roots(vault: Path | None = None) -> list[Path]:
     return unique
 
 
+def _is_note_file(p: Path, real_root: Path) -> bool:
+    """A regular file whose real path stays inside the Vault.
+
+    Fail-closed (정본 §3): a symlink that escapes the Vault or dangles is not a note — following
+    it would read foreign files into the index (or crash on a missing target).
+    """
+    try:
+        return p.is_file() and p.resolve().is_relative_to(real_root)
+    except OSError:
+        return False
+
+
 @dataclass
 class Vault:
     root: Path
@@ -116,6 +128,7 @@ class Vault:
         return (Path(root) / CONFIG_FILE).is_file()
 
     def iter_note_paths(self) -> Iterator[Path]:
+        real_root = self.root.resolve()
         for dirpath, dirnames, filenames in os.walk(self.root):
             dirnames[:] = sorted(
                 d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")
@@ -125,7 +138,9 @@ class Vault:
                 continue  # templates/prompts are not notes
             for fn in sorted(filenames):
                 if fn.endswith(".md") and (rel_dir != Path() or fn not in NON_NOTE_FILES):
-                    yield Path(dirpath) / fn
+                    p = Path(dirpath) / fn
+                    if _is_note_file(p, real_root):
+                        yield p
 
     def read_all(self) -> tuple[list[Note], list[NoteParseError]]:
         notes: list[Note] = []

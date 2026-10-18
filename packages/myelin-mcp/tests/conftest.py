@@ -15,6 +15,17 @@ def repo_root() -> Path:
     return REPO_ROOT
 
 
+@pytest.fixture(autouse=True)
+def _external_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ADR-0011: tests run as an EXTERNAL process unless they opt in with `local_session`."""
+    monkeypatch.delenv("MYELIN_LLM", raising=False)
+
+
+@pytest.fixture
+def local_session(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MYELIN_LLM", "local")
+
+
 @pytest.fixture
 def vault_root(tmp_path: Path) -> Path:
     dst = tmp_path / "basic"

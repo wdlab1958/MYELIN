@@ -26,6 +26,19 @@
             "statusMessage": "MYELIN guard: shell write check"
           }
         ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/guard_read.py"],
+            "timeout": 10,
+            "onFailure": "block",
+            "statusMessage": "MYELIN guard: confidential routing check"
+          }
+        ]
       }
     ]
   }

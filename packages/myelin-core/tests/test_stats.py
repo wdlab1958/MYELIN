@@ -38,3 +38,17 @@ def test_stats_counts_parse_errors(fixtures_dir: Path) -> None:
     v = Vault.open(fixtures_dir / "vaults/seeded-violations")
     st = compute_stats(v, date(2026, 10, 18))
     assert st.parse_errors == 2 and st.notes == 19
+
+
+def test_kpi_status_judgement() -> None:
+    from myelin_core.stats import TARGETS, kpi_status
+
+    assert kpi_status("ai_promotion_rate", None) is None
+    assert kpi_status("ai_promotion_rate", 0.5) == "ok"
+    assert kpi_status("ai_promotion_rate", 0.9) == "alert"  # too high = weak gate
+    assert kpi_status("ai_promotion_rate", 0.1) == "alert"
+    assert (
+        kpi_status("inbox_dwell_days", 7) == "ok" and kpi_status("inbox_dwell_days", 8) == "alert"
+    )
+    assert kpi_status("orphan_ratio", 0.2) == "alert" and kpi_status("verified_per_week", 5) == "ok"
+    assert all(kpi_status(k, 0) in ("ok", "alert") for k in TARGETS)

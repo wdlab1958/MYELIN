@@ -73,11 +73,14 @@ class ApplyBody(BaseModel):
 
 class PackBody(BaseModel):
     pack_yaml: str = Field(min_length=1)
+    # registry pack whose sidecar files are copied along ("개인 Pack 으로 복사")
+    copy_from: str | None = None
 
 
 class PublishBody(BaseModel):
     confirmed: bool = False  # the UI's '비식별 확인' checkbox
-    push: bool = False
+    push: bool = False  # git push -u origin publish/<id> (origin added from commons.remote)
+    pr: bool = False  # gh pr create (needs push; best effort — see service.commons_publish)
 
 
 class CustomDomain(BaseModel):
@@ -124,6 +127,13 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     async def _hub_error(_: Request, exc: HubError) -> JSONResponse:
         return JSONResponse({"detail": str(exc)}, status_code=exc.status)
 
+    @app.exception_handler(OSError)
+    async def _os_error(_: Request, exc: OSError) -> JSONResponse:
+        # read-only Vault, ENAMETOOLONG, disk errors … → a clean error with detail, never a bare 500
+        return JSONResponse(
+            {"detail": f"filesystem error: {type(exc).__name__}: {exc}"}, status_code=500
+        )
+
     def s() -> HubService:
         svc.index and svc.index.refresh()
         return svc
@@ -131,7 +141,13 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     # ---------------------------------------------------------------- reads
     @app.get("/api/health")
     def health() -> dict[str, Any]:
-        return {"ok": True, "version": __version__, "ready": svc.ready, "root": str(svc.root)}
+        return {
+            "ok": True,
+            "version": __version__,
+            "ready": svc.ready,
+            "error": svc.config_error,
+            "root": str(svc.root),
+        }
 
     @app.get("/api/vault")
     def vault() -> dict[str, Any]:
@@ -252,12 +268,12 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
 
     @app.put("/api/packs/{name}", dependencies=[Depends(require_user_click)])
     def save_pack(name: str, body: PackBody) -> dict[str, Any]:
-        return svc.save_pack(name, body.pack_yaml)
+        return svc.save_pack(name, body.pack_yaml, copy_from=body.copy_from)
 
     @app.post("/api/commons/publish/{ref:path}", dependencies=[Depends(require_user_click)])
     def commons_publish(ref: str, body: PublishBody | None = None) -> dict[str, Any]:
         b = body or PublishBody()
-        return svc.commons_publish(ref, confirmed=b.confirmed, push=b.push)
+        return svc.commons_publish(ref, confirmed=b.confirmed, push=b.push, pr=b.pr)
 
     @app.post("/api/onboarding", dependencies=[Depends(require_user_click)])
     def onboarding(body: OnboardBody) -> dict[str, Any]:
@@ -272,9 +288,12 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
         @app.get("/{full_path:path}", include_in_schema=False)
         def spa(full_path: str) -> FileResponse:
             # Threat model T09: only files resolving INSIDE dist are served; else SPA index.
-            candidate = (dist_root / full_path).resolve(strict=False)
-            if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
-                return FileResponse(candidate)
+            try:
+                candidate = (dist_root / full_path).resolve(strict=False)
+                if full_path and candidate.is_file() and candidate.is_relative_to(dist_root):
+                    return FileResponse(candidate)
+            except (OSError, ValueError):  # NUL byte, over-long path … → index
+                pass
             return FileResponse(dist_root / "index.html")
 
     return app

@@ -5,11 +5,16 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
   const [level, setLevel] = useState<number>(vault.level ?? 1);
   const [writeDraft, setWriteDraft] = useState<boolean>(vault.mcp?.write_draft ?? false);
   const [expose, setExpose] = useState<boolean>(vault.mcp?.expose_confidential ?? false);
+  const [commonsLocal, setCommonsLocal] = useState<string>(vault.commons?.local ?? "");
+  const [commonsRemote, setCommonsRemote] = useState<string>(vault.commons?.remote ?? "");
+  const [commonsEnabled, setCommonsEnabled] = useState<boolean>(vault.commons?.enabled ?? false);
+  const [metricsOptIn, setMetricsOptIn] = useState<boolean>(vault.commons?.metrics_opt_in ?? false);
   const [msg, setMsg] = useState<string>("");
   const save = async () => {
     try {
       const current = await (await fetch("/api/settings")).json();
-      const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose } };
+      const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
+      const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose }, commons };
       const r = await userPut<{ commit: string }>("/api/settings", next);
       setMsg(`저장됨 · commit ${r.commit.slice(0, 7)}`); onChanged();
     } catch (e) { setMsg(`저장 실패: ${String(e)}`); }
@@ -18,7 +23,7 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
     <>
       <h1 className="hub-h1">Settings</h1>
       <p className="hub-sub">myelin.yaml · 사람만 바꾼다. 저장은 git commit.</p>
-      <div className="hub-grid">
+      <div className="hub-grid hub-grid--settings">
         <article className="mx-card hub-stack">
           <strong>Owner</strong>
           <div>{vault.owner?.name} · {vault.owner?.team} · <span className="mx-mono">{vault.owner?.email}</span></div>
@@ -37,7 +42,17 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
           <label className="hub-row"><input type="checkbox" checked={expose} onChange={(e) => setExpose(e.target.checked)} /> confidential 노출 (로컬 LLM 세션에서만)</label>
           <div className="hub-row"><button type="button" className="mx-btn-primary" onClick={save} data-testid="settings-save">저장 (commit)</button>{msg && <span className={msg.startsWith("저장 실패") ? "mx-badge--blocked" : "mx-chip mx-chip--verified"} data-testid="settings-msg">{msg}</span>}</div>
         </article>
-        <article className="mx-card hub-stack">
+        <article className="mx-card hub-stack" data-testid="commons-card">
+          <strong>Commons — 공개는 사람이 한다 (ADR-0010)</strong>
+          <label className="hub-stack" style={{ gap: "var(--mx-space-1)" }}><span className="mx-muted">로컬 clone 경로 (commons.local) · <span className="mx-mono">myelin commons init &lt;path&gt;</span> 로 만든다</span>
+            <input className="mx-input" value={commonsLocal} onChange={(e) => setCommonsLocal(e.target.value)} placeholder="~/Commons" data-testid="commons-local" /></label>
+          <label className="hub-stack" style={{ gap: "var(--mx-space-1)" }}><span className="mx-muted">원격 저장소 (commons.remote, enabled 일 때 필수)</span>
+            <input className="mx-input" value={commonsRemote} onChange={(e) => setCommonsRemote(e.target.value)} placeholder="git@github.com:org/myelin-commons.git" data-testid="commons-remote" /></label>
+          <label className="hub-row"><input type="checkbox" checked={commonsEnabled} onChange={(e) => setCommonsEnabled(e.target.checked)} data-testid="commons-enabled" /> Commons 연동 켜기 (push 는 여전히 사람이 확인)</label>
+          <label className="hub-row"><input type="checkbox" checked={metricsOptIn} onChange={(e) => setMetricsOptIn(e.target.checked)} data-testid="metrics-opt-in" /> 익명 지표 공유 opt-in (§11.2 · owner 해시와 개수만, 실명·제목·본문 없음 — Commons 노트의 실명 author 와는 별개)</label>
+          <div className="mx-muted" data-testid="commons-status">{vault.commons?.configured ? "상태: 제안 가능" : `상태: ${vault.commons?.error ?? "미설정"}`}</div>
+        </article>
+        <article className="mx-card hub-stack hub-card--table">
           <strong>Skill 개방 (현재 Level {vault.level})</strong>
           <table className="mx-table"><thead><tr><th>skill</th><th>min</th><th>enabled</th><th>scope</th></tr></thead>
             <tbody>{vault.skills?.map((s) => <tr key={s.skill}><td className="mx-mono">{s.skill}</td><td>{s.min_level}</td><td>{s.enabled ? <span className="mx-chip mx-chip--verified">yes</span> : <span className="mx-chip mx-chip--unverified">no</span>}</td><td className="mx-mono mx-muted">{s.write_scope}</td></tr>)}</tbody></table>

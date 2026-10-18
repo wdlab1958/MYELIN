@@ -150,3 +150,30 @@ def test_schema_version_mismatch_rebuilds(vault_copy: Vault) -> None:
     idx2 = VaultIndex(vault_copy)
     assert idx2.count() == 35
     idx2.close()
+
+
+def test_locked_connection_is_safe_under_threads(tmp_path: Path) -> None:
+    """Cursors are consumed after the lock is released — rows must be materialised inside it."""
+    import threading
+
+    root = tmp_path / "v"
+    shutil.copytree(Path(__file__).resolve().parents[3] / "tests/fixtures/vaults/basic", root)
+    idx = open_index(Vault.open(root))
+    idx.refresh()
+    errors: list[BaseException] = []
+
+    def worker() -> None:
+        try:
+            for _ in range(30):
+                idx.search("평가", limit=5)
+                idx.stats(date(2026, 10, 18))
+                idx.refresh()
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker) for _ in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == [], errors
