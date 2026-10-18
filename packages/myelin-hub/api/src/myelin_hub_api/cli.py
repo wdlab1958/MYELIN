@@ -73,8 +73,12 @@ def main(argv: list[str] | None = None) -> int:
         HubService(vault, packs_dir), token=token, web_dir=args.web or default_web_dir()
     )
     url = f"http://{'[::1]' if args.host == '::1' else args.host}:{args.port}/?token={token}"
-    print(f"MYELIN Hub → {url}")
-    print(f"  Vault: {vault}\n  이 링크는 이번 실행에서만 유효합니다. 남과 공유하지 마세요.")
+    # flush: 파이프로 실행될 때(스크립트·서비스)도 링크가 바로 보이게
+    print(f"MYELIN Hub → {url}", flush=True)
+    print(
+        f"  Vault: {vault}\n  이 링크는 이번 실행에서만 유효합니다. 남과 공유하지 마세요.",
+        flush=True,
+    )
     if args.open:
         webbrowser.open(url)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

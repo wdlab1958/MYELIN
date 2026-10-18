@@ -16,6 +16,7 @@ import http.cookiejar
 import json
 import os
 import re
+import select
 import socket
 import subprocess
 import sys
@@ -105,6 +106,9 @@ def run(out: Path, keep: bool = False) -> dict[str, Any]:
     )
     try:
         assert hub.stdout is not None
+        ready, _, _ = select.select([hub.stdout], [], [], 60)
+        if not ready:
+            raise RuntimeError("Hub가 60초 안에 링크를 출력하지 않았습니다")
         line = hub.stdout.readline()
         match = re.search(r"\?token=([\w-]+)", line)
         if not match:
