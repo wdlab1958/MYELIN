@@ -37,7 +37,8 @@ so AI drafts never overwrite what you have verified.
 - `classification: confidential` 노트와 `40_IP/` 는 로컬 LLM으로만 처리하도록 라우팅합니다 (`myelin.yaml` 의 `llm.route`).
 - `myelin init` 은 **이 저장소(소스 폴더)나 다른 git 저장소 안에는 Vault를 만들지 않습니다** — fork에 개인 노트가 push되는 사고를 막기 위해서입니다.
 - `myelin doctor` 는 Vault가 공개 코드 호스팅(GitHub 등)을 원격으로 둔 git 안에 있으면 경고합니다. Vault를 git으로 백업한다면 **비공개 저장소**를 쓰세요.
-- Hub(P6)는 기본적으로 `localhost` 에서만 열리고, MCP 서버(P4)는 로컬 stdio로 동작합니다.
+- Hub는 `localhost` 에서만 열리고(다른 주소는 거부), MCP 서버는 로컬 stdio로 동작합니다.
+- Hub는 **버튼을 누를 때만** Vault에 씁니다. 승격·반려는 Vault의 로컬 git commit으로 남고, push는 하지 않습니다.
 
 ## Claude Code에서 쓰기
 
@@ -48,7 +49,17 @@ so AI drafts never overwrite what you have verified.
 Vault 폴더에서 Claude Code를 실행하고 `/myelin:ingest`, `/myelin:distill`, `/myelin:interview`, `/myelin:review` 등을 씁니다.
 Claude가 쓸 수 있는 곳은 Vault의 `myelin.yaml` `level` 이 정하고, Vault 안 Guard Hook이 실제로 막습니다 — [plugin/README.md](plugin/README.md).
 
-## 구성 (예정)
+## MYELIN Hub (웹)
+
+```bash
+uv sync
+(cd packages/myelin-hub/web && npm ci && npm run build)
+uv run myelin-hub --vault ~/MyVault --open     # http://127.0.0.1:8765
+```
+Vault가 없으면 온보딩 마법사가 뜹니다(`myelin init` 과 같은 로직). Claude가 `00_Inbox/ai-drafts` 에 남긴 초안은
+**Review Gate** 에서 원문을 확인한 뒤 사람이 verified 로 승격합니다 — [ADR-0008](docs/adr/0008-hub.md).
+
+## 구성
 
 | 경로 | 구성요소 | Phase |
 |---|---|---|

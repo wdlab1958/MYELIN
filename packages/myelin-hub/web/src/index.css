@@ -1,0 +1,14 @@
+/* MYELIN Hub — Emboss 토큰·컴포넌트 위에 Tailwind 레이아웃 유틸만 얹는다. 색 리터럴 금지 (lint). */
+@import "../../../../design/dist/tokens.css";
+@import "../../../../design/src/components.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background: var(--mx-surface);
+  color: var(--mx-ink);
+  font-family: var(--mx-font-sans);
+}

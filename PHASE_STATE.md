@@ -16,11 +16,11 @@ approved: "GO P6" (Brian, 2026-10-18 09:32)
 - [x] P6-T1 scripts/gate.py 에 P6 Gate 검사 추가
 - [x] P6-T2 Hub API (FastAPI, 127.0.0.1 바인딩, core·index 재사용) + ADR-0008
 - [x] P6-T3 API: stats, domains, inbox/drafts, promote/reject(→ git commit), packs
-- [ ] P6-T4 web: Vite + React + TS + Tailwind(Emboss preset) — 색은 토큰만 (lint)
-- [ ] P6-T5 화면: Dashboard, My Domains, Inbox/Review Gate, Domain Packs, Settings
-- [ ] P6-T6 온보딩 마법사 (CLI init 로직 재사용)
-- [ ] P6-T7 Playwright e2e: 온보딩 → 첫 노트 verified 승격, 승격 시 git commit
-- [ ] P6-T8 사용자 행위 없는 Vault 쓰기 0 검증, 화면별 스크린샷
+- [x] P6-T4 web: Vite + React + TS + Tailwind(Emboss preset) — 색은 토큰만 (lint)
+- [x] P6-T5 화면: Dashboard, My Domains, Inbox/Review Gate, Domain Packs, Settings
+- [x] P6-T6 온보딩 마법사 (CLI init 로직 재사용)
+- [x] P6-T7 Playwright e2e: 온보딩 → 첫 노트 verified 승격, 승격 시 git commit
+- [x] P6-T8 사용자 행위 없는 Vault 쓰기 0 검증, 화면별 스크린샷
 
 ## Blockers
 - (없음)

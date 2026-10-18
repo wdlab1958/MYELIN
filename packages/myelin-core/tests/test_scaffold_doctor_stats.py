@@ -125,6 +125,7 @@ def test_stats_on_violations() -> None:
     assert 0 < s.orphan_ratio < 0.2
     assert s.by_type["moc"] == 4
     assert s.as_dict()["notes"] == s.notes
+    assert 0 <= s.verified_notes <= s.notes
 
 
 def test_stats_empty_vault(tmp_path: Path) -> None:

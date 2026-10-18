@@ -25,6 +25,7 @@ from myelin_core.config import (
 )
 from myelin_core.doctor import run_doctor
 from myelin_core.errors import Issue, MyelinError, PackError, issues_from_validation
+from myelin_core.frontmatter import NoteType
 from myelin_core.gitops import Author
 from myelin_core.loader import CORE_PACK, LoadedPack
 from myelin_core.lock import load_lock
@@ -141,7 +142,11 @@ class HubService:
         rows = []
         for d_id in cfg.domains.all():
             locked = lock.domain(d_id)
-            mine = [n for n in notes if d_id in n.frontmatter.domain]
+            mine = [
+                n
+                for n in notes
+                if d_id in n.frontmatter.domain and n.frontmatter.type is not NoteType.MOC
+            ]
             rows.append(
                 {
                     "id": d_id,

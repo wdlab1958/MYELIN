@@ -26,6 +26,7 @@ class VaultStats:
     orphan_ratio: float = 0.0  # 목표 ≤ 10%
     cross_domain_ratio: float = 0.0  # verified 중 domain 2개 이상 (목표 ≥ 15%)
     verified_last_7d: int = 0
+    verified_notes: int = 0  # MOC 제외
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -80,6 +81,7 @@ def compute_stats(vault: Path, today: date | None = None) -> VaultStats:
     s.cross_domain_ratio = _ratio(
         sum(1 for n in verified if len(n.frontmatter.domain) >= 2), len(verified)
     )
+    s.verified_notes = len(verified)
     week_ago = today - timedelta(days=7)
     s.verified_last_7d = sum(1 for n in verified if n.frontmatter.created > week_ago)
     return s

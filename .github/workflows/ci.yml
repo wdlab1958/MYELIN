@@ -13,8 +13,18 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: packages/myelin-hub/web/package-lock.json
       - name: Install
         run: uv sync
+      - name: Hub web build
+        working-directory: packages/myelin-hub/web
+        run: npm ci --no-audit --no-fund && npm run build
+      - name: Playwright Chromium (Hub e2e)
+        run: uv run playwright install --with-deps chromium
       - name: Lint · Type · Test
         run: make check
       - name: Gate (current phase)

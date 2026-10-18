@@ -32,6 +32,7 @@
   color: var(--mx-ink);
   box-shadow: var(--mx-shadow-raised-sm);
   padding: var(--mx-space-2) var(--mx-space-4);
+  white-space: nowrap;
   cursor: pointer;
   transition: box-shadow var(--mx-motion-fast) var(--mx-motion-ease);
 }
@@ -145,6 +146,33 @@
 .mx-review-row__title { flex: 1; color: var(--mx-ink); }
 .mx-review-row__meta { color: var(--mx-muted); font-size: var(--mx-font-size-xs); }
 
+/* Myelinated — 승격 순간 Lime 링이 감긴다 (명세 §8.2) */
+.mx-myelinate { animation: mx-myelinate var(--mx-motion-slow) var(--mx-motion-ease) both; }
+@keyframes mx-myelinate {
+  from { box-shadow: var(--mx-shadow-raised), 0 0 0 0 var(--mx-glow-lime); }
+  to { box-shadow: var(--mx-shadow-raised), 0 0 0 4px var(--mx-lime), 0 0 36px var(--mx-glow-lime); }
+}
+
+/* 본문 미리보기 — 렌더링하지 않은 원문 (Inset well) */
+.mx-pre {
+  font-family: var(--mx-font-mono);
+  font-size: var(--mx-font-size-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--mx-surface-well);
+  color: var(--mx-ink);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius-control);
+  box-shadow: var(--mx-shadow-inset-sm);
+  padding: var(--mx-space-4);
+}
+
+/* 체크박스·라디오 — 브라우저 기본 컨트롤에 Violet 강조 */
+.mx-check { accent-color: var(--mx-violet); width: 18px; height: 18px; }
+
+.mx-btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .mx-btn { transition: none; }
+  .mx-myelinate { animation: none; box-shadow: var(--mx-shadow-raised), 0 0 0 4px var(--mx-lime); }
 }

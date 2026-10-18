@@ -14,3 +14,4 @@ node_modules/
 .DS_Store
 # MYELIN runtime (Vault 외부 색인·로그)
 .myelin/
+*.tsbuildinfo
