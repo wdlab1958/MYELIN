@@ -1,11 +1,10 @@
 # PHASE_STATE
 
-current_phase: P3
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P4
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P2 완료. P3 Gate 통과(`make gate P=3`), 보고서 `docs/reports/P3.md`, 태그 `phase-P3`.
-> **다음 Phase(P4)는 Brian의 "GO P4" 승인 후에만 착수한다.** 승인 시 current_phase를 P4, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> P0~P3 완료(`phase-P0`~`phase-P3`). 2026-10-18 Brian "GO P4" 승인으로 P4 착수.
 
 ## Done
 ### P0
@@ -56,7 +55,7 @@ last_updated: 2026-10-18
 - [x] P3-T9 /link SKILL.md (_patches 제안 형식 정의) · /compose · /review · /ip-scan SKILL.md
 - [x] P3-T10 Level 0에서 쓰기 Skill 비활성 확인 테스트 · make gate P=3 · reports/P3.md · tag phase-P3
 
-## Next (P4 — 승인 대기)
+## Next
 - [ ] P4-T1 myelin-core 색인기 — SQLite FTS5 (.myelin/index.db), frontmatter 컬럼, 증분 갱신(mtime/hash)
 - [ ] P4-T2 stdio MCP 서버 골격 (MCP Python SDK) + Vault 루트 경계 검사 유틸
 - [ ] P4-T3 search_notes (FTS + domain/status/type 필터)
