@@ -22,7 +22,6 @@ gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8
 - [ ] 로컬에서 태그 push (phase-P0 … , v1.0.0)
 
 ## Blockers
-- **원격 main 교체됨 (10:39, 다른 세션)** — 이 이력은 `opus-v1.0-2026-10-18` 브랜치. main 결정은 Brian (docs/reports/compare-main-2026-10-18.md). 공개 main·fable-v1.0 중립화 완료(7029cec, CI green). 원격 태그 phase-P0~P8·v1.0.0 은 중립화 이전 commit을 가리킴
 - (P7 완료 조건) §9.1 정책 3종 합의 · 파일럿 5명+ 실측 `docs/pilot/results.yaml` · `docs/pilot/feedback.md` (status: final) · Org Pack 2종 챔피언 확정 — 사람
 
 ## Decisions (→ ADR)
@@ -37,6 +36,7 @@ gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8
 - ADR-0009: Commons(로컬 clone 브랜치 제안 → 별도 확인 push), 공개 자격 차단·비식별 자동 차단·사람 확인 5항목, opt-in 익명 지표(파일만)
 
 ## Backlog (Phase 범위 밖)
+- Claude Desktop 구현에만 있던 기능 검토·이식: Hub `_patches` 적용, pack-propose, metrics aggregate, install.sh 의 플러그인·MCP·테마 자동 설정 (docs/reports/compare-main-2026-10-18.md §4)
 - phase-P0, phase-P1 태그 push — 세션 git 경로에서 태그 push 차단. Brian 로컬에서 push
 - 조직별 Org Pack(예: 소속 회사용)은 별도 private 저장소에서 관리 (공개 저장소에는 Example Org만)
 - Hub에서 Guard 차단 이벤트 표시 — Guard 이벤트 기록(로그) 설계 선행

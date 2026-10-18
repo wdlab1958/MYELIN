@@ -56,3 +56,14 @@
 
 **중립화:** 공개 `main` 과 `fable-v1.0` 의 조직 특정 Pack·문서는 2026-10-18 중립화했다 (7029cec).
 - 이전 commit 이력에는 계속 남는다. 민감하다면 저장소 이력 정리(force push, GitHub 지원 요청)를 따로 검토해야 한다.
+
+## 6. 결정 (2026-10-18 11:27, Brian)
+"최종적으로 Claude Code에서 커밋과 푸시가 가능하게" → **Claude Code 구현을 `main` 으로**.
+
+방식은 **이력을 지우지 않는 merge(`-s ours --allow-unrelated-histories`)** 다.
+- `main` 의 파일 내용은 이 세션(Claude Code) 구현이 된다.
+- Claude Desktop 이력(78 커밋, 중립화 commit 포함)은 merge의 두 번째 부모로 `main` 안에 그대로 남는다.
+- `fable-v1.0` 브랜치와 원격 태그도 그대로 둔다.
+- force push 없이 fast-forward로 올라가므로, 이후 Claude Code에서 평소처럼 commit·push 할 수 있다.
+
+Desktop에만 있던 기능(4절)은 필요해지면 그 이력에서 골라 옮긴다 (Backlog).
