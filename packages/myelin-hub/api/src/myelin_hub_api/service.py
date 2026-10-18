@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from myelin_core import gitops
+from myelin_core import commons, gitops
 from myelin_core.config import (
     CONFIG_FILE,
     LEVEL_DESCRIPTIONS,
@@ -252,6 +252,8 @@ class HubService:
             "level": cfg.level,
             "levels": {str(k): v for k, v in LEVEL_DESCRIPTIONS.items()},
             "mcp_write_drafts": cfg.mcp.write_drafts,
+            "metrics_opt_in": cfg.metrics.opt_in,
+            "commons": cfg.commons.model_dump(),
             "llm": cfg.llm.model_dump(),
             "git": gitops.is_repo(self.vault),
             "git_available": gitops.git_available(),
@@ -281,7 +283,54 @@ class HubService:
             "sample": [f for f in files if not f.endswith(".gitkeep")][:40],
         }
 
+    def commons(self) -> dict[str, Any]:
+        """Commons 상태·Registry·제안 목록·공개 후보. 읽기만 한다."""
+        cfg = self._cfg()
+        out: dict[str, Any] = {
+            "enabled": cfg.commons.enabled,
+            "path": cfg.commons.path,
+            "ok": False,
+            "issues": [],
+            "org": None,
+            "packs": [],
+            "proposals": [],
+            "candidates": commons.candidates(self.vault),
+        }
+        if not cfg.commons.enabled:
+            return out
+        try:
+            repo = commons.commons_dir(self.vault, cfg)
+            reg = commons.load_registry(repo)
+        except MyelinError as err:
+            out["issues"] = [asdict(i) for i in err.issues]
+            return out
+        out.update(
+            ok=True,
+            org=reg.org,
+            packs=[p.model_dump() for p in reg.packs],
+            proposals=commons.proposals(repo),
+        )
+        return out
+
+    def commons_check(self, rel: str) -> dict[str, Any]:
+        self._cfg()
+        return commons.check_note(self.vault, rel, self.today()).as_dict()
+
     # ── 쓰기 (사람의 클릭만) ────────────────────────────────────────────
+    def do_commons_propose(self, rel: str, note_id: str, confirmed: list[str]) -> dict[str, Any]:
+        """Commons 저장소에 제안 브랜치를 만든다. Vault는 바뀌지 않는다."""
+        with self._lock:
+            cfg = self._cfg()
+            return commons.propose(
+                self.vault, rel, note_id, confirmed, self._author(cfg), self.today()
+            )
+
+    def do_commons_push(self, branch: str) -> dict[str, Any]:
+        """두 번째 확인: 제안 브랜치를 조직 원격으로 보낸다 (노트가 밖으로 나가는 유일한 경로)."""
+        with self._lock:
+            self._cfg()
+            return {"branch": branch, "output": commons.push(self.vault, branch)}
+
     def do_onboarding(self, req: InitRequest, start_git: bool) -> dict[str, Any]:
         with self._lock:
             prepared = prepare_init(self.vault, req, self._packs(), self.today())
@@ -323,7 +372,10 @@ class HubService:
             return self._do_review(plan_reject(self.vault, rel, note_id, self.today()))
 
     def do_update_settings(
-        self, level: int | None = None, write_drafts: bool | None = None
+        self,
+        level: int | None = None,
+        write_drafts: bool | None = None,
+        metrics_opt_in: bool | None = None,
     ) -> dict[str, Any]:
         """Level·MCP 초안 쓰기만 바꾼다. LLM 라우팅(기밀 경계)은 Hub에서 바꾸지 않는다."""
         with self._lock:
@@ -336,6 +388,10 @@ class HubService:
                     if "mcp" not in data or data["mcp"] is None:
                         data["mcp"] = {}
                     data["mcp"]["write_drafts"] = write_drafts
+                if metrics_opt_in is not None:
+                    if "metrics" not in data or data["metrics"] is None:
+                        data["metrics"] = {}
+                    data["metrics"]["opt_in"] = metrics_opt_in
 
             _, text = update_config(self.vault, mutate)
             path = self.vault / CONFIG_FILE

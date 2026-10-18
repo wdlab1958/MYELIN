@@ -24,6 +24,8 @@ WRITE_ROUTES = {
     "/api/settings",
     "/api/git/init",
     "/api/domains/add",
+    "/api/commons/propose",
+    "/api/commons/push",
 }
 PURE_POSTS = {"/api/onboarding/preview", "/api/packs/validate"}
 
@@ -36,6 +38,7 @@ def _get_paths(app_client: TestClient) -> list[str]:
                 route.path.replace("{name}", "brian.physical-ai")
                 .replace("{rest:path}", "anything")
                 .replace("/api/note", "/api/note?path=00_Inbox/ai-drafts/x.md")
+                .replace("/api/commons/check", "/api/commons/check?path=30_Resources/x.md")
             )
     return paths
 

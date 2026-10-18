@@ -14,10 +14,13 @@ from typing import Annotated, Any, NoReturn
 import typer
 
 from myelin_cli import __version__
-from myelin_core.config import CONFIG_FILE
+from myelin_core.commons import check_note, commons_dir, init_commons
+from myelin_core.config import CONFIG_FILE, update_config
 from myelin_core.doctor import run_doctor
 from myelin_core.errors import Issue, MyelinError
+from myelin_core.gitops import Author
 from myelin_core.loader import CORE_PACK, LoadedPack, discover_packs, resolve
+from myelin_core.metrics import anonymous_metrics
 from myelin_core.onboarding import InitRequest, find_packs_dir, prepare_add_domain, prepare_init
 from myelin_core.safety import init_target_issues
 from myelin_core.scaffold import apply_plan, domain_index
@@ -246,6 +249,94 @@ def stats_cmd(
         return
     for key, value in s.items():
         typer.echo(f"{key:<22} {value}")
+
+
+# ── commons ──────────────────────────────────────────────────────────────
+commons_app = typer.Typer(help="Team Commons — 조직 내부 공유 (opt-in)", no_args_is_help=True)
+app.add_typer(commons_app, name="commons")
+
+
+@commons_app.command("init")
+def commons_init_cmd(
+    target: Annotated[Path, typer.Argument(help="새 Commons 저장소 폴더 (Vault 밖)")],
+    org: Annotated[str, typer.Option(help="조직 이름")],
+    name: Annotated[str, typer.Option(help="첫 commit 작성자")] = "MYELIN",
+    email: Annotated[str, typer.Option(help="작성자 이메일")] = "myelin@localhost",
+) -> None:
+    """Commons 저장소 골격(notes · registry · 비식별 정책 · PR 템플릿)을 만든다."""
+    try:
+        sha = init_commons(target, org, Author(name, email))
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    typer.secho(f"✓ Commons를 만들었습니다 ({sha[:7]}).", fg=typer.colors.GREEN)
+    typer.echo(
+        "조직 내부 git 서버에 비공개 저장소로 올리고, 구성원은 clone 후 `myelin commons link`."
+    )
+
+
+@commons_app.command("link")
+def commons_link_cmd(
+    vault: VaultArg,
+    path: Annotated[Path, typer.Argument(help="Commons 저장소의 로컬 clone")],
+) -> None:
+    """이 Vault에서 Commons 공개를 켠다 (myelin.yaml commons.enabled/path)."""
+    target = str(path.expanduser().absolute())
+
+    def mutate(data: Any) -> None:
+        if data.get("commons") is None:
+            data["commons"] = {}
+        data["commons"]["enabled"] = True
+        data["commons"]["path"] = target
+
+    try:
+        cfg, text = update_config(vault, mutate)
+        commons_dir(vault, cfg)
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    (vault / CONFIG_FILE).write_text(text, encoding="utf-8")
+    typer.secho(f"✓ Commons 연결: {target}", fg=typer.colors.GREEN)
+
+
+@commons_app.command("check")
+def commons_check_cmd(
+    vault: VaultArg,
+    note: Annotated[str, typer.Argument(help="Vault 기준 노트 경로")],
+    today: TodayOpt = None,
+) -> None:
+    """공개 자격과 비식별 검사 결과를 보여 준다 (아무것도 쓰지 않는다)."""
+    try:
+        chk = check_note(vault, note, _today(today))
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    for issue in chk.blocks:
+        typer.secho(f"✗ {issue}", fg=typer.colors.RED)
+    for f in chk.deid.findings:
+        typer.secho(f"✗ 비식별 {f.issue()}", fg=typer.colors.RED)
+    if not chk.ok:
+        raise typer.Exit(1)
+    typer.secho(
+        f"✓ 공개 가능 → {chk.target} (Hub의 'Commons 제안'에서 확인 후 제안)", fg=typer.colors.GREEN
+    )
+
+
+# ── metrics ──────────────────────────────────────────────────────────────
+@app.command("metrics")
+def metrics_cmd(
+    vault: VaultArg,
+    out: Annotated[Path | None, typer.Option("--out", help="저장할 파일 (기본: 화면 출력)")] = None,
+    today: TodayOpt = None,
+) -> None:
+    """opt-in 익명 지표 (네트워크 전송 없음 — 파일을 직접 제출)."""
+    try:
+        data = anonymous_metrics(vault, _today(today))
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+    if out is None:
+        typer.echo(text, nl=False)
+        return
+    out.write_text(text, encoding="utf-8")
+    typer.secho(f"✓ {out} — 내용을 확인한 뒤 직접 제출하세요.", fg=typer.colors.GREEN)
 
 
 def main() -> None:

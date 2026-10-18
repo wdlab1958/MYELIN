@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { get } from "./api";
 import { ErrorBox } from "./components/ui";
+import Commons from "./screens/Commons";
 import Dashboard from "./screens/Dashboard";
 import Domains from "./screens/Domains";
 import Onboarding from "./screens/Onboarding";
@@ -14,6 +15,7 @@ const SCREENS = [
   { key: "domains", label: "My Domains" },
   { key: "review", label: "Review Gate" },
   { key: "packs", label: "Domain Packs" },
+  { key: "commons", label: "Team Commons" },
   { key: "settings", label: "Settings" },
 ] as const;
 type ScreenKey = (typeof SCREENS)[number]["key"];
@@ -68,6 +70,7 @@ export default function App() {
           {screen === "domains" && <Domains />}
           {screen === "review" && <Review />}
           {screen === "packs" && <Packs />}
+          {screen === "commons" && <Commons />}
           {screen === "settings" && <Settings onChange={refresh} />}
         </main>
       </div>

@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from myelin_core.commons import CommonsError
 from myelin_core.config import ConfigError
 from myelin_core.errors import MyelinError, PackError
 from myelin_core.gitops import GitError
@@ -44,6 +45,7 @@ STATUS: tuple[tuple[type[MyelinError], int], ...] = (
     (OnboardingError, 400),
     (ConfigError, 422),
     (PackError, 404),
+    (CommonsError, 409),
 )
 
 
@@ -84,6 +86,18 @@ class ReviewBody(_Body):
 class SettingsBody(_Body):
     level: Annotated[int | None, Field(ge=0, le=3)] = None
     mcp_write_drafts: bool | None = None
+    metrics_opt_in: bool | None = None
+
+
+class ProposeBody(_Body):
+    path: Annotated[str, Field(max_length=512)]
+    id: Annotated[str, Field(max_length=128)]
+    confirmed: Annotated[list[str], Field(max_length=16)] = []
+
+
+class PushBody(_Body):
+    branch: Annotated[str, Field(max_length=200)]
+    confirm: bool = False
 
 
 class AddDomainBody(_Body):
@@ -187,6 +201,14 @@ def create_app(
     def settings() -> dict[str, Any]:
         return svc.settings()
 
+    @app.get("/api/commons")
+    def commons_state() -> dict[str, Any]:
+        return svc.commons()
+
+    @app.get("/api/commons/check")
+    def commons_check(path: Annotated[str, Query(max_length=512)]) -> dict[str, Any]:
+        return svc.commons_check(path)
+
     @app.get("/api/onboarding")
     def onboarding() -> dict[str, Any]:
         return svc.onboarding()
@@ -215,7 +237,21 @@ def create_app(
 
     @app.post("/api/settings")
     def update_settings(body: SettingsBody) -> dict[str, Any]:
-        return svc.do_update_settings(level=body.level, write_drafts=body.mcp_write_drafts)
+        return svc.do_update_settings(
+            level=body.level,
+            write_drafts=body.mcp_write_drafts,
+            metrics_opt_in=body.metrics_opt_in,
+        )
+
+    @app.post("/api/commons/propose")
+    def commons_propose(body: ProposeBody) -> dict[str, Any]:
+        return svc.do_commons_propose(body.path, body.id, body.confirmed)
+
+    @app.post("/api/commons/push")
+    def commons_push(body: PushBody) -> Any:
+        if not body.confirm:
+            return _deny(400, "push 확인이 없습니다 — 노트가 조직 원격으로 나갑니다")
+        return svc.do_commons_push(body.branch)
 
     @app.post("/api/git/init")
     def git_init(_: Empty) -> dict[str, Any]:

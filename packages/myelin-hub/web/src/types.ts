@@ -105,6 +105,8 @@ export type Settings = {
   level: number;
   levels: Record<string, string>;
   mcp_write_drafts: boolean;
+  metrics_opt_in: boolean;
+  commons: { enabled: boolean; remote: string | null; path: string | null };
   llm: { default: string; route: Record<string, string> };
   git: boolean;
   git_available: boolean;
@@ -134,3 +136,48 @@ export type OnboardingBody = {
 };
 
 export type Preview = { files: number; domains: string[]; packs: string[]; level: number; sample: string[] };
+
+export type CommonsCandidate = {
+  path: string;
+  id: string;
+  title: string;
+  domain: string[];
+  classification: string;
+  blocks: Issue[];
+};
+
+export type Proposal = { branch: string; subject: string; pushed: "yes" | "no" };
+
+export type RegistryPack = {
+  name: string;
+  version: string;
+  source: string;
+  status: string;
+  champions: string[];
+  domains: string[];
+  description: string;
+};
+
+export type CommonsState = {
+  enabled: boolean;
+  path: string | null;
+  ok: boolean;
+  issues: Issue[];
+  org: string | null;
+  packs: RegistryPack[];
+  proposals: Proposal[];
+  candidates: CommonsCandidate[];
+};
+
+export type CommonsCheck = {
+  path: string;
+  id: string;
+  title: string;
+  target: string;
+  branch: string;
+  content: string;
+  ok: boolean;
+  blocks: Issue[];
+  deid: Issue[];
+  checklist: Record<string, string>;
+};

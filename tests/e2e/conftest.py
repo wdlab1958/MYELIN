@@ -2,7 +2,7 @@
 
 빌드(`packages/myelin-hub/web/dist`)나 브라우저가 없으면 skip 한다.
 Gate는 MYELIN_E2E_REQUIRED=1 로 실행해 skip 대신 실패하게 한다.
-스크린샷은 MYELIN_SHOTS=1 일 때 docs/reports/P6/ 에 저장한다 (평소에는 임시 폴더).
+스크린샷은 MYELIN_SHOTS=1(P6) 또는 MYELIN_SHOTS=P7 일 때 docs/reports/<Phase>/ 에 저장한다.
 """
 
 from __future__ import annotations
@@ -20,7 +20,6 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "packages/myelin-hub/web/dist"
-SHOTS = ROOT / "docs/reports/P6"
 
 
 def _unavailable(reason: str) -> None:
@@ -76,7 +75,9 @@ def hub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Hub]:
         if time.monotonic() > deadline:
             pytest.fail("Hub 서버가 시작되지 않았습니다")
         time.sleep(0.05)
-    shots = SHOTS if os.environ.get("MYELIN_SHOTS") == "1" else tmp_path / "shots"
+    flag = os.environ.get("MYELIN_SHOTS", "")
+    phase = flag if flag.startswith("P") else "P6"
+    shots = ROOT / "docs/reports" / phase if flag else tmp_path / "shots"
     shots.mkdir(parents=True, exist_ok=True)
     try:
         yield Hub(f"http://127.0.0.1:{port}", vault, shots)

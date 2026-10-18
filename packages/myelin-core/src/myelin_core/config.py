@@ -84,8 +84,17 @@ class LlmRouting(_Strict):
 
 
 class Commons(_Strict):
+    """팀 공유 (ADR-0009). 기본 off. path = Commons 저장소의 로컬 clone (Vault 밖)."""
+
     enabled: bool = False
     remote: str | None = None
+    path: str | None = None
+
+
+class Metrics(_Strict):
+    """opt-in 익명 집계 (ADR-0009). 켜도 파일로만 내보낸다 — 네트워크 전송 없음."""
+
+    opt_in: bool = False
 
 
 class McpSettings(_Strict):
@@ -104,6 +113,7 @@ class VaultConfig(_Strict):
     llm: LlmRouting = Field(default_factory=LlmRouting)
     commons: Commons = Field(default_factory=Commons)
     mcp: McpSettings = Field(default_factory=McpSettings)
+    metrics: Metrics = Field(default_factory=Metrics)
 
     @field_validator("packs")
     @classmethod

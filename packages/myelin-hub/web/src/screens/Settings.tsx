@@ -7,6 +7,7 @@ export default function Settings(props: { onChange: () => void }) {
   const { data, error, reload } = useLoad<Data>("/api/settings");
   const [level, setLevel] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<boolean | null>(null);
+  const [metrics, setMetrics] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<unknown>(null);
@@ -15,12 +16,13 @@ export default function Settings(props: { onChange: () => void }) {
     if (data) {
       setLevel(data.level);
       setDrafts(data.mcp_write_drafts);
+      setMetrics(data.metrics_opt_in);
     }
   }, [data]);
 
   if (error) return <ErrorBox error={error} />;
-  if (!data || level === null || drafts === null) return <Muted>불러오는 중…</Muted>;
-  const dirty = level !== data.level || drafts !== data.mcp_write_drafts;
+  if (!data || level === null || drafts === null || metrics === null) return <Muted>불러오는 중…</Muted>;
+  const dirty = level !== data.level || drafts !== data.mcp_write_drafts || metrics !== data.metrics_opt_in;
 
   async function run(fn: () => Promise<string>) {
     setBusy(true);
@@ -39,7 +41,7 @@ export default function Settings(props: { onChange: () => void }) {
 
   const save = () =>
     run(async () => {
-      const res = await act<Data>("/api/settings", { level, mcp_write_drafts: drafts });
+      const res = await act<Data>("/api/settings", { level, mcp_write_drafts: drafts, metrics_opt_in: metrics });
       return res.commit ? `저장했습니다 · commit ${res.commit.slice(0, 7)}` : "저장했습니다";
     });
   const startGit = () =>
@@ -80,6 +82,22 @@ export default function Settings(props: { onChange: () => void }) {
           />
           <span>
             MCP <code>write_draft</code> 허용 <span className="text-sm text-mx-muted">— ai-drafts 에만 씁니다</span>
+          </span>
+        </label>
+        <label className="flex gap-mx-3 items-start mt-mx-3">
+          <input
+            type="checkbox"
+            className="mx-check mt-mx-1"
+            checked={metrics}
+            onChange={(e) => setMetrics(e.target.checked)}
+            data-testid="metrics-opt-in"
+          />
+          <span>
+            익명 지표 수집 동의 (opt-in){" "}
+            <span className="block text-sm text-mx-muted">
+              구간으로 뭉갠 숫자만, 파일로만 만듭니다 — <code>myelin metrics --out</code> 으로 내용을 확인한 뒤 직접 제출.
+              네트워크 전송 없음.
+            </span>
           </span>
         </label>
         <div className="flex gap-mx-3 items-center mt-mx-5">

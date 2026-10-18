@@ -2,11 +2,24 @@
   "$defs": {
     "Commons": {
       "additionalProperties": false,
+      "description": "팀 공유 (ADR-0009). 기본 off. path = Commons 저장소의 로컬 clone (Vault 밖).",
       "properties": {
         "enabled": {
           "default": false,
           "title": "Enabled",
           "type": "boolean"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
         },
         "remote": {
           "anyOf": [
@@ -62,6 +75,19 @@
         }
       },
       "title": "McpSettings",
+      "type": "object"
+    },
+    "Metrics": {
+      "additionalProperties": false,
+      "description": "opt-in 익명 집계 (ADR-0009). 켜도 파일로만 내보낸다 — 네트워크 전송 없음.",
+      "properties": {
+        "opt_in": {
+          "default": false,
+          "title": "Opt In",
+          "type": "boolean"
+        }
+      },
+      "title": "Metrics",
       "type": "object"
     },
     "Owner": {
@@ -186,6 +212,9 @@
     },
     "mcp": {
       "$ref": "#/$defs/McpSettings"
+    },
+    "metrics": {
+      "$ref": "#/$defs/Metrics"
     },
     "myelin": {
       "const": 1,

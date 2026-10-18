@@ -16,9 +16,9 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 ## Next (P7)
 - 선행 조건(사람): 명세 §9.1 정책 3종 합의 — **미확인**. 가장 보수적인 기본값으로 구현 (Commons 기본 off, 공개마다 사람 확인, 40_IP·confidential 공개 불가)
 - [x] P7-T1 scripts/gate.py 에 P7 Gate 검사 추가
-- [ ] P7-T2 Commons Git 구조 · Pack Registry (조직 Pack은 별도 private 저장소)
-- [ ] P7-T3 publish 흐름: verified + share:true + classification ≤ internal → Commons PR (Hub "Commons 제안")
-- [ ] P7-T4 비식별 체크리스트 (고객명·IP·기밀) — 자동 검사 + 사람 확인
+- [x] P7-T2 Commons Git 구조 · Pack Registry (조직 Pack은 별도 private 저장소)
+- [x] P7-T3 publish 흐름: verified + share:true + classification ≤ internal → Commons PR (Hub "Commons 제안")
+- [x] P7-T4 비식별 체크리스트 (고객명·IP·기밀) — 자동 검사 + 사람 확인
 - [ ] P7-T5 Org Pack 2종 확정 (챔피언 협업)
 - [ ] P7-T6 opt-in 익명 지표 수집
 - [ ] P7-T7 파일럿 가이드 · 60분 워크숍 자료
@@ -35,6 +35,7 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 - ADR-0006: MCP 서버 — SDK 2.x stdio, trigram 색인, 보호 노트 색인 제외, write_draft opt-in
 - ADR-0007: Emboss 토큰 단일 원천, 명세 색 4건 대비 조정, 가드레일을 검사(contrast·lint)로
 - ADR-0008: Hub localhost 전용·사용자 행위 없는 쓰기 0, Review Gate는 status·reviewed만 변경 + git commit, llm.route는 Hub에서 변경 불가
+- ADR-0009: Commons(로컬 clone 브랜치 제안 → 별도 확인 push), 공개 자격 차단·비식별 자동 차단·사람 확인 5항목, opt-in 익명 지표(파일만)
 
 ## Backlog (Phase 범위 밖)
 - phase-P0, phase-P1 태그 push — 세션 git 경로에서 태그 push 차단. Brian 로컬에서 push
