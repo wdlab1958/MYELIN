@@ -19,7 +19,7 @@ Claude Desktop이나 Claude Code가 **내 Vault를 검색**할 수 있게 해 �
 - 색인 파일은 Vault의 `.myelin/index.db` — `.gitignore` 대상이며 내 PC에만 있습니다.
 - 네트워크 포트를 열지 않습니다 (stdio 전용).
 
-## 설치 (현재: 소스 체크아웃 기준 — 패키지 배포는 P8)
+## 설치
 ```bash
 git clone https://github.com/wdlab1958/MYELIN.git ~/src/MYELIN
 cd ~/src/MYELIN && uv sync
