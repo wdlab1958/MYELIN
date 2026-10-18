@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MYELIN Emboss — Component Gallery</title>
+<link rel="stylesheet" href="../dist/emboss.css">
+<style>
+  /* Gallery layout only — every color comes from emboss.css tokens. */
+  body { margin: 0; }
+  .g-page { max-width: 1200px; margin: 0 auto; padding: var(--mx-space-6) var(--mx-space-4) var(--mx-space-7); }
+  .g-header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--mx-space-4); margin-bottom: var(--mx-space-6); }
+  .g-header h1 { margin: 0; font-size: var(--mx-font-size-xl); letter-spacing: -0.01em; }
+  .g-section { margin-top: var(--mx-space-7); }
+  .g-section > h2 { font-size: var(--mx-font-size-lg); margin: 0 0 var(--mx-space-2); }
+  .g-section > p { margin: 0 0 var(--mx-space-5); color: var(--mx-muted); font-size: var(--mx-font-size-sm); }
+  .g-grid { display: grid; gap: var(--mx-space-5); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .g-row { display: flex; flex-wrap: wrap; gap: var(--mx-space-4); align-items: center; }
+  .g-swatch { display: grid; gap: var(--mx-space-2); font-size: var(--mx-font-size-xs); }
+  .g-swatch i { display: block; height: 48px; border-radius: var(--mx-radius-control); border: 1px solid var(--mx-border); }
+  .g-shell { display: grid; grid-template-columns: 220px 1fr; gap: var(--mx-space-5); }
+  .g-tokens { font-family: var(--mx-font-mono); font-size: var(--mx-font-size-xs); color: var(--mx-muted); }
+  .g-stack { display: grid; gap: var(--mx-space-3); }
+</style>
+</head>
+<body class="mx">
+<main class="g-page">
+  <header class="g-header">
+    <div>
+      <h1>MYELIN Emboss</h1>
+      <div class="mx-muted">Component Gallery · tokens v1.0.0 · 표면은 조용히, 신호는 선명하게</div>
+    </div>
+    <span class="mx-chip mx-chip--verified">verified</span>
+  </header>
+
+  <section class="g-section" aria-labelledby="h-colors">
+    <h2 id="h-colors">1. 토큰 — 색</h2>
+    <p>surface 는 배경이자 카드 색. 네온은 채움·glow·링 전용, 그 위 텍스트는 ink.</p>
+    <div class="g-grid">
+      <div class="g-swatch"><i style="background: var(--mx-surface)"></i><span class="g-tokens">--mx-surface</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-surface-2)"></i><span class="g-tokens">--mx-surface-2</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-ink)"></i><span class="g-tokens">--mx-ink</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-muted)"></i><span class="g-tokens">--mx-muted (ADR-0008)</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-violet-600)"></i><span class="g-tokens">--mx-violet-600</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-violet-50)"></i><span class="g-tokens">--mx-violet-50</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-neon-lime)"></i><span class="g-tokens">--mx-neon-lime · verified</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-neon-cyan)"></i><span class="g-tokens">--mx-neon-cyan · ai-draft</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-neon-magenta)"></i><span class="g-tokens">--mx-neon-magenta · blocked</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-lime-ink)"></i><span class="g-tokens">--mx-lime-ink (text)</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-cyan-ink)"></i><span class="g-tokens">--mx-cyan-ink (text)</span></div>
+      <div class="g-swatch"><i style="background: var(--mx-magenta-ink)"></i><span class="g-tokens">--mx-magenta-ink (text)</span></div>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-surfaces">
+    <h2 id="h-surfaces">2. Card · KPI Tile (Raised)</h2>
+    <p>숫자는 상태 색의 어두운 변형, 라벨은 muted.</p>
+    <div class="g-grid">
+      <article class="mx-card mx-kpi"><div class="mx-kpi__value mx-kpi__value--verified">19</div><div class="mx-kpi__label">verified 노트</div></article>
+      <article class="mx-card mx-kpi"><div class="mx-kpi__value mx-kpi__value--ai">7</div><div class="mx-kpi__label">ai-drafts 대기</div></article>
+      <article class="mx-card mx-kpi"><div class="mx-kpi__value">0.44</div><div class="mx-kpi__label">AI 초안 승격률 · 목표 0.40~0.70</div></article>
+      <article class="mx-card mx-kpi"><div class="mx-kpi__value mx-kpi__value--blocked">2</div><div class="mx-kpi__label">Guard 차단 (이번 주)</div></article>
+      <article class="mx-card mx-glow--ai"><span class="mx-chip mx-chip--ai">ai-draft</span><h3 style="margin: var(--mx-space-3) 0 var(--mx-space-2)">Lit - 양자화 서베이</h3><p class="mx-muted" style="margin:0">origin: claude · D2 · 2026-10-16</p></article>
+      <article class="mx-card mx-ring--verified is-myelinating"><span class="mx-chip mx-chip--verified">verified</span><h3 style="margin: var(--mx-space-3) 0 var(--mx-space-2)">WCET 예산은 측정값의 1.5배로 잡는다</h3><p class="mx-muted" style="margin:0">myelinated · D2, D3 · reviewed 2026-09-21</p></article>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-controls">
+    <h2 id="h-controls">3. Buttons · Input · Nav</h2>
+    <p>Primary 는 화면당 1개. Secondary 는 Raised → 눌리면 Inset. 입력창은 Inset + 1px 경계선 + Focus ring.</p>
+    <div class="g-shell">
+      <nav class="mx-card mx-nav" aria-label="예시 내비게이션" style="padding: var(--mx-space-4)">
+        <a class="mx-nav-item" href="#h-surfaces">Dashboard</a>
+        <a class="mx-nav-item is-active" href="#h-controls" aria-current="page">My Domains</a>
+        <a class="mx-nav-item" href="#h-review">Inbox / Review Gate</a>
+        <a class="mx-nav-item" href="#h-orbs">Domain Packs</a>
+        <a class="mx-nav-item" href="#h-colors">Settings</a>
+      </nav>
+      <div class="g-stack">
+        <div class="g-row">
+          <button class="mx-btn-primary" type="button">+ 새 노트 (Primary)</button>
+          <button class="mx-btn" type="button">Secondary</button>
+          <button class="mx-btn" type="button" aria-pressed="true">Pressed (Inset)</button>
+          <button class="mx-btn" type="button" disabled>Disabled</button>
+        </div>
+        <label class="g-stack" style="gap: var(--mx-space-1)"><span class="mx-muted">검색 (Inset · focus ring)</span><input class="mx-input" type="search" placeholder="노트, 용어, Domain 검색…"></label>
+        <label class="g-stack" style="gap: var(--mx-space-1)"><span class="mx-muted">입력 (autofocus)</span><input class="mx-input" type="text" value="focus 상태 — 2px violet ring" autofocus></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-chips">
+    <h2 id="h-chips">4. Status Chip · Badge</h2>
+    <p>상태는 색만으로 전달하지 않는다 — 칩에 항상 텍스트 라벨.</p>
+    <div class="g-row">
+      <span class="mx-chip mx-chip--draft">draft</span>
+      <span class="mx-chip mx-chip--ai">ai-draft</span>
+      <span class="mx-chip mx-chip--verified">verified</span>
+      <span class="mx-chip mx-chip--unverified">unverified</span>
+      <span class="mx-badge--blocked">blocked · guard</span>
+      <span class="mx-badge--blocked">doctor · fail-closed</span>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-orbs">
+    <h2 id="h-orbs">5. Domain Orb</h2>
+    <p>원형 Raised + Pack accent glow. 클릭 시 MOC 로 이동.</p>
+    <div class="g-row">
+      <button class="mx-orb" type="button" data-accent="violet" aria-label="D1 AI/ML/AX Platform">D1</button>
+      <button class="mx-orb" type="button" data-accent="cyan" aria-label="D2 Embedded SW">D2</button>
+      <button class="mx-orb" type="button" data-accent="lime" aria-label="D3 자율학습 Robotics">D3</button>
+      <button class="mx-orb" type="button" data-accent="magenta" aria-label="D4 Auto Design">D4</button>
+      <button class="mx-orb" type="button" aria-label="SEC-CONSULT (accent 없음)">SEC</button>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-review">
+    <h2 id="h-review">6. Review Row (Review Gate)</h2>
+    <p>평면 리스트 + 좌측 상태 칩 + Promote(Lime) / Reject. 승격은 사람의 클릭으로만.</p>
+    <div class="mx-card" style="padding: 0 var(--mx-space-4)">
+      <div class="mx-review-row"><span class="mx-chip mx-chip--ai">ai-draft</span><div><div class="mx-review-row__title">평가 지표 회의 - 원자 노트 1</div><div class="mx-review-row__meta">evergreen · D1 · /distill · 2026-10-16</div></div><div class="g-row"><button class="mx-btn mx-btn-promote" type="button">Promote</button><button class="mx-btn" type="button">Reject</button></div></div>
+      <div class="mx-review-row"><span class="mx-chip mx-chip--ai">ai-draft</span><div><div class="mx-review-row__title">인터뷰 - 데드라인 미스 교훈</div><div class="mx-review-row__meta">lesson · D2 · /interview · 2026-10-17</div></div><div class="g-row"><button class="mx-btn mx-btn-promote" type="button">Promote</button><button class="mx-btn" type="button">Reject</button></div></div>
+      <div class="mx-review-row" style="border-bottom: 0"><span class="mx-chip mx-chip--draft">draft</span><div><div class="mx-review-row__title">_patches/20261018-1700-d2-moc-missing-links</div><div class="mx-review-row__meta">patch · append → 10_Domains/D2/_MOC.md · /link</div></div><div class="g-row"><button class="mx-btn mx-btn-promote" type="button">Apply</button><button class="mx-btn" type="button">Reject</button></div></div>
+    </div>
+  </section>
+
+  <section class="g-section" aria-labelledby="h-table">
+    <h2 id="h-table">7. Table</h2>
+    <p>헤더는 surface-2 위 muted 텍스트.</p>
+    <table class="mx-table">
+      <thead><tr><th>KPI</th><th>값</th><th>목표</th><th>판정</th></tr></thead>
+      <tbody>
+        <tr><td>inbox_dwell_days</td><td class="mx-mono">2.0</td><td>≤ 7</td><td><span class="mx-chip mx-chip--verified">ok</span></td></tr>
+        <tr><td>ai_promotion_rate</td><td class="mx-mono">0.44</td><td>0.40 ~ 0.70</td><td><span class="mx-chip mx-chip--verified">ok</span></td></tr>
+        <tr><td>orphan_ratio</td><td class="mx-mono">0.11</td><td>≤ 0.10</td><td><span class="mx-badge--blocked">over</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body>
+</html>
