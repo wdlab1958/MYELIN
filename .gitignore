@@ -24,3 +24,4 @@ packages/myelin-hub/web/dist/
 *.swp
 # Local tooling
 .claude/settings.local.json
+.local/

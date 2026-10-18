@@ -10,6 +10,7 @@
 #   4. registers the Claude Code plugin from the local marketplace (unless --no-plugin)
 #   5. registers the MCP server for the vault (unless --no-mcp / no --vault)
 #   6. copies the Obsidian theme into <vault>/.obsidian/themes/MYELIN Emboss (if --vault)
+#   (Obsidian itself: scripts/install_obsidian.sh — .deb install + theme preselect + open vault)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -31,14 +32,19 @@ say() { echo "▸ $*"; }
 die() { echo "✗ $*" >&2; exit 1; }
 
 # 1. prerequisites
-PY="$(command -v python3.12 || command -v python3 || true)"
-[[ -n "$PY" ]] || die "python3.12 not found"
-"$PY" - <<'PYEOF' || die "python asyncio self-test failed — this interpreter is a mixed install (see PHASE_STATE P4). Use /usr/bin/python3.12 or reinstall pyenv 3.12."
+# Pick the first interpreter whose asyncio self-test passes (a mixed pyenv install segfaults here — PHASE_STATE P4).
+PY=""
+for cand in /usr/bin/python3.12 "$(command -v python3.12 || true)" "$(command -v python3 || true)"; do
+  [[ -n "$cand" && -x "$cand" ]] || continue
+  if "$cand" - <<'PYEOF' >/dev/null 2>&1
 import asyncio, sys
 assert sys.version_info[:2] == (3, 12), sys.version
 async def f(): return 1
 assert asyncio.run(f()) == 1
 PYEOF
+  then PY="$cand"; break; else say "skipping $cand — asyncio self-test failed (mixed install?)"; fi
+done
+[[ -n "$PY" ]] || die "no working Python 3.12 found (tried /usr/bin/python3.12, python3.12, python3)"
 say "python: $("$PY" -c 'import sys; print(sys.executable, sys.version.split()[0])')"
 command -v uv >/dev/null || die "uv not found (https://docs.astral.sh/uv/)"
 command -v git >/dev/null || die "git not found"

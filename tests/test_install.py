@@ -70,3 +70,15 @@ def test_marketplace_manifest_points_at_plugin() -> None:
     m = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
     assert m["name"] == "myelin-local" and m["plugins"][0]["source"] == "./plugin"
     assert m["plugins"][0]["name"] == "myelin"
+
+
+def test_install_obsidian_script_is_sane() -> None:
+    """install_obsidian.sh: valid bash, documented usage, never runs the obsidian binary."""
+    script = ROOT / "scripts/install_obsidian.sh"
+    assert subprocess.run(["bash", "-n", str(script)], capture_output=True).returncode == 0
+    r = subprocess.run(["bash", str(script), "--help"], capture_output=True, text=True)
+    assert r.returncode == 0 and "--vault" in r.stdout
+    text = script.read_text(encoding="utf-8")
+    assert "obsidian --version" not in text  # it opens the GUI and blocks (found the hard way)
+    assert "obsidianmd/obsidian-releases" in text and "cssTheme" in text
+    assert subprocess.run(["bash", str(script), "--bogus"], capture_output=True).returncode == 2
