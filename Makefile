@@ -10,6 +10,10 @@
 #   make packs           validate packs/
 #   make perf            5,000-note index/search benchmark (MYELIN_PERF=1)
 #   make mcp             run the MCP server on VAULT=<path> (stdio)
+#   make emboss          regenerate design/dist + Obsidian theme from design/tokens.json
+#   make a11y            text contrast / neon-as-text check
+#   make emboss-lint     raw color literal lint (CSS/HTML/TSX)
+#   make gallery         headless Chrome screenshot of the gallery → docs/reports/P5/gallery.png
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
@@ -22,7 +26,7 @@ ifneq ($(SYSTEM_PY),)
 export UV_PYTHON ?= $(SYSTEM_PY)
 endif
 
-.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp check clean
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp emboss a11y emboss-lint gallery check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -68,6 +72,21 @@ perf: sync
 VAULT ?= .
 mcp: sync
 	$(UV) run myelin-mcp --vault $(VAULT)
+
+emboss:
+	python3 scripts/emboss.py build
+
+a11y:
+	python3 scripts/emboss.py a11y
+
+emboss-lint:
+	python3 scripts/emboss.py lint
+
+CHROME ?= $(shell command -v google-chrome google-chrome-stable chromium chromium-browser 2>/dev/null | head -1)
+gallery:
+	mkdir -p docs/reports/P5
+	$(CHROME) --headless=new --disable-gpu --hide-scrollbars --window-size=1280,2400 \
+	  --screenshot=docs/reports/P5/gallery.png file://$(CURDIR)/design/gallery/index.html
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage coverage.xml

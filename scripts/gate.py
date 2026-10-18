@@ -279,9 +279,26 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P5 tasks", phase_state_lists_next_phase_tasks(4)),
     ],
     5: [
-        Check("no hardcoded tokens (lint)", not_implemented("토큰 하드코딩 0")),
-        Check("text contrast ≥ 4.5:1", not_implemented("대비 검사")),
-        Check("gallery screenshot approved", not_implemented("갤러리 스크린샷 승인")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "tokens → generated files in sync (single source)",
+            sh(["python3", "scripts/emboss.py", "check"]),
+        ),
+        Check(
+            "text contrast ≥ 4.5:1 + no neon-as-text", sh(["python3", "scripts/emboss.py", "a11y"])
+        ),
+        Check("no hardcoded colors in UI (lint)", sh(["python3", "scripts/emboss.py", "lint"])),
+        Check(
+            "gallery screenshot present (사람 승인 대상)",
+            lambda: (
+                (ROOT / "docs/reports/P5/gallery.png").exists(),
+                "docs/reports/P5/gallery.png",
+            ),
+        ),
+        Check("ADR-0008 contrast adjustments", adr_exists("0008", "emboss-contrast")),
+        Check("PHASE_STATE has P6 tasks", phase_state_lists_next_phase_tasks(5)),
     ],
     6: [
         Check("playwright: onboarding → first promote", not_implemented("온보딩·승격 e2e")),
