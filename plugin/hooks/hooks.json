@@ -9,7 +9,21 @@
             "command": "python3",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/guard_write.py"],
             "timeout": 10,
-            "onFailure": "block"
+            "onFailure": "block",
+            "statusMessage": "MYELIN guard: write path check"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/guard_bash.py"],
+            "timeout": 10,
+            "onFailure": "block",
+            "statusMessage": "MYELIN guard: shell write check"
           }
         ]
       }
