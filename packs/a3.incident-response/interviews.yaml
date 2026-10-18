@@ -1,0 +1,23 @@
+questions:
+  - id: ir-triage-wrong-call
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 초동 대응에서 심각도를 잘못 판단한 사고가 있었나? 어떤 신호를 놓쳤고, 이제는 무엇을 먼저 보나?
+  - id: ir-timeline-gap
+    domain: IR
+    sub_moc: Timeline
+    prompt: 타임라인을 재구성할 때 가장 메우기 어려웠던 공백은? 어떤 로그가 있었으면 됐을까?
+    yields: checklist
+  - id: ir-ioc-reuse
+    domain: IR
+    sub_moc: IoC·위협 인텔
+    prompt: 다른 사고에서 재사용한 IoC 나 패턴이 있나? 고객 식별자 없이 어떻게 일반화했나?
+  - id: ir-containment-tradeoff
+    domain: IR
+    sub_moc: 봉쇄·복구
+    prompt: 봉쇄 때문에 서비스를 멈춰야 했던 결정 — 누가, 어떤 근거로, 얼마나 빨리 내렸나?
+    yields: adr
+  - id: ir-postmortem-lesson
+    domain: IR
+    sub_moc: Post-mortem
+    prompt: 포스트모템에서 나온 교훈 중 다음 사고에서 실제로 작동한 것 하나를 말해라.

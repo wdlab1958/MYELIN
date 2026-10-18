@@ -1,0 +1,19 @@
+# A3 Org Pack — 침해사고 대응 (정본 §5.6). Timeline 템플릿, IoC 노트(비식별 규칙 포함), Post-mortem.
+pack: a3.incident-response
+version: 1.0.0
+kind: org
+maintainer: A3-AI WG
+requires: [myelin.core>=1.0]
+description: 침해사고 대응 지식 — 타임라인·IoC·포렌식 절차·포스트모템 교훈 (고객·시스템 식별자는 항상 비식별)
+domains:
+  - id: IR
+    name: 침해사고 대응
+    accent: magenta
+    description: 사고 접수부터 종결까지의 절차·판단·교훈. 고객명·IP·호스트명은 기록하지 않는다 (deid.yaml).
+    sub_mocs: [초동 대응, Timeline, IoC·위협 인텔, 포렌식 절차, 봉쇄·복구, Post-mortem]
+    note_types: [evergreen, lesson, checklist, adr, literature]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates
+    interview_bank: interviews.yaml
+    classification_default: internal
+    compose_targets: [사고 대응 보고서 초안, Post-mortem 요약, 탐지 규칙 제안]

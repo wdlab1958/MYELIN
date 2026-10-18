@@ -1,0 +1,8 @@
+terms:
+  - { term: IoC, aliases: [Indicator of Compromise, 침해 지표], domain: [IR], definition: 침해를 가리키는 관측 가능한 흔적. Commons 공개 시 비식별(해시·패턴만) }
+  - { term: Timeline, aliases: [타임라인, 사고 연대기], domain: [IR], definition: 사고의 시간순 사실 기록 — 추정과 사실을 구분 }
+  - { term: Post-mortem, aliases: [포스트모템, 사후 분석, 회고], domain: [IR], definition: 비난 없는 원인·교훈 정리 }
+  - { term: 봉쇄, aliases: [containment, 격리], domain: [IR] }
+  - { term: 초동 대응, aliases: [triage, 트리아지, 초기 대응], domain: [IR] }
+  - { term: 비식별, aliases: [de-identification, 익명화], domain: [IR], definition: 고객명·IP·호스트·계정을 제거하거나 패턴으로 대체 }
+  - { term: 탐지 규칙, aliases: [detection rule, Sigma, YARA], domain: [IR] }
