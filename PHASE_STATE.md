@@ -1,10 +1,12 @@
 # PHASE_STATE
 
 current_phase: P6
-status: in_progress   # in_progress | gate_pending | awaiting_approval
+status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P5 완료(`phase-P0`~`phase-P5`). 2026-10-18 Brian "GO P6" 승인(갤러리 스크린샷 포함)으로 P6 착수.
+> P0~P5 완료. P6 Gate 통과(`make gate P=6`), 보고서 `docs/reports/P6.md`, 태그 `phase-P6`.
+> **다음 Phase(P7)는 Brian의 "GO P7" 승인 후에만 착수한다.** 승인 시 current_phase를 P7, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> 화면 스크린샷 `docs/reports/P6/*.png` (8장) — 정본 P6 착수 프롬프트 "화면별 완료 시 스크린샷" 항목.
 
 ## Done
 ### P0
@@ -73,28 +75,36 @@ last_updated: 2026-10-18
 - [x] P5-T6 토큰 하드코딩 lint 규칙 (CSS/TSX에서 raw hex 금지)
 - [x] P5-T7 theme/obsidian-myelin-emboss (manifest.json, theme.css 생성물)
 - [x] P5-T8 갤러리 스크린샷 승인 · make gate P=5 · reports/P5.md · tag phase-P5
+### P6
+- [x] P6-T1 FastAPI 앱 골격 (myelin-core 재사용), localhost 바인딩, 읽기 API
+- [x] P6-T2 React 18 + Vite + TS + Tailwind(Emboss preset) 골격, 토큰 외 색 금지 lint
+- [x] P6-T3 Dashboard 화면 (KPI Tile, 지표 11.1)
+- [x] P6-T4 My Domains 화면 (Domain Orb, Domain Map → MOC)
+- [x] P6-T5 Inbox / Review Gate 화면 — Promote(Lime)/Reject, 승격 시 git commit
+- [x] P6-T6 Domain Packs 화면 (Pack 편집기)
+- [x] P6-T7 Settings 화면 + 온보딩 마법사 (init과 동일 로직 공유)
+- [x] P6-T8 Playwright e2e: 신규 사용자 온보딩 → 첫 노트 승격 · 커밋 생성 확인
+- [x] P6-T9 사용자 클릭 없이 Vault 쓰기 0 검증(쓰기 경로 감사 테스트) · 스크린샷 docs/reports/P6/ · make gate P=6 · tag phase-P6
 
-## Next
-- [ ] P6-T1 FastAPI 앱 골격 (myelin-core 재사용), localhost 바인딩, 읽기 API
-- [ ] P6-T2 React 18 + Vite + TS + Tailwind(Emboss preset) 골격, 토큰 외 색 금지 lint
-- [ ] P6-T3 Dashboard 화면 (KPI Tile, 지표 11.1)
-- [ ] P6-T4 My Domains 화면 (Domain Orb, Domain Map → MOC)
-- [ ] P6-T5 Inbox / Review Gate 화면 — Promote(Lime)/Reject, 승격 시 git commit
-- [ ] P6-T6 Domain Packs 화면 (Pack 편집기)
-- [ ] P6-T7 Settings 화면 + 온보딩 마법사 (init과 동일 로직 공유)
-- [ ] P6-T8 Playwright e2e: 신규 사용자 온보딩 → 첫 노트 승격 · 커밋 생성 확인
-- [ ] P6-T9 사용자 클릭 없이 Vault 쓰기 0 검증(쓰기 경로 감사 테스트) · 스크린샷 docs/reports/P6/ · make gate P=6 · tag phase-P6
+## Next (P7 — 승인 대기)
+- [ ] P7-T1 Commons Git 구조 정의 (packs registry + notes) · 사내 Pack Registry 포맷
+- [ ] P7-T2 publish 흐름 — share:true + verified + classification ≤ internal 검사 → PR 생성, 사용자 확인 단계 필수
+- [ ] P7-T3 비식별 체크리스트(고객명·IP·기밀) + publish 전 자동 스캔
+- [ ] P7-T4 confidential / share:false publish 차단 100% 테스트
+- [ ] P7-T5 opt-in 익명 지표 집계 (11.2) — 개인 Vault 내용 미전송 보장
+- [ ] P7-T6 Org Pack 2종 확정 (팀 챔피언과) · Pack 진화 제안 흐름
+- [ ] P7-T7 파일럿 가이드 · 60분 워크숍 자료(9.3) · Day 1 체크리스트(부록 D)
+- [ ] P7-T8 파일럿 5명+ 온보딩 15분 측정 · 피드백 리포트 · make gate P=7 · tag phase-P7
 
 ## Blockers
-- (없음) — CI green은 GitHub 원격 push 후 확인 필요. 갤러리 스크린샷은 사람 승인 대기(Gate 는 파일 존재만 검사).
+- (없음) — CI green은 GitHub 원격 push 후 확인 필요. CI 에 Node 설치·Chrome 채널 준비 단계 추가 필요(Backlog).
 
 ## Decisions (→ ADR)
-- ADR-0001~0007
-- ADR-0008 Emboss 대비 조정 — 정본 §8.1 값 중 `--muted`(#6B6F85→#5F6378, 5.20:1), `--lime-ink`(#4D7C0F→#3F6A0A, 5.62:1), `--cyan-ink`(#0891B2→#0E7490, 4.70:1) 를 4.5:1 기준에 맞춰 조정(원값은 tokens.json `spec` 필드 보존). 보조 토큰 추가(surface-2, on-violet, border 조정, raised-sm, ring-lime, space, font, motion). 검사 대상 쌍은 `a11y.text-pairs` 가 정본.
-- P5 결정(기록): CSS 변수 접두어 `--mx-*`(색은 `--mx-<name>`, 그 외 `--mx-<group>-<name>`), 컴포넌트 클래스 `.mx-*`. 생성물 3종(`design/dist/emboss.css`, `design/dist/tailwind.preset.cjs`, `theme/obsidian-myelin-emboss/theme.css`)은 커밋하며 Gate 가 동기화를 검사. 하드코딩 lint 는 생성 파일의 `:root`/테마 변수 블록만 리터럴 허용. Obsidian 테마는 `.theme-dark` 에도 light 값 적용(다크 미지원이 깨지지 않게). 갤러리 스크린샷은 headless Chrome(`make gallery`).
+- ADR-0001~0008
+- ADR-0009 Hub 쓰기 정책 — 쓰기 엔드포인트는 `X-Myelin-Intent: user-click` 헤더 필수(UI onClick 에서만 부여), 쓰기 동작 6종은 각각 정확히 하나의 git commit, 승격 전제(ai-drafts·유효 frontmatter·설정 Domain·모순 없음), 첫 쓰기에서 `git init`, `.myelin/` git ignore, welcome 초안은 Hub 온보딩에서만 생성, Hub 는 localhost 전용·기밀 비가림(소유자 UI)
+- P6 결정(기록): Hub 는 서버가 `--vault` 로 받은 디렉터리가 Vault 가 아니면 온보딩 마법사를 띄우고 `POST /api/onboarding` 이 `init_vault` 를 호출(CLI 와 동일 로직). e2e 포트는 5199/8799(워크스테이션의 다른 dev 서버와 충돌 회피, env 로 변경 가능), Playwright 는 시스템 Chrome 채널. `default_pack_roots` 중복 제거(`$MYELIN_PACKS` 가 저장소 packs/ 를 가리킬 때 "already loaded" 오류 수정). Guard 차단 이벤트는 `.myelin/guard.log` JSONL → Dashboard 타일.
 
 ## Backlog (Phase 범위 밖)
-- P6: Hub 는 `tailwind.preset.cjs` 를 preset 으로, 컴포넌트는 `emboss.css` 클래스 또는 `mx-*` 유틸만. `emboss.py lint` 의 LINT_GLOBS 에 Hub src 포함됨 → P6 Gate 에 재사용. Hub API 는 `VaultService`/`VaultIndex` 재사용 · Review Gate 가 `_patches` 적용(ADR-0006) · Guard 차단 이벤트 표시 · 온보딩 마법사는 `init_vault` 공유
-- P6: 갤러리의 `is-myelinating` 애니메이션을 Hub 승격 순간에 연결
-- P7: a3.security-consulting Sub-MOC·용어 확정, Org Pack 1종 추가 · Obsidian 테마 실사용 피드백(코드 블록·테이블·Dataview 호환)
-- P8: 정본 Rev 2.1 제안 — §8.1 표를 ADR-0008 값으로 갱신 · 위협 모델 · 설치 스크립트 인터프리터 검증 · plugin/README marketplace 한 줄 · Pack 번들 경로
+- P7: Team 모드 인증(Hub `--host` 비-loopback 허용 조건), Commons publish 흐름을 Hub Review Row 에 추가("Commons 제안" 버튼), a3 Org Pack 확정, Obsidian 테마 실사용 피드백
+- P7/P8: CI 워크플로에 Node 22 + `make web` + Chrome 채널(e2e) 단계 추가 · 패치 `replace` 적용 실패 시 UI 안내 개선 · Hub 에서 `_patches` 미리보기 diff 뷰
+- P8: 정본 Rev 2.1 제안(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더) · 위협 모델(Hub CSRF: localhost + 커스텀 헤더로 cross-site 폼 전송 차단, 추가로 Origin 검사 검토) · 설치 스크립트(인터프리터 검증, npm 빌드 포함) · plugin/README marketplace 한 줄 · Pack 번들 경로
