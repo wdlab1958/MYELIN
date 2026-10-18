@@ -23,6 +23,7 @@ from typer._click import exceptions as click_exc  # typer's vendored click
 from myelin_cli import __version__
 from myelin_core.config import ConfigError, Domains, MyelinConfig, Owner
 from myelin_core.doctor import run_doctor
+from myelin_core.levels import LEVEL_NAMES, skill_table
 from myelin_core.packs.loader import PackError, discover_packs
 from myelin_core.scaffold import ScaffoldError, VaultExistsError, add_domain, init_vault
 from myelin_core.stats import compute_stats
@@ -312,6 +313,85 @@ def stats(
     typer.echo(f"by_domain: {st.by_domain}")
     if st.parse_errors:
         typer.echo(f"⚠ {st.parse_errors} notes could not be parsed — run `myelin doctor`")
+
+
+# ----------------------------------------------------------------------------------- skills
+
+
+@app.command()
+def skills(vault: VaultOpt = Path(), as_json: JsonOpt = False) -> None:
+    """현재 Level 에서 사용 가능한 Skill 과 쓰기 범위를 보인다 (정본 §7.1)."""
+    v = _open_vault(vault)
+    rows = skill_table(v.config.level)
+    if as_json:
+        typer.echo(
+            json.dumps({"level": v.config.level, "skills": rows}, ensure_ascii=False, indent=2)
+        )
+        return
+    typer.echo(f"Level {v.config.level} — {LEVEL_NAMES[v.config.level]}")
+    typer.echo(f"{'skill':<12}{'min':>4}  {'enabled':<8} {'write scope':<22} summary")
+    for r in rows:
+        flag = "yes" if r["enabled"] else "no"
+        typer.echo(
+            f"{r['skill']:<12}{r['min_level']:>4}  {flag:<8} {r['write_scope']!s:<22} "
+            f"{r['summary']}"
+        )
+
+
+# ---------------------------------------------------------------------------- interview-bank
+
+
+@app.command("interview-bank")
+def interview_bank(
+    vault: VaultOpt = Path(),
+    domain: Annotated[str | None, typer.Option("--domain", "-d", help="Domain ID 로 필터")] = None,
+    as_json: JsonOpt = False,
+    packs_dir: PacksOpt = None,
+) -> None:
+    """설정된 Pack 의 /interview 질문 은행을 출력한다 (Skill 이 Bash 로 호출)."""
+    v = _open_vault(vault)
+    if domain is not None and domain not in v.config.domains.all_ids:
+        _die(f"domain {domain!r} 은 이 Vault 에 설정되지 않았습니다: {v.config.domains.all_ids}")
+    try:
+        packs = v.packs(_roots(v.root, packs_dir))
+    except PackError as exc:
+        _die(str(exc))
+    rows: list[dict[str, object]] = []
+    for lp in packs:
+        for d in lp.pack.domains:
+            if d.id not in v.config.domains.all_ids or (domain and d.id != domain):
+                continue
+            bank = lp.interview_bank_for(d.id)
+            if bank is None:
+                continue
+            for q in bank.questions:
+                if q.domain not in (None, d.id):
+                    continue
+                rows.append(
+                    {
+                        "id": q.id,
+                        "domain": d.id,
+                        "domain_name": d.name,
+                        "sub_moc": q.sub_moc,
+                        "prompt": q.prompt,
+                        "follow_ups": list(q.follow_ups),
+                        "yields": q.yields.value,
+                        "pack": lp.name,
+                    }
+                )
+    if as_json:
+        typer.echo(json.dumps({"questions": rows}, ensure_ascii=False, indent=2))
+        return
+    if not rows:
+        typer.echo("질문 은행이 없습니다 (Pack 에 interview_bank 미설정).")
+        return
+    for r in rows:
+        typer.echo(f"[{r['domain']}] {r['id']} ({r['sub_moc'] or '-'}) → {r['yields']}")
+        typer.echo(f"    {r['prompt']}")
+        follow_ups = r["follow_ups"]
+        assert isinstance(follow_ups, list)
+        for fu in follow_ups:
+            typer.echo(f"      ↳ {fu}")
 
 
 def run(argv: list[str]) -> int:
