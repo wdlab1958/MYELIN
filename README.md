@@ -17,7 +17,7 @@ Obsidian + Claude 기반 개인 지식 운영체계. 정본 명세: [`docs/spec/
 ## 개발
 
 ```bash
-make sync        # uv sync
+make sync        # uv sync (Makefile 이 /usr/bin/python3.12 가 있으면 UV_PYTHON 으로 고정)
 make check       # lint + typecheck + test
 make gate P=0    # Phase gate
 ```

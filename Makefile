@@ -8,12 +8,21 @@
 #   make fixtures        regenerate tests/fixtures/vaults/{basic,seeded-violations}
 #   make golden          regenerate tests/fixtures/golden/init-basic (review the diff!)
 #   make packs           validate packs/
+#   make perf            5,000-note index/search benchmark (MYELIN_PERF=1)
+#   make mcp             run the MCP server on VAULT=<path> (stdio)
 #   make sync            uv sync (all workspace members + dev group)
 
 UV ?= uv
 P  ?= 0
 
-.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs check clean
+# Interpreter pin: this workstation's pyenv 3.12.11 is a mixed install (3.12.3 binary + 3.12.11 stdlib)
+# and segfaults in asyncio. Prefer the consistent system CPython when present (PHASE_STATE P4 decision).
+SYSTEM_PY := $(shell command -v /usr/bin/python3.12 2>/dev/null)
+ifneq ($(SYSTEM_PY),)
+export UV_PYTHON ?= $(SYSTEM_PY)
+endif
+
+.PHONY: sync test lint fmt typecheck gate phases schemas fixtures golden packs perf mcp check clean
 
 sync:
 	$(UV) sync --all-packages --group dev
@@ -52,6 +61,13 @@ golden: sync
 
 packs: sync
 	$(UV) run python scripts/validate_packs.py
+
+perf: sync
+	MYELIN_PERF=1 $(UV) run pytest -q -s tests/test_perf_index.py
+
+VAULT ?= .
+mcp: sync
+	$(UV) run myelin-mcp --vault $(VAULT)
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage coverage.xml
