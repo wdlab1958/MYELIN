@@ -1,9 +1,8 @@
 # PHASE_STATE
-current_phase: P5
-status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 09:50 KST
-approved: "GO P5" (Brian, 2026-10-18 09:22)
-gate: P5 PASS (docs/reports/P5.md) — 갤러리 디자인은 Brian 승인 대기
+current_phase: P6
+status: in_progress            # in_progress | gate_pending | awaiting_approval
+last_updated: 2026-10-18 09:35 KST
+approved: "GO P6" (Brian, 2026-10-18 09:32)
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
@@ -11,17 +10,10 @@ gate: P5 PASS (docs/reports/P5.md) — 갤러리 디자인은 Brian 승인 대�
 - P2 — CLI Scaffolder: Gate PASS 7/7 (docs/reports/P2.md)
 - P3 — Plugin + Guard: Gate PASS 8/8 (docs/reports/P3.md)
 - P4 — MCP Server: Gate PASS 6/6 (docs/reports/P4.md)
-- [x] P5-T1 P5 Gate (산출물 최신·대비·lint·테스트·테마·스크린샷 해시)
-- [x] P5-T2 design/tokens.json — 명세 값 4건 대비 미달 → 조정 (ADR-0007), accent 6종 완성
-- [x] P5-T3 design/build.py — tokens → tokens.css · resolved.json · tailwind.preset.js · Obsidian theme.css
-- [x] P5-T4 --contrast: 텍스트 18쌍 ≥ 4.5:1, 네온 5종 텍스트 금지 보고
-- [x] P5-T5 components.css + gallery/index.html (Card·KPI·Button·Input·Nav·Chip·Orb·Review Row)
-- [x] P5-T6 --lint: 색 리터럴·네온 글자색 금지 (design/src, gallery, Hub web/src)
-- [x] P5-T7 theme/obsidian-myelin-emboss (manifest + theme.css, 라이트 전용) + 설치 안내
-- [x] P5-T8 갤러리 스크린샷 (Playwright) → docs/reports/P5/gallery.png — **Brian 승인 대기**
+- P5 — Emboss Design System: Gate PASS 8/8 (docs/reports/P5.md)
 
-## Next (P6 — "GO P6" 승인 후 시작)
-- [ ] P6-T1 scripts/gate.py 에 P6 Gate 검사 추가
+## Next (P6)
+- [x] P6-T1 scripts/gate.py 에 P6 Gate 검사 추가
 - [ ] P6-T2 Hub API (FastAPI, 127.0.0.1 바인딩, core·index 재사용) + ADR-0008
 - [ ] P6-T3 API: stats, domains, inbox/drafts, promote/reject(→ git commit), packs
 - [ ] P6-T4 web: Vite + React + TS + Tailwind(Emboss preset) — 색은 토큰만 (lint)

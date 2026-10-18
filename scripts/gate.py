@@ -483,7 +483,97 @@ def p5_checks() -> list[Check]:
     ]
 
 
+# ── P6 — MYELIN Hub ─────────────────────────────────────────────────────
+HUB_WEB = ROOT / "packages/myelin-hub/web"
+P6_SCREENS = ("onboarding", "dashboard", "domains", "review", "packs", "settings")
+
+
+def _pytest_required(path: str, keyword: str | None = None) -> Callable[[], bool]:
+    """e2e는 브라우저·빌드가 없으면 skip 대신 실패하도록 MYELIN_E2E_REQUIRED=1 로 실행한다."""
+
+    def _run() -> bool:
+        import subprocess
+
+        cmd = [sys.executable, "-m", "pytest", path, "-q", "--no-header", "-p", "no:cacheprovider"]
+        if keyword:
+            cmd += ["-k", keyword]
+        env = {**os.environ, "MYELIN_E2E_REQUIRED": "1"}
+        res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env)
+        if res.returncode != 0 or " skipped" in res.stdout:
+            print("    ! " + res.stdout[-800:])
+            return False
+        return True
+
+    _run.__name__ = f"pytest {path} {keyword or ''}".strip()
+    return _run
+
+
+def p6_web_build() -> bool:
+    """타입 검사 + 프로덕션 빌드 (node_modules 가 없으면 lockfile 그대로 설치)."""
+    import shutil
+    import subprocess
+
+    npm = shutil.which("npm")
+    if npm is None:
+        print("    ! npm 이 없습니다")
+        return False
+    steps = [] if (HUB_WEB / "node_modules").is_dir() else [[npm, "ci", "--no-audit", "--no-fund"]]
+    steps.append([npm, "run", "build"])
+    for cmd in steps:
+        res = subprocess.run(cmd, cwd=HUB_WEB, capture_output=True, text=True)
+        if res.returncode != 0:
+            print("    ! " + (res.stdout + res.stderr)[-800:])
+            return False
+    return (HUB_WEB / "dist" / "index.html").is_file()
+
+
+def p6_refuses_public_bind() -> bool:
+    import subprocess
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        cmd = [sys.executable, "-m", "myelin_hub_api", "--vault", tmp, "--host", "0.0.0.0"]
+        res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=60)
+        untouched = not any(Path(tmp).iterdir())
+    return res.returncode == 2 and untouched
+
+
+def p6_screenshots() -> bool:
+    missing = [s for s in P6_SCREENS if not (ROOT / f"docs/reports/P6/{s}.png").is_file()]
+    if missing:
+        print(f"    ! 스크린샷 없음: {missing}")
+    return not missing
+
+
+def p6_checks() -> list[Check]:
+    return [
+        ("exists: docs/adr/0008-hub.md", exists("docs/adr/0008-hub.md")),
+        (
+            "core review/git/onboarding tests",
+            guarded(p3_pytest("packages/myelin-core/tests/review")),
+        ),
+        ("hub api tests (security, read-only GETs, actions)", guarded(p3_pytest(HUB_API_TESTS))),
+        ("hub refuses non-loopback bind", guarded(p6_refuses_public_bind)),
+        ("web: typecheck + build", guarded(p6_web_build)),
+        ("lint: web uses tokens only", guarded(_design_cmd("--lint"))),
+        (
+            "e2e: onboarding -> first note verified -> git commit",
+            guarded(_pytest_required("tests/e2e", "onboarding_to_promotion")),
+        ),
+        (
+            "e2e: zero vault writes without user action",
+            guarded(_pytest_required("tests/e2e", "no_passive_writes")),
+        ),
+        ("screenshots per screen (docs/reports/P6)", guarded(p6_screenshots)),
+        ("PHASE_STATE lists P7 tasks", next_phase_tasks_listed(7)),
+    ]
+
+
+HUB_API_TESTS = "packages/myelin-hub/api/tests"
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P6": p6_checks,
     "P5": p5_checks,
     "P4": p4_checks,
     "P0": p0_checks,
