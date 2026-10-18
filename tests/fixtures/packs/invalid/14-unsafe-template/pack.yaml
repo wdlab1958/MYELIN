@@ -1,0 +1,10 @@
+# 템플릿에 Templater JS 실행 블록 — Vault에 심기면 Obsidian에서 임의 코드가 돈다 (STRIDE T3)
+pack: me.unsafe
+version: 0.1.0
+kind: personal
+maintainer: tester
+domains:
+  - id: UNSAFE
+    name: unsafe
+    sub_mocs: [a]
+    templates: templates

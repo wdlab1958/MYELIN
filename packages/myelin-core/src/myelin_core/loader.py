@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -62,6 +63,45 @@ def _inside(root: Path, rel: str) -> Path | None:
     return target if target.is_relative_to(root.resolve()) else None
 
 
+# Pack 템플릿은 Obsidian Templater가 실행한다. `<%* … %>`(JS 실행), tp.user·tp.system·tp.web·
+# tp.file.include 등은 임의 코드 실행·외부 호출이 될 수 있다. 남의 Pack이 이를 Vault에
+# 심지 못하게 아래 허용 목록의 표현식만 받는다 (STRIDE T3/E3, P8).
+_TEMPLATER_TAG = re.compile(r"<%.*?%>", re.DOTALL)
+_SAFE_TAG = re.compile(
+    r"""<%\s*tp\.(?:date\.now\(\s*(?:"[^"\\]*"|'[^'\\]*')?\s*\)|file\.title|date\.today\(\s*(?:"[^"\\]*"|'[^'\\]*')?\s*\))\s*%>"""
+)
+
+
+def _template_issues(root: Path, rel: str, loc: str) -> list[Issue]:
+    target = _inside(root, rel)
+    if target is None or not target.is_dir():
+        return []
+    out: list[Issue] = []
+    root = root.resolve()
+    for f in sorted(target.rglob("*")):
+        if f.is_symlink():
+            out.append(Issue(loc, f"symlink in templates: {f.relative_to(root)}", "symlink"))
+            continue
+        if not f.is_file():
+            continue
+        try:
+            text = f.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            out.append(Issue(loc, f"not UTF-8: {f.relative_to(root)}", "encoding"))
+            continue
+        for m in _TEMPLATER_TAG.finditer(text):
+            if not _SAFE_TAG.fullmatch(m.group(0)):
+                line = text.count("\n", 0, m.start()) + 1
+                out.append(
+                    Issue(
+                        f"{f.relative_to(root).as_posix()}:{line}",
+                        f"허용되지 않은 Templater 표현식: {m.group(0)[:60]}",
+                        "unsafe_template",
+                    )
+                )
+    return out
+
+
 def load_pack(path: Path) -> LoadedPack:
     manifest_path = path / MANIFEST
     if not manifest_path.is_file():
@@ -105,9 +145,13 @@ def load_pack(path: Path) -> LoadedPack:
             return None
 
     check_dir(manifest.templates, "templates")
+    if manifest.templates:
+        issues.extend(_template_issues(path, manifest.templates, "templates"))
     for idx, domain in enumerate(manifest.domains):
         loc = f"domains[{idx}]"
         check_dir(domain.templates, f"{loc}.templates")
+        if domain.templates and domain.templates != manifest.templates:
+            issues.extend(_template_issues(path, domain.templates, f"{loc}.templates"))
         if domain.taxonomy_seed:
             tax = taxonomies.get(domain.taxonomy_seed) or load_ref(
                 domain.taxonomy_seed, f"{loc}.taxonomy_seed", TaxonomyFile

@@ -1,0 +1,171 @@
+# MYELIN v1.0 위협 목록 (STRIDE). Gate P8: High 는 모두 mitigated, mitigated 는 실행되는 증거(테스트)를 가진다.
+# severity = 조치 전 위험도. status: mitigated | accepted (근거 필요) | open
+threats:
+  - id: S1
+    stride: [S, T]
+    component: Hub
+    threat: 사용자가 열어 둔 다른 웹사이트가 localhost Hub에 요청을 보내 승격·설정 변경 (CSRF, DNS rebinding)
+    severity: high
+    status: mitigated
+    mitigation: Host 헤더 loopback 검사, POST에 X-Myelin-Intent + 같은 출처 Origin + JSON 필수, CORS 미개방, 세션 쿠키 SameSite=Strict
+    evidence: [packages/myelin-hub/api/tests/test_security.py]
+  - id: I5
+    stride: [I, S]
+    component: Hub
+    threat: 같은 컴퓨터의 다른 OS 사용자·프로세스가 127.0.0.1 포트로 노트(40_IP·confidential 포함)를 읽음
+    severity: medium
+    status: mitigated
+    mitigation: 실행마다 임의 세션 토큰 — 터미널 링크로만 전달, HttpOnly 쿠키로 교환, /api 는 토큰 없으면 401 (P8에서 추가)
+    evidence: [packages/myelin-hub/api/tests/test_security.py, tests/e2e/test_hub_e2e.py]
+  - id: I4
+    stride: [I]
+    component: Hub
+    threat: Hub가 네트워크 인터페이스에 바인딩되어 개인 지식이 LAN에 노출
+    severity: high
+    status: mitigated
+    mitigation: loopback 외 --host 는 exit 2 (Vault 접근 전에), Team 모드 인증 전까지 원격 바인딩 없음
+    evidence: [packages/myelin-hub/api/tests/test_security.py]
+  - id: I7
+    stride: [I, E]
+    component: Hub web
+    threat: 웹에서 수집한 노트에 심긴 스크립트가 Hub 화면에서 실행 (저장형 XSS → API 전권)
+    severity: high
+    status: mitigated
+    mitigation: 노트 본문은 <pre> 텍스트로만 렌더링, HTML sink 금지 테스트, CSP default-src 'self' (inline script·eval 차단)
+    evidence: [packages/myelin-hub/api/tests/test_security.py, tests/e2e/test_hub_e2e.py]
+  - id: T2
+    stride: [T]
+    component: Review Gate
+    threat: 승격·반려가 Vault 밖·심볼릭 링크·다른 노트를 덮어쓰거나 본문을 바꿈
+    severity: high
+    status: mitigated
+    mitigation: status·reviewed 두 키만, 본문 바이트 보존, O_EXCL·O_NOFOLLOW, 링크·제어문자 경로 거부, commit 실패 시 파일·stage 원복 (독립 보안 검토 6건 반영)
+    evidence: [packages/myelin-core/tests/review/test_review.py, packages/myelin-core/tests/review/test_gitops_onboarding.py]
+  - id: T1
+    stride: [T, E]
+    component: Claude Code (Plugin·Guard)
+    threat: 수집 문서의 프롬프트 인젝션으로 Claude가 사람 영역 노트·설정을 고침
+    severity: high
+    status: mitigated
+    mitigation: Vault 로컬 Guard Hook (Level별 허용 경로, .md 만, 오류 시 차단), settings.json Edit deny, verified 승격은 Hub에서 사람만
+    evidence: [tests/plugin/test_guard.py, packages/myelin-core/tests/test_guard_inprocess.py]
+  - id: E1
+    stride: [E]
+    component: Claude Code
+    threat: Claude가 myelin.yaml·.claude/ 를 고쳐 자기 Level을 올리거나 Guard를 끔
+    severity: high
+    status: mitigated
+    mitigation: myelin.yaml·CLAUDE.md·.claude/** Edit deny + Guard 차단, Bash git push·rm·curl 등 deny
+    evidence: [tests/plugin/test_guard.py, packages/myelin-core/tests/test_scaffold_doctor_stats.py]
+  - id: T3
+    stride: [T, E]
+    component: Domain Pack
+    threat: 외부·조직 Pack 템플릿의 Templater 실행 블록(<%* %>, tp.user, tp.system, tp.web)이 Vault에 복사되어 Obsidian에서 임의 코드 실행
+    severity: high
+    status: mitigated
+    mitigation: Pack 로더가 템플릿의 Templater 표현식을 허용 목록(tp.date.now·tp.date.today·tp.file.title)만 받고, 링크 파일도 거부 (P8에서 추가)
+    evidence: [packages/myelin-core/tests/test_loader.py, tests/fixtures/packs/invalid/14-unsafe-template/pack.yaml]
+  - id: I1
+    stride: [I]
+    component: Claude·MCP
+    threat: confidential 노트와 40_IP 가 Claude(Anthropic)로 전송
+    severity: high
+    status: mitigated
+    mitigation: llm.route 기본 local, Guard Read 차단, MCP 색인에 보호 노트 미포함(본문 미저장), 라우팅 변경 시 재색인, Hub에서 route 변경 불가
+    evidence: [packages/myelin-core/tests/test_index_policy.py, packages/myelin-mcp/tests/test_smoke.py, packages/myelin-hub/api/tests/test_flows.py]
+  - id: I2
+    stride: [I]
+    component: Commons
+    threat: confidential·share:false·미검증·40_IP 노트나 고객 식별정보가 조직 Commons로 공개
+    severity: high
+    status: mitigated
+    mitigation: 자격 차단(48조합 전수), 비식별 자동 차단, 본인 확인 5항목, 제안·push 2단계 확인, 챔피언 PR 리뷰, 공개본에서 source·projects 제거
+    evidence: [packages/myelin-core/tests/commons/test_commons.py, packages/myelin-core/tests/commons/test_deid_metrics.py, tests/e2e/test_commons_e2e.py]
+  - id: I3
+    stride: [I]
+    component: Vault 위치
+    threat: Vault를 MYELIN 소스 fork나 공개 저장소 안에 만들어 개인 노트가 push됨
+    severity: high
+    status: mitigated
+    mitigation: init 이 소스·다른 git 안·비어 있지 않은 폴더 거부, doctor 가 공개 호스팅 원격 경고
+    evidence: [packages/myelin-core/tests/test_safety.py]
+  - id: I6
+    stride: [I]
+    component: 지표
+    threat: 익명 지표로 개인이 특정됨 (작은 조직의 정확한 수, Pack 이름에 이름 포함)
+    severity: medium
+    status: mitigated
+    mitigation: opt-in, 파일로만, 구간화, 이름·경로·id·Domain id·reference Pack 이름 제외
+    evidence: [packages/myelin-core/tests/commons/test_deid_metrics.py]
+  - id: I8
+    stride: [I]
+    component: 비식별 검사 화면
+    threat: 검사 결과 표시가 찾은 비밀값을 화면·로그에 다시 노출
+    severity: low
+    status: mitigated
+    mitigation: 찾은 값은 앞뒤 2자만 남기고 가림
+    evidence: [packages/myelin-core/tests/commons/test_deid_metrics.py]
+  - id: E2
+    stride: [E]
+    component: MCP
+    threat: MCP 클라이언트(Claude Desktop 등)가 Vault에 임의로 씀
+    severity: medium
+    status: mitigated
+    mitigation: 기본 읽기 전용, write_draft 는 opt-in 시에만 등록, 경로·Level 판정은 Guard 함수 재사용
+    evidence: [packages/myelin-mcp/tests/test_smoke.py]
+  - id: E4
+    stride: [E]
+    component: Hub Settings
+    threat: 화면에서 기밀 경계(llm.route)를 열어 confidential 을 Claude로 보냄
+    severity: medium
+    status: mitigated
+    mitigation: Settings 본문 extra=forbid — Level·MCP 초안·지표 동의만 변경 가능
+    evidence: [packages/myelin-hub/api/tests/test_flows.py]
+  - id: R1
+    stride: [R]
+    component: Review Gate · Commons
+    threat: 누가 언제 무엇을 승격·공개했는지 부인
+    severity: medium
+    status: mitigated
+    mitigation: 승격·반려·설정 변경 = Vault git commit (작성자), 공개본 author·commons_of·published, Commons 브랜치 commit
+    evidence: [packages/myelin-hub/api/tests/test_flows.py, packages/myelin-core/tests/commons/test_commons.py]
+  - id: R2
+    stride: [R]
+    component: Guard
+    threat: Guard 차단 이벤트가 기록되지 않아 사후 감사 불가
+    severity: low
+    status: accepted
+    mitigation: v1.0은 차단 시 Claude에 사유 반환만. 이벤트 로그·Hub 표시는 Backlog (개인 Vault에 로그를 남기는 것 자체의 프라이버시 설계 필요)
+    evidence: []
+  - id: T5
+    stride: [T]
+    component: 공급망
+    threat: 설치 시 변조·취약 의존성 (PyPI·npm)
+    severity: medium
+    status: mitigated
+    mitigation: uv.lock·package-lock 고정 (uv sync --frozen, npm ci), curl|sh 없음, pip-audit·npm audit(런타임) 0건 (2026-10-18)
+    evidence: [uv.lock, packages/myelin-hub/web/package-lock.json, scripts/install.sh]
+  - id: T6
+    stride: [T]
+    component: 개발 도구
+    threat: 빌드 전용 의존성 취약점 — braces(DoS, tailwind 3 경유), esbuild dev server CORS(GHSA-67mh-4wv8-2f99)
+    severity: low
+    status: accepted
+    mitigation: 사용자에게 배포되는 것은 빌드 결과물뿐(번들에 미포함). esbuild 이슈는 esbuild serve 모드 대상이며 Vite dev 서버는 개발자 전용. Vite 6+·Tailwind 4 이전은 Backlog
+    evidence: []
+  - id: D1
+    stride: [D]
+    component: Hub·doctor
+    threat: 큰 Vault·큰 입력으로 Hub 응답 지연, git 훅 대기
+    severity: low
+    status: mitigated
+    mitigation: 요청 본문 길이 제한(Pack 200KB 등), git 30초 timeout, 쓰기는 단일 잠금
+    evidence: [packages/myelin-hub/api/tests/test_flows.py]
+  - id: D2
+    stride: [D]
+    component: Commons
+    threat: 원격 git 서버 무응답으로 push가 멈춤
+    severity: low
+    status: mitigated
+    mitigation: push 120초 timeout, 터미널 프롬프트 비활성(GIT_TERMINAL_PROMPT=0)
+    evidence: [packages/myelin-core/tests/commons/test_commons.py]

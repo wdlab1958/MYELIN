@@ -16,7 +16,7 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 
 ## Next (P8 — 승인됨: "GO P7 & P8")
 - [x] P8-T1 scripts/gate.py 에 P8 Gate 검사 추가
-- [ ] P8-T2 위협 모델(STRIDE) 문서와 조치 — High 0
+- [x] P8-T2 위협 모델(STRIDE) 문서와 조치 — High 0
 - [ ] P8-T3 설치 스크립트 · 설치 가이드 (+ 설치→첫 verified 자동 측정)
 - [ ] P8-T4 사용자 · 관리자 가이드
 - [ ] P8-T5 상표 · 도메인 확인 (KIPRIS 제9류·제42류, GitHub org명) 결과 기록

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import secrets
 import socket
 import threading
 import time
@@ -33,6 +34,7 @@ class Hub:
     url: str
     vault: Path
     shots: Path
+    token: str
 
 
 def tree(root: Path) -> dict[str, str]:
@@ -66,7 +68,8 @@ def hub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Hub]:
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
     vault = tmp_path / "MyVault"
     port = _free_port()
-    app = create_app(HubService(vault, find_packs_dir()), web_dir=WEB)
+    token = secrets.token_urlsafe(24)
+    app = create_app(HubService(vault, find_packs_dir()), token=token, web_dir=WEB)
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()
@@ -80,7 +83,7 @@ def hub(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Hub]:
     shots = ROOT / "docs/reports" / phase if flag else tmp_path / "shots"
     shots.mkdir(parents=True, exist_ok=True)
     try:
-        yield Hub(f"http://127.0.0.1:{port}", vault, shots)
+        yield Hub(f"http://127.0.0.1:{port}", vault, shots, token)
     finally:
         server.should_exit = True
         thread.join(timeout=10)
@@ -99,6 +102,7 @@ def page(hub: Hub) -> Iterator[object]:
             _unavailable(f"Chromium 실행 불가: {exc}")
         context = browser.new_context(viewport={"width": 1440, "height": 900}, locale="ko-KR")
         pg = context.new_page()
+        pg.goto(f"{hub.url}/?token={hub.token}")  # 터미널 링크로 여는 것과 같은 로그인
         errors: list[str] = []
         pg.on("pageerror", lambda e: errors.append(str(e)))
         yield pg

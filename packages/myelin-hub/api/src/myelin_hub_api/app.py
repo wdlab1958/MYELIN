@@ -6,10 +6,15 @@
    모두 있어야 한다.
    커스텀 헤더가 있으면 다른 출처의 요청은 CORS preflight에서 막히고, Hub는 CORS를 열지 않는다.
 3. GET은 Vault에 아무것도 쓰지 않는다 (테스트·Gate가 Vault 해시로 확인).
+4. 세션 토큰: 시작할 때 만든 임의 토큰을 터미널 링크(`/?token=…`)로만 받는다. 브라우저는 그것을
+   HttpOnly·SameSite=Strict 쿠키로 바꿔 쓰고, `/api/*` 는 쿠키가 없으면 401 — 같은 컴퓨터의 다른
+   OS 사용자·프로세스가 localhost 포트로 노트를 읽지 못하게 (STRIDE I5).
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from pathlib import Path
@@ -17,7 +22,7 @@ from typing import Annotated, Any
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Query, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -125,11 +130,21 @@ def _deny(status: int, msg: str) -> JSONResponse:
     return JSONResponse({"error": msg, "issues": []}, status_code=status)
 
 
+def cookie_name(token: str) -> str:
+    """Hub 인스턴스마다 다른 쿠키 이름 — 포트가 다른 Hub 둘이 서로의 쿠키를 덮지 않게."""
+    return "myelin_" + hashlib.sha256(token.encode()).hexdigest()[:10]
+
+
 def create_app(
     service: HubService,
+    *,
+    token: str,
     web_dir: Path | None = None,
     allowed_hosts: frozenset[str] = LOOPBACK_NAMES,
 ) -> FastAPI:
+    if len(token) < 16:
+        raise ValueError("session token too short")
+    cookie = cookie_name(token)
     app = FastAPI(
         title="MYELIN Hub", version=__version__, docs_url=None, redoc_url=None, openapi_url=None
     )
@@ -142,6 +157,19 @@ def create_app(
         host = request.headers.get("host", "")
         if _hostname(host) not in allowed_hosts:
             return _deny(403, "허용되지 않은 Host — Hub는 localhost 전용입니다")
+        offered = request.query_params.get("token")
+        if offered is not None:
+            if not hmac.compare_digest(offered.encode(), token.encode()):
+                return _deny(401, "토큰이 맞지 않습니다 — 터미널에 출력된 링크로 여세요")
+            login = RedirectResponse(request.url.path or "/", status_code=303)
+            login.set_cookie(cookie, token, httponly=True, samesite="strict", path="/")
+            login.headers["Cache-Control"] = "no-store"
+            login.headers["Referrer-Policy"] = "no-referrer"
+            return login
+        if request.url.path.startswith("/api/"):
+            got = request.cookies.get(cookie, "")
+            if not hmac.compare_digest(got.encode(), token.encode()):
+                return _deny(401, "세션이 없습니다 — 터미널에 출력된 링크(?token=…)로 여세요")
         if request.method not in ("GET", "HEAD"):
             if request.method != "POST":
                 return _deny(405, "허용되지 않은 메서드")

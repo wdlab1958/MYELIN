@@ -201,3 +201,37 @@ def test_resolve_without_core_requirement(tmp_path: Path) -> None:
     assert [p.name for p in resolve(["me.a"], discover_packs(tmp_path), require_core=False)] == [
         "me.a"
     ]
+
+
+def test_templater_allowlist(tmp_path: Path) -> None:
+    """Pack 템플릿의 Templater 표현식은 허용 목록만 (임의 코드 실행 차단, STRIDE T3)."""
+    from myelin_core.errors import PackError
+    from myelin_core.loader import load_pack
+
+    root = tmp_path / "me.tpl"
+    (root / "templates").mkdir(parents=True)
+    (root / "pack.yaml").write_text(
+        "pack: me.tpl\nversion: 0.1.0\nkind: personal\nmaintainer: t\n"
+        "domains:\n  - id: TPL\n    name: t\n    sub_mocs: [a]\n    templates: templates\n",
+        encoding="utf-8",
+    )
+    ok = '<% tp.date.now("YYYY-MM-DD") %> <% tp.file.title %> <%tp.date.today()%>\n'
+    (root / "templates/a.md").write_text(ok, encoding="utf-8")
+    assert load_pack(root).name == "me.tpl"
+    for bad in (
+        "<%* app.vault.delete() %>",
+        "<%+ tp.file.content %>",
+        "<% tp.user.x() %>",
+        '<% tp.web.request("https://evil") %>',
+        '<% tp.file.include("[[x]]") %>',
+        '<% tp.date.now("x") + require("fs") %>',
+        "<%\n tp.system.prompt() \n%>",
+    ):
+        (root / "templates/a.md").write_text(ok + bad, encoding="utf-8")
+        with pytest.raises(PackError) as exc:
+            load_pack(root)
+        assert exc.value.issues[0].code == "unsafe_template", bad
+    (root / "templates/a.md").write_text(ok, encoding="utf-8")
+    (root / "templates/link.md").symlink_to(tmp_path)
+    with pytest.raises(PackError):
+        load_pack(root)

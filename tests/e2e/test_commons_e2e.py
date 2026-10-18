@@ -55,6 +55,7 @@ def test_commons_propose_requires_confirmation(
     repo = _setup(hub)
     before = snapshot(hub.vault)
     page.goto(f"{hub.url}/#/commons")
+    page.reload()  # 로그인 때 열린 화면은 Vault 생성 전 상태다
     page.get_by_test_id("screen-commons").wait_for()
     rows = page.get_by_test_id("commons-row")
     expect(rows).to_have_count(2)

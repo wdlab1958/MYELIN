@@ -11,10 +11,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from myelin_core.onboarding import find_packs_dir
-from myelin_hub_api.app import create_app
+from myelin_hub_api.app import cookie_name, create_app
 from myelin_hub_api.service import HubService
 
 BASE = "http://127.0.0.1:8765"
+TOKEN = "test-session-token-0123456789"
 ACT = {"X-Myelin-Intent": "user", "Origin": BASE}
 TODAY = date(2026, 10, 18)
 ONBOARD = {
@@ -56,7 +57,9 @@ def service(target: Path) -> HubService:
 
 @pytest.fixture
 def client(service: HubService) -> TestClient:
-    return TestClient(create_app(service), base_url=BASE)
+    c = TestClient(create_app(service, token=TOKEN), base_url=BASE)
+    c.cookies.set(cookie_name(TOKEN), TOKEN)
+    return c
 
 
 @pytest.fixture

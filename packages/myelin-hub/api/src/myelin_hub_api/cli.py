@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import secrets
 import sys
 import webbrowser
 from pathlib import Path
@@ -67,9 +68,13 @@ def main(argv: list[str] | None = None) -> int:
     from myelin_hub_api.service import HubService
 
     vault = args.vault.expanduser().absolute()
-    app = create_app(HubService(vault, packs_dir), web_dir=args.web or default_web_dir())
-    url = f"http://{'[::1]' if args.host == '::1' else args.host}:{args.port}/"
-    print(f"MYELIN Hub → {url}  (Vault: {vault})")
+    token = secrets.token_urlsafe(32)
+    app = create_app(
+        HubService(vault, packs_dir), token=token, web_dir=args.web or default_web_dir()
+    )
+    url = f"http://{'[::1]' if args.host == '::1' else args.host}:{args.port}/?token={token}"
+    print(f"MYELIN Hub → {url}")
+    print(f"  Vault: {vault}\n  이 링크는 이번 실행에서만 유효합니다. 남과 공유하지 마세요.")
     if args.open:
         webbrowser.open(url)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

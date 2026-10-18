@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 
 from myelin_core.errors import MyelinError
 from myelin_hub_api import cli
-from myelin_hub_api.app import _hostname, create_app
+from myelin_hub_api.app import _hostname, cookie_name, create_app
 from myelin_hub_api.service import HubService
 
 Snap = Callable[[Path], dict[str, str]]
@@ -151,7 +151,7 @@ def test_cli_runs_on_loopback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(cli.webbrowser, "open", opened.append)
     assert cli.main(["--vault", str(tmp_path / "v"), "--port", "9001", "--open"]) == 0
     assert seen == {"host": "127.0.0.1", "port": 9001, "log_level": "warning"}
-    assert opened == ["http://127.0.0.1:9001/"]
+    assert len(opened) == 1 and opened[0].startswith("http://127.0.0.1:9001/?token=")
     assert not (tmp_path / "v").exists()  # 시작만으로는 쓰지 않는다
     assert cli._is_loopback("::1") and cli._is_loopback("localhost")
 
@@ -169,6 +169,29 @@ def test_cli_missing_packs(
     assert "Pack" in capsys.readouterr().err
 
 
+TOKEN = "test-session-token-0123456789"
+
+
+def test_session_token(service: HubService) -> None:
+    """같은 컴퓨터의 다른 사용자·프로세스는 토큰 없이 /api 를 읽지 못한다 (STRIDE I5)."""
+    anon = TestClient(create_app(service, token=TOKEN), base_url="http://127.0.0.1:8765")
+    res = anon.get("/api/state")
+    assert res.status_code == 401 and "?token" in res.json()["error"]
+    anon.cookies.set(cookie_name(TOKEN), "wrong-token-value")
+    assert anon.get("/api/state").status_code == 401
+    anon.cookies.clear()
+    assert anon.get("/?token=nope", follow_redirects=False).status_code == 401
+    login = anon.get("/review?token=" + TOKEN, follow_redirects=False)
+    assert login.status_code == 303 and login.headers["location"] == "/review"
+    set_cookie = login.headers["set-cookie"].lower()
+    assert "httponly" in set_cookie and "samesite=strict" in set_cookie
+    assert anon.get("/api/state").status_code == 200  # 쿠키로 계속
+    assert anon.get("/").status_code == 200  # 정적 화면은 토큰 없이도 (데이터 없음)
+    with pytest.raises(ValueError):
+        create_app(service, token="short")
+    assert cookie_name("a" * 20) != cookie_name("b" * 20)
+
+
 def test_hostname_parsing() -> None:
     assert _hostname("127.0.0.1:8765") == "127.0.0.1"
     assert _hostname("[::1]:8765") == "::1"
@@ -182,11 +205,26 @@ def test_web_serving(tmp_path: Path, service: HubService) -> None:
     (web / "assets" / "app.js").write_text("console.log(1)", encoding="utf-8")
     (web / "favicon.svg").write_text("<svg/>", encoding="utf-8")
     (tmp_path / "secret.txt").write_text("secret", encoding="utf-8")
-    c = TestClient(create_app(service, web_dir=web), base_url="http://127.0.0.1:8765")
+    c = TestClient(create_app(service, token=TOKEN, web_dir=web), base_url="http://127.0.0.1:8765")
     assert "id=root" in c.get("/review").text  # SPA fallback
     assert c.get("/assets/app.js").text == "console.log(1)"
     assert c.get("/favicon.svg").text == "<svg/>"
     assert "secret" not in c.get("/..%2Fsecret.txt").text
-    bare = TestClient(create_app(service, web_dir=tmp_path / "none"), base_url="http://127.0.0.1")
+    bare = TestClient(
+        create_app(service, token=TOKEN, web_dir=tmp_path / "none"), base_url="http://127.0.0.1"
+    )
     assert "빌드되지 않았습니다" in bare.get("/").text
     assert cli.default_web_dir().name in ("dist", "web")
+
+
+def test_web_has_no_html_sinks() -> None:
+    """노트 본문 등 Vault 내용은 텍스트로만 렌더링한다 (저장형 XSS 차단, STRIDE I7)."""
+    root = Path(__file__).resolve().parents[2] / "web" / "src"
+    sinks = ("dangerouslySetInnerHTML", "innerHTML", "outerHTML", "eval(", "new Function", "style={")
+    found = [
+        f"{p.name}: {s}"
+        for p in root.rglob("*.ts*")
+        for s in sinks
+        if s in p.read_text(encoding="utf-8")
+    ]
+    assert found == []
