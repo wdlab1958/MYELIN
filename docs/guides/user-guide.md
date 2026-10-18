@@ -5,7 +5,7 @@
 ## 1. 설치 (15분 목표)
 ```bash
 git clone <repo> myelin && cd myelin
-scripts/install.sh --vault ~/Vaults/me        # python/uv 검사 → sync → Hub 빌드 → 런처 → plugin → MCP → Obsidian 테마
+scripts/install.sh --vault ~/Vaults/me --claude   # python/uv 검사 → sync → Hub 빌드 → 런처 → Obsidian 테마 (+ --claude: plugin/MCP 등록)
 myelin-hub --vault ~/Vaults/me                 # http://127.0.0.1:8787 → 온보딩 마법사
 ```
 CLI 로 하려면 `myelin init --vault ~/Vaults/me`. 둘 다 같은 로직이다.

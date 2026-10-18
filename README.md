@@ -4,7 +4,7 @@
 > Obsidian + Claude 기반 개인 지식 운영체계. 개인의 관심·경험을 재사용 가능한 지식으로 전환한다.
 
 정본 명세: [`docs/spec/MYELIN_Rev2.0.md`](docs/spec/MYELIN_Rev2.0.md) (WDLAB-MYELIN-SPEC Rev 2.0, 2026-10-18) · 원본 [`docs/spec/MYELIN_Rev2.0.docx`](docs/spec/MYELIN_Rev2.0.docx)
-상태: **v1.0.0** — 정본의 구현 Phase P0~P8 완료 (`phase-P0`~`phase-P8`, `v1.0.0` 태그). 남은 것은 사람 참여 항목과 운영(아래 "남은 일").
+상태: **v1.1.0** — 정본의 구현 Phase P0~P8 완료 + P9(Desktop 라인 기능 이식) (`phase-P0`~`phase-P8`, `v1.0.0` 태그). 남은 것은 사람 참여 항목과 운영(아래 "남은 일").
 
 ---
 
@@ -49,7 +49,7 @@ L5 Commons      <commons repo>/ (registry · notes · proposals · metrics)
 
 ```bash
 git clone git@github.com:wdlab1958/MYELIN.git myelin && cd myelin
-scripts/install.sh --vault ~/Vaults/me      # python/uv 자가 검사 → uv sync → Hub 빌드 → 런처(~/.local/bin) → plugin → MCP → Obsidian 테마
+scripts/install.sh --vault ~/Vaults/me --claude   # python/uv 자가 검사 → uv sync → Hub 빌드 → 런처 → Obsidian 테마 (+ --claude: plugin/MCP 등록, opt-in)
 myelin-hub --vault ~/Vaults/me               # http://127.0.0.1:8787 → 온보딩 마법사(3+1 Domain) → 첫 ai-draft 승격
 ```
 Obsidian 이 없으면 `scripts/install_obsidian.sh --vault ~/Vaults/me` (Debian/Ubuntu: 공식 .deb 설치 + Emboss 테마 선선택 + Vault 열기).
@@ -112,6 +112,7 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 | P6 Hub | FastAPI + React 5화면·온보딩·Promote/Reject/패치 적용 commit·Playwright e2e·클릭 없는 쓰기 0 | PASS | [P6](docs/reports/P6.md), [스크린샷](docs/reports/P6/) |
 | P7 Commons & Pilot | Commons 구조·Registry·비식별 스캔·publish/PR·Pack 제안·익명 지표·Org Pack 2종·파일럿 키트 | 자동 PASS · **사람 항목 2개 대기** | [P7](docs/reports/P7.md) |
 | P8 Hardening & v1.0 | 위협 모델(High 0)·install.sh·가이드·릴리스 노트·이름 확인·15분 측정 | PASS → **v1.0.0** | [P8](docs/reports/P8.md) |
+| P9 Desktop 기능 이식 | patch plan/diff/digest·Hub 미리보기·install `--claude`·Obsidian 선설치/가이드 | tests 417 → **v1.1.0** | [CHANGELOG](CHANGELOG.md) |
 
 ## 8. 설계 결정 (ADR)
 

@@ -1,24 +1,25 @@
 #!/usr/bin/env bash
 # MYELIN v1.0 installer (P8-T3). Idempotent; never overwrites user files (backs up instead).
 #
-#   scripts/install.sh [--vault <path>] [--bin <dir>] [--no-web] [--no-plugin] [--no-mcp] [--dry-run]
+#   scripts/install.sh [--vault <path>] [--bin <dir>] [--claude] [--no-web] [--no-plugin] [--no-mcp] [--dry-run]
 #
 # What it does
 #   1. checks python3.12 (and that asyncio works — mixed pyenv installs segfault), uv, git, node (for the Hub web)
 #   2. uv sync --all-packages ; builds the Hub web (unless --no-web)
 #   3. writes launchers myelin / myelin-mcp / myelin-hub into --bin (default ~/.local/bin)
-#   4. registers the Claude Code plugin from the local marketplace (unless --no-plugin)
-#   5. registers the MCP server for the vault (unless --no-mcp / no --vault)
+#   4. (opt-in: --claude) registers the Claude Code plugin from the local marketplace
+#   5. (opt-in: --claude, needs --vault) registers the MCP server for the vault
 #   6. copies the Obsidian theme into <vault>/.obsidian/themes/MYELIN Emboss (if --vault)
 #   (Obsidian itself: scripts/install_obsidian.sh — .deb install + theme preselect + open vault)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VAULT=""; BIN="${HOME}/.local/bin"; WEB=1; PLUGIN=1; MCP=1; DRY=0
+VAULT=""; BIN="${HOME}/.local/bin"; WEB=1; CLAUDE=0; PLUGIN=1; MCP=1; DRY=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --vault) VAULT="$2"; shift 2;;
     --bin) BIN="$2"; shift 2;;
+    --claude) CLAUDE=1; shift;;
     --no-web) WEB=0; shift;;
     --no-plugin) PLUGIN=0; shift;;
     --no-mcp) MCP=0; shift;;
@@ -74,7 +75,11 @@ exec uv --directory \"$REPO\" run $cmd \"\$@\"
 done
 say "launchers in $BIN (add to PATH if needed)"
 
-# 4. Claude Code plugin (local marketplace)
+# 4. Claude Code plugin (local marketplace) — opt-in with --claude (Claude Code is optional for Vault-only users)
+if [[ $CLAUDE -eq 0 ]]; then
+  say "Claude Code 연동은 --claude 플래그를 줄 때만 설정한다 (plugin + MCP)"
+  PLUGIN=0; MCP=0
+fi
 if [[ $PLUGIN -eq 1 ]] && command -v claude >/dev/null; then
   run claude plugin marketplace add "$REPO" || say "marketplace already added or claude too old — use: claude --plugin-dir $REPO/plugin"
   run claude plugin install myelin@myelin-local --scope user || say "plugin install skipped — fallback: claude --plugin-dir $REPO/plugin"

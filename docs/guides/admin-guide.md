@@ -26,7 +26,7 @@ Alpha(Brian, 2주) → Pilot(5~10명, 3주, `docs/guides/pilot-guide.md`) → Wa
 
 ## 5. 업그레이드
 ```bash
-git pull && scripts/install.sh --vault <v>     # 멱등. 테마는 .bak 백업 후 갱신
+git pull && scripts/install.sh --vault <v> [--claude]   # 멱등. 테마는 .bak 백업 후 갱신; --claude 일 때만 plugin/MCP 등록
 make gate P=8                                   # 전체 검사
 ```
 Vault 포맷(Frontmatter v2, myelin.yaml) 변경은 ADR 선행. `myelin doctor` 로 마이그레이션 검증.

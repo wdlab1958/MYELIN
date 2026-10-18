@@ -64,6 +64,18 @@ def test_install_launchers_and_theme_idempotent(tmp_path: Path) -> None:
     assert "not a Vault yet" in r.stdout
 
 
+def test_claude_registration_is_opt_in(tmp_path: Path) -> None:
+    """Without --claude the installer never touches Claude Code plugin/MCP settings."""
+    r = _run(["--dry-run", "--no-web", "--vault", str(tmp_path / "v")], tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert (
+        "claude plugin" not in r.stdout and "claude mcp" not in r.stdout and "--claude" in r.stdout
+    )
+    r = _run(["--dry-run", "--no-web", "--claude", "--vault", str(tmp_path / "v")], tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert ("claude plugin" in r.stdout) or ("claude CLI not found" in r.stdout)
+
+
 def test_marketplace_manifest_points_at_plugin() -> None:
     import json
 
