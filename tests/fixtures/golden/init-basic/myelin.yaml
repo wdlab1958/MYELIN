@@ -13,3 +13,4 @@ llm:
   default: claude
   route: {confidential: local, 40_IP/**: local}
 commons: {enabled: false}
+mcp: {write_draft: false, expose_confidential: false}

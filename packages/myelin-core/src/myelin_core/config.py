@@ -113,6 +113,13 @@ class Commons(_Strict):
         return self
 
 
+class MCP(_Strict):
+    """MYELIN MCP server policy (ADR-0007). Read-only by default."""
+
+    write_draft: bool = False  # register the write_draft tool (also needs level >= 1)
+    expose_confidential: bool = False  # return confidential bodies / include them in search
+
+
 class MyelinConfig(_Strict):
     owner: Owner
     language: str = "ko"
@@ -121,6 +128,7 @@ class MyelinConfig(_Strict):
     level: Level = 1
     llm: LLM = Field(default_factory=LLM)
     commons: Commons = Field(default_factory=Commons)
+    mcp: MCP = Field(default_factory=MCP)
 
     @field_validator("packs")
     @classmethod
