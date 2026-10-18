@@ -1,12 +1,10 @@
 # PHASE_STATE
 
-current_phase: P5
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P6
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P4 완료. P5 Gate 통과(`make gate P=5`), 보고서 `docs/reports/P5.md`, 태그 `phase-P5`.
-> **다음 Phase(P6)는 Brian의 "GO P6" 승인 후에만 착수한다.** 승인 시 current_phase를 P6, status를 in_progress로 바꾸고 아래 Next를 이어간다.
-> 갤러리 스크린샷 `docs/reports/P5/gallery.png` 는 정본 P5 Gate "갤러리 스크린샷 승인" 항목 — Brian 의 시각 승인이 필요하다.
+> P0~P5 완료(`phase-P0`~`phase-P5`). 2026-10-18 Brian "GO P6" 승인(갤러리 스크린샷 포함)으로 P6 착수.
 
 ## Done
 ### P0
@@ -76,7 +74,7 @@ last_updated: 2026-10-18
 - [x] P5-T7 theme/obsidian-myelin-emboss (manifest.json, theme.css 생성물)
 - [x] P5-T8 갤러리 스크린샷 승인 · make gate P=5 · reports/P5.md · tag phase-P5
 
-## Next (P6 — 승인 대기)
+## Next
 - [ ] P6-T1 FastAPI 앱 골격 (myelin-core 재사용), localhost 바인딩, 읽기 API
 - [ ] P6-T2 React 18 + Vite + TS + Tailwind(Emboss preset) 골격, 토큰 외 색 금지 lint
 - [ ] P6-T3 Dashboard 화면 (KPI Tile, 지표 11.1)
