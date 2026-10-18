@@ -108,7 +108,7 @@ last_updated: 2026-10-18
 
 ## Blockers
 - 사람 참여: 파일럿 운영(3주), 챔피언 지정, KIPRIS 조회. 코드 측 블로커 없음.
-- CI green 은 GitHub 원격 push 후 확인 필요(Node/Chrome 단계 추가 필요 — Backlog).
+- CI: **green** — github.com/wdlab1958/MYELIN `main` run 39087153818 (check + gate P=8, 2026-10-18). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
 - ADR-0001~0010 (변경 없음)
