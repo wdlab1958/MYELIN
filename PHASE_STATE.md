@@ -22,7 +22,7 @@ gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8
 - [ ] 로컬에서 태그 push (phase-P0 … , v1.0.0)
 
 ## Blockers
-- **원격 main 교체됨 (10:39, 다른 세션)** — 이 이력은 `opus-v1.0-2026-10-18` 브랜치. main 결정은 Brian (docs/reports/compare-main-2026-10-18.md). 공개 main의 A3 Pack 중립화 필요
+- **원격 main 교체됨 (10:39, 다른 세션)** — 이 이력은 `opus-v1.0-2026-10-18` 브랜치. main 결정은 Brian (docs/reports/compare-main-2026-10-18.md). 공개 main·fable-v1.0 중립화 완료(7029cec, CI green). 원격 태그 phase-P0~P8·v1.0.0 은 중립화 이전 commit을 가리킴
 - (P7 완료 조건) §9.1 정책 3종 합의 · 파일럿 5명+ 실측 `docs/pilot/results.yaml` · `docs/pilot/feedback.md` (status: final) · Org Pack 2종 챔피언 확정 — 사람
 
 ## Decisions (→ ADR)
