@@ -8,6 +8,7 @@ with "not implemented" (fail-closed) so nobody can tag a phase by accident.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -24,9 +25,10 @@ class Check:
     run: Callable[[], tuple[bool, str]]
 
 
-def sh(cmd: list[str]) -> Callable[[], tuple[bool, str]]:
+def sh(cmd: list[str], env: dict[str, str] | None = None) -> Callable[[], tuple[bool, str]]:
     def _run() -> tuple[bool, str]:
-        proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+        full_env = {**os.environ, **(env or {})}
+        proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=full_env)
         tail = (proc.stdout + proc.stderr).strip().splitlines()
         return proc.returncode == 0, (tail[-1] if tail else "")
 
@@ -217,9 +219,64 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P4 tasks", phase_state_lists_next_phase_tasks(3)),
     ],
     4: [
-        Check("path escape blocked", not_implemented("경로 이탈 차단")),
-        Check("read-only by default", not_implemented("기본 읽기 전용")),
-        Check("search p95 < 300ms @5k notes", not_implemented("p95 < 300ms")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "mcp: path escape (.., abs, ~, symlink) blocked",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-mcp/tests/test_service.py",
+                    "-k",
+                    "escape",
+                ]
+            ),
+        ),
+        Check(
+            "mcp: read-only by default, write_draft opt-in + level",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-mcp/tests/test_server.py",
+                    "-k",
+                    "read_only or registered",
+                ]
+            ),
+        ),
+        Check(
+            "mcp: confidential withheld unless exposed",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-mcp/tests/test_service.py",
+                    "-k",
+                    "confidential",
+                ]
+            ),
+        ),
+        Check(
+            "index: search p95 < 300ms @ 5,000 notes",
+            sh(
+                ["uv", "run", "pytest", "-q", "-s", "tests/test_perf_index.py"],
+                env={"MYELIN_PERF": "1"},
+            ),
+        ),
+        Check("ADR-0007 MCP policy", adr_exists("0007", "mcp-policy")),
+        Check(
+            "MCP setup guide",
+            lambda: ((ROOT / "docs/guides/mcp-setup.md").exists(), "docs/guides/mcp-setup.md"),
+        ),
+        Check("PHASE_STATE has P5 tasks", phase_state_lists_next_phase_tasks(4)),
     ],
     5: [
         Check("no hardcoded tokens (lint)", not_implemented("토큰 하드코딩 0")),
