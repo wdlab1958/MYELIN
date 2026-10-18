@@ -1,8 +1,9 @@
 # PHASE_STATE
 current_phase: P8
-status: in_progress            # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 11:00 KST
+status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
+last_updated: 2026-10-18 11:40 KST
 approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진행 승인
+gate: P8 자동 6/6 PASS · 사람 증거 1건 PEND (상표 검토) — phase-P8·v1.0.0 태그 보류 (docs/reports/P8.md)
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
@@ -13,15 +14,12 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 - P5 — Emboss Design System: Gate PASS 8/8 (docs/reports/P5.md)
 - P6 — MYELIN Hub: Gate PASS 10/10 (docs/reports/P6.md)
 - P7 — Commons & Org Pilot: 자동 7/7 PASS · **사람 증거 2건 PEND** (파일럿 온보딩 결과, 피드백 리포트) — phase-P7 태그 보류 (docs/reports/P7.md)
+- P8 — Hardening & v1.0: 자동 6/6 PASS · 사람 증거 1건 PEND (상표) (docs/reports/P8.md)
 
-## Next (P8 — 승인됨: "GO P7 & P8")
-- [x] P8-T1 scripts/gate.py 에 P8 Gate 검사 추가
-- [x] P8-T2 위협 모델(STRIDE) 문서와 조치 — High 0
-- [x] P8-T3 설치 스크립트 · 설치 가이드 (+ 설치→첫 verified 자동 측정)
-- [x] P8-T4 사용자 · 관리자 가이드
-- [x] P8-T5 상표 · 도메인 확인 (KIPRIS 제9류·제42류, GitHub org명) 결과 기록
-- [x] P8-T6 릴리스 노트 (알려진 제약) · v1.0.0
-- [x] P8-T7 회고
+## Next (사람 — v1.0.0 태그 조건)
+- [ ] KIPRIS 제9·42류 검토 → docs/legal/trademark-check.md `reviewed_by`·`decision` → `make gate P=8` → tag phase-P8, v1.0.0
+- [ ] §9.1 정책 3종 합의 → 파일럿 5명+ (docs/pilot/results.yaml, feedback.md) → `make gate P=7` → tag phase-P7
+- [ ] 로컬에서 태그 push (phase-P0 … , v1.0.0)
 
 ## Blockers
 - (P7 완료 조건) §9.1 정책 3종 합의 · 파일럿 5명+ 실측 `docs/pilot/results.yaml` · `docs/pilot/feedback.md` (status: final) · Org Pack 2종 챔피언 확정 — 사람
@@ -45,4 +43,7 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 - 템플릿 id 식(tp.date.now "YYYYMMDD-HHmm-ssSSS")을 실제 Obsidian+Templater에서 확인 (docs/manual/P3-e2e.md #14)
 - Obsidian에 Emboss 테마 적용 모습 확인 (Brian 수동)
 - 다크 모드 토큰 (v1.0 이후)
-- 휠 패키지에 packs 포함 (myelin_cli/_packs) — P8 패키징
+- Vite 6+ · Tailwind 4 전환 (dev 의존성 경보, 위협 T6)
+- Windows 기본 환경 검증 · 설치 스크립트
+- 이름 결정에 따른 정리 (상표 출원 또는 마이그레이션)
+- 레지스트리(PyPI) 배포 — 이름 결정 이후. v1.0은 git + lockfile 설치

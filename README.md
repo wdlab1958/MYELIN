@@ -84,6 +84,9 @@ myelin commons link ~/MyVault ~/org-commons              # 구성원: clone 후 
 
 ## 문서
 
+- 설치 · 사용 · 관리: [install](docs/guides/install.md) · [user](docs/guides/user.md) · [admin](docs/guides/admin.md) · [MCP](docs/guides/mcp.md)
+- v1.0.0 릴리스 노트(알려진 제약): [`docs/release/v1.0.0.md`](docs/release/v1.0.0.md) · 위협 모델: [`docs/security/threat-model.md`](docs/security/threat-model.md)
+
 - 명세 (Rev 2.0 공개판): [`docs/spec/MYELIN_Rev2.0.md`](docs/spec/MYELIN_Rev2.0.md) · [docx](docs/spec/MYELIN_Rev2.0.docx)
 - Phase 계획: [`docs/phases/`](docs/phases/) · 보고서: [`docs/reports/`](docs/reports/)
 - 설계 결정: [`docs/adr/`](docs/adr/)

@@ -725,8 +725,14 @@ def p8_trademark_reviewed() -> bool:
     """사람 증거: 상표 판단은 사람이 한다 — `reviewed_by:` 가 채워져 있어야 한다."""
     if not TRADEMARK.is_file():
         return False
-    m = re.search(r"^reviewed_by:[ \t]*(\S.*)$", TRADEMARK.read_text(encoding="utf-8"), re.M)
-    return m is not None and m.group(1).strip() not in ("", '""', "null")
+    m = re.search(r"^reviewed_by:(.*)$", TRADEMARK.read_text(encoding="utf-8"), re.M)
+    if m is None:
+        return False
+    value = m.group(1).split("#", 1)[0].strip().strip("'\"")  # 주석·따옴표 제외
+    if value in ("", "null", "~"):
+        print("    ! reviewed_by 비어 있음 — KIPRIS 확인 후 사람이 기입")
+        return False
+    return True
 
 
 def p8_versions() -> bool:
