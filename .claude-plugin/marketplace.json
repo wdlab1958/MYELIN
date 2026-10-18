@@ -1,0 +1,14 @@
+{
+  "name": "myelin-local",
+  "owner": { "name": "WDLAB · A3 AI·ML·AX Research Division" },
+  "metadata": { "description": "MYELIN local marketplace — install the plugin from this checkout" },
+  "plugins": [
+    {
+      "name": "myelin",
+      "source": "./plugin",
+      "description": "MYELIN for Claude Code — Personal Knowledge OS skills + fail-closed write guard",
+      "version": "1.0.0",
+      "category": "productivity"
+    }
+  ]
+}

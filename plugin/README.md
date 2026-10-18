@@ -14,6 +14,12 @@ Layout follows `docs/adr/0002-plugin-spec.md`.
 - 판단 불가(비JSON, 경로 없음, Vault 없음, `$(…)`, `cd`+쓰기, 인라인 인터프리터)는 **차단**(exit 2). 사유가 Claude 에게 전달된다.
 - Skill 은 시작 시 Level 을 확인하고(`myelin skills --json`) 최소 Level 미달이면 중단한다. Guard 가 하드 가드, Skill 안내가 소프트 가드, Vault `.claude/settings.json` 의 deny 규칙이 2차 방어.
 
+## 설치
+```
+/plugin install myelin --marketplace wdlab1958/myelin
+```
+(Claude Code 2.1.275+, 저장소 `.claude-plugin/marketplace.json` 기준. 로컬 체크아웃: `claude plugin marketplace add <repo path>` 후 동일.)
+
 ## 로컬 테스트
 ```bash
 claude --plugin-dir ./plugin            # 세션 한정 로드

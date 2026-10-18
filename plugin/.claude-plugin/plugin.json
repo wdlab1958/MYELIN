@@ -1,7 +1,7 @@
 {
   "name": "myelin",
   "displayName": "MYELIN for Claude Code",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Personal Knowledge OS skills (/ingest /distill /interview /review /link /compose /ip-scan) with a fail-closed write guard for Write/Edit/NotebookEdit and Bash. Level-gated per Vault myelin.yaml.",
   "author": { "name": "WDLAB · A3 AI·ML·AX Research Division" },
   "license": "Proprietary",
