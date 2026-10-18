@@ -130,3 +130,35 @@ def test_stats_on_violations() -> None:
 def test_stats_empty_vault(tmp_path: Path) -> None:
     s = compute_stats(tmp_path, TODAY)
     assert s.notes == 0 and s.ai_promotion_rate is None and s.orphan_ratio == 0.0
+
+
+# ── P3 보정: 노트가 아닌 폴더·Inbox 원료 메모 ──────────────────────────────────
+def test_non_note_folders_and_raw_captures(tmp_path: Path, packs: list) -> None:  # type: ignore[type-arg]
+    apply_plan(tmp_path, plan_init(make_cfg(), packs, TODAY))  # type: ignore[arg-type]
+    for rel in (
+        "50_Journal/2026-10-18.md",
+        "80_Outputs/drafts/proposal.md",
+        "00_Inbox/clips/web page.md",
+        "00_Inbox/빠른 메모.md",
+    ):
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("frontmatter 없는 글\n", encoding="utf-8")
+    (tmp_path / "00_Inbox/ai-drafts/bad.md").write_text("no frontmatter\n", encoding="utf-8")
+    findings = run_doctor(tmp_path, today=TODAY, check_location=False)
+    assert [(f.rule, f.path) for f in findings] == [("schema", "00_Inbox/ai-drafts/bad.md")]
+    assert compute_stats(tmp_path, TODAY).inbox_items == 1
+
+
+def test_vault_settings_and_guard_rendered(packs: list) -> None:  # type: ignore[type-arg]
+    import json
+
+    from myelin_core.scaffold import GUARD_FILE, SETTINGS_FILE, guard_source
+
+    plan = plan_init(make_cfg(), packs, TODAY)  # type: ignore[arg-type]
+    settings = json.loads(plan.files[SETTINGS_FILE])
+    assert "Edit(/10_Domains/**)" in settings["permissions"]["deny"]
+    assert "Read(/40_IP/*.md)" in settings["permissions"]["deny"]
+    hook = settings["hooks"]["PreToolUse"][0]
+    assert "Read" in hook["matcher"] and hook["hooks"][0]["args"][0].endswith(GUARD_FILE)
+    assert plan.files[GUARD_FILE] == guard_source()

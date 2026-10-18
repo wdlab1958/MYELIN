@@ -54,3 +54,10 @@ P2는 실제 사용자 Vault를 만들고 고친다. 사용자 데이터를 다�
 ## 결과
 - golden snapshot(`tests/fixtures/vaults/golden/brian`)은 CLI를 임시 폴더에서 실행해 만든다 — Vault를 소스 안에 직접 만들 수 없기 때문.
 - 내장 Pack 경로 탐색: `--packs` → `$MYELIN_PACKS` → 패키지 내장 `_packs` → 소스 트리. 휠에 Pack을 넣는 패키징은 P8에서.
+
+## 보정 (P3, 2026-10-18)
+- doctor 검사 범위에서 `50_Journal`(일일·리뷰 노트), `80_Outputs`(산출물 문서), `00_Inbox/clips`(웹 클리핑 원문)를 제외한다.
+  이들은 지식 노트가 아니어서 노트 스키마를 강제하면 정상 사용에서 오류가 쏟아진다 (P2 설계 결함).
+- `00_Inbox` 의 frontmatter 없는 메모는 오류가 아니라 **처리 전 원료**(raw capture)로 센다 — stats의 inbox_items에 포함.
+  단 `00_Inbox/ai-drafts/` 는 Claude의 출력이므로 항상 스키마를 지켜야 한다.
+- `myelin init` 은 Vault `.claude/settings.json`(권한 + Guard Hook)과 `.claude/hooks/myelin_guard.py` 를 함께 만든다 (ADR-0002 Rev 2).

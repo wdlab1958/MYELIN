@@ -7,9 +7,11 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
+from importlib import resources
 from pathlib import Path
 
 from myelin_core.config import CONFIG_FILE, LEVEL_DESCRIPTIONS, VaultConfig, render_config
@@ -43,7 +45,74 @@ GITIGNORE = """\
 .trash/
 .obsidian/workspace*.json
 .obsidian/cache
+.claude/settings.local.json
 """
+
+SETTINGS_FILE = ".claude/settings.json"
+GUARD_FILE = ".claude/hooks/myelin_guard.py"
+GUARD_TOOLS = "Write|Edit|MultiEdit|NotebookEdit|Read"
+
+# Vault 권한 (ADR-0002 Rev 2): 사람 영역은 Edit deny.
+# Edit deny는 Write·Edit 도구와 Bash 리다이렉트·sed·tee 대상까지 막는다.
+# Level별 세부 허용은 Guard Hook이 판정한다 (deny는 allow로 예외를 만들 수 없으므로 여기선 굵게만).
+PROTECTED_EDIT = (
+    "/10_Domains/**",
+    "/20_Projects/**",
+    "/30_Resources/**",
+    "/40_IP/*.md",
+    "/90_System/**",
+    "/99_Archive/**",
+    "/myelin.yaml",
+    "/CLAUDE.md",
+    "/.claude/**",
+)
+DENIED_BASH = (
+    "rm",
+    "rmdir",
+    "mv",
+    "git push",
+    "git reset",
+    "git clean",
+    "curl",
+    "wget",
+    "scp",
+    "rsync",
+)
+
+
+def render_vault_settings() -> str:
+    settings = {
+        "permissions": {
+            "allow": ["Bash(myelin doctor *)", "Bash(myelin stats *)"],
+            "deny": [
+                *(f"Edit({p})" for p in PROTECTED_EDIT),
+                "Read(/40_IP/*.md)",
+                *(f"Bash({c} *)" for c in DENIED_BASH),
+            ],
+        },
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": GUARD_TOOLS,
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "python3",
+                            "args": ["${CLAUDE_PROJECT_DIR}/" + GUARD_FILE],
+                            "timeout": 10,
+                        }
+                    ],
+                }
+            ]
+        },
+    }
+    return json.dumps(settings, ensure_ascii=False, indent=2) + "\n"
+
+
+def guard_source() -> str:
+    return (resources.files("myelin_core.resources") / "myelin_guard.py").read_text(
+        encoding="utf-8"
+    )
 
 
 class ScaffoldError(MyelinError):
@@ -198,11 +267,16 @@ def render_claude_md(cfg: VaultConfig, refs: dict[str, DomainRef]) -> str:
 
 {render_generated_block(cfg, refs)}
 
-## Write Policy (fail-closed)
-- 새 노트는 `00_Inbox/ai-drafts/` 에만 만든다 (`origin: claude`, `status: draft`).
-- 그 외 경로의 노트는 직접 고치지 않는다. 변경은 `_patches/YYYYMMDD-<topic>.md` 로 제안한다.
-- `40_IP/` 와 `classification: confidential` 노트는 읽기만 하고, 외부 도구로 보내지 않는다.
-- verified 승격, MOC 편집, 공유는 사람만 한다.
+## Write Policy (fail-closed — `.claude/hooks/myelin_guard.py` 가 실제로 차단한다)
+- 쓸 수 있는 곳은 Level에 따라 정해진다 (`.md` 만):
+  - L1 `00_Inbox/ai-drafts/`, `50_Journal/reviews/`
+  - L2 + `_patches/`, `80_Outputs/drafts/`
+  - L3 + `40_IP/candidates/`
+- 새 노트의 frontmatter에는 `origin: claude`, `status: draft` 를 넣는다.
+- 기존 노트는 직접 고치지 않는다. 변경은 `_patches/YYYYMMDD-<topic>.md` 로 제안한다.
+- `40_IP/` 와 `classification: confidential` 노트는 **읽지 않는다**.
+  로컬 LLM 전용이다 — Claude가 읽는 순간 내용이 외부로 전송되기 때문.
+- verified 승격, MOC 편집, 공유는 사람만 한다. 차단 메시지가 나오면 우회하지 말고 사람에게 알린다.
 
 ## Note Conventions
 - 1 노트 = 1 개념. 제목은 주장형 문장을 권장한다.
@@ -256,6 +330,8 @@ def plan_init(cfg: VaultConfig, packs: Sequence[LoadedPack], today: date) -> Pla
     f[CONFIG_FILE] = render_config(cfg)
     f[CLAUDE_FILE] = render_claude_md(cfg, refs)
     f[".gitignore"] = GITIGNORE
+    f[SETTINGS_FILE] = render_vault_settings()
+    f[GUARD_FILE] = guard_source()
     f[LOCK_FILE] = render_lock(lock_from_packs(packs))
     f[TAXONOMY_FILE] = render_taxonomy(ordered)
     f[INTERVIEWS_FILE] = render_interviews(ordered)

@@ -39,6 +39,15 @@ so AI drafts never overwrite what you have verified.
 - `myelin doctor` 는 Vault가 공개 코드 호스팅(GitHub 등)을 원격으로 둔 git 안에 있으면 경고합니다. Vault를 git으로 백업한다면 **비공개 저장소**를 쓰세요.
 - Hub(P6)는 기본적으로 `localhost` 에서만 열리고, MCP 서버(P4)는 로컬 stdio로 동작합니다.
 
+## Claude Code에서 쓰기
+
+```
+/plugin marketplace add wdlab1958/MYELIN
+/plugin install myelin@myelin
+```
+Vault 폴더에서 Claude Code를 실행하고 `/myelin:ingest`, `/myelin:distill`, `/myelin:interview`, `/myelin:review` 등을 씁니다.
+Claude가 쓸 수 있는 곳은 Vault의 `myelin.yaml` `level` 이 정하고, Vault 안 Guard Hook이 실제로 막습니다 — [plugin/README.md](plugin/README.md).
+
 ## 구성 (예정)
 
 | 경로 | 구성요소 | Phase |

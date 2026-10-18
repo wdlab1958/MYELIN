@@ -3,3 +3,4 @@
 .trash/
 .obsidian/workspace*.json
 .obsidian/cache
+.claude/settings.local.json

@@ -19,11 +19,16 @@
 - 초안 — ai-drafts에 초안을 쓸 수 있다
 <!-- myelin:generated:end -->
 
-## Write Policy (fail-closed)
-- 새 노트는 `00_Inbox/ai-drafts/` 에만 만든다 (`origin: claude`, `status: draft`).
-- 그 외 경로의 노트는 직접 고치지 않는다. 변경은 `_patches/YYYYMMDD-<topic>.md` 로 제안한다.
-- `40_IP/` 와 `classification: confidential` 노트는 읽기만 하고, 외부 도구로 보내지 않는다.
-- verified 승격, MOC 편집, 공유는 사람만 한다.
+## Write Policy (fail-closed — `.claude/hooks/myelin_guard.py` 가 실제로 차단한다)
+- 쓸 수 있는 곳은 Level에 따라 정해진다 (`.md` 만):
+  - L1 `00_Inbox/ai-drafts/`, `50_Journal/reviews/`
+  - L2 + `_patches/`, `80_Outputs/drafts/`
+  - L3 + `40_IP/candidates/`
+- 새 노트의 frontmatter에는 `origin: claude`, `status: draft` 를 넣는다.
+- 기존 노트는 직접 고치지 않는다. 변경은 `_patches/YYYYMMDD-<topic>.md` 로 제안한다.
+- `40_IP/` 와 `classification: confidential` 노트는 **읽지 않는다**.
+  로컬 LLM 전용이다 — Claude가 읽는 순간 내용이 외부로 전송되기 때문.
+- verified 승격, MOC 편집, 공유는 사람만 한다. 차단 메시지가 나오면 우회하지 말고 사람에게 알린다.
 
 ## Note Conventions
 - 1 노트 = 1 개념. 제목은 주장형 문장을 권장한다.

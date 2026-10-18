@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from collections.abc import Callable
@@ -289,10 +290,110 @@ def p2_checks() -> list[Check]:
     ]
 
 
+SKILLS = ("ingest", "distill", "interview", "link", "compose", "review", "ip-scan")
+GUARD_COPIES = (
+    "packages/myelin-core/src/myelin_core/resources/myelin_guard.py",
+    "plugin/scripts/myelin_guard.py",
+    "tests/fixtures/vaults/golden/brian/.claude/hooks/myelin_guard.py",
+)
+
+
+def p3_adr_revised() -> bool:
+    return "## Rev 2" in (ROOT / "docs/adr/0002-claude-code-plugin-spec.md").read_text(
+        encoding="utf-8"
+    )
+
+
+def p3_claude_validate() -> bool:
+    import shutil
+    import subprocess
+
+    claude = shutil.which("claude")
+    if claude is None:
+        print("    ! claude CLI not found — this check needs Claude Code installed")
+        return False
+    for target in ("plugin", "."):
+        res = subprocess.run(
+            [claude, "plugin", "validate", "--strict", target],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if res.returncode != 0:
+            print(f"    ! validate {target}: {res.stdout[-400:]}{res.stderr[-400:]}")
+            return False
+    return True
+
+
+def p3_guard_copies_identical() -> bool:
+    blobs = {(ROOT / p).read_bytes() for p in GUARD_COPIES}
+    return len(blobs) == 1
+
+
+def p3_skill_frontmatter() -> bool:
+    from myelin_core.errors import MyelinError
+    from myelin_core.note import split_frontmatter
+    from myelin_core.yamlio import load_yaml
+
+    for name in SKILLS:
+        text = (ROOT / f"plugin/skills/{name}/SKILL.md").read_text(encoding="utf-8")
+        fm_text, body = split_frontmatter(text, name)
+        fm = load_yaml(fm_text, name, MyelinError)
+        if fm.get("name") != name or not fm.get("description"):
+            return False
+        if fm.get("disable-model-invocation") is not True:  # 모든 MYELIN Skill은 사람이 호출
+            return False
+        if "<!-- myelin:min-level" not in body or len(text.splitlines()) > 500:
+            return False
+    return True
+
+
+def p3_pytest(path: str) -> Callable[[], bool]:
+    def _run() -> bool:
+        import subprocess
+
+        cmd = [sys.executable, "-m", "pytest", path, "-q", "--no-header", "-p", "no:cacheprovider"]
+        res = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+        if res.returncode != 0:
+            print("    ! " + res.stdout[-600:])
+        return res.returncode == 0
+
+    _run.__name__ = f"pytest {path}"
+    return _run
+
+
+CLAUDE_VALIDATE = "claude plugin validate --strict (plugin + marketplace)"
+LOCAL_ONLY = {CLAUDE_VALIDATE}  # CI 러너에 Claude Code CLI가 없다 (ADR-0002 Rev 2)
+
+
+def p3_checks() -> list[Check]:
+    return [
+        ("ADR-0002 Rev 2 (re-verified against docs)", guarded(p3_adr_revised)),
+        (CLAUDE_VALIDATE, guarded(p3_claude_validate)),
+        (
+            "guard copies identical (core / plugin / golden vault)",
+            guarded(p3_guard_copies_identical),
+        ),
+        (
+            "guard tests (write gate, read block, escapes, malformed)",
+            guarded(p3_pytest("tests/plugin/test_guard.py")),
+        ),
+        ("skills: 7 present, human-invoked, min-level, <=500 lines", guarded(p3_skill_frontmatter)),
+        (
+            "skill output contracts: guard-allowed + doctor-clean",
+            guarded(p3_pytest("tests/plugin/test_skill_contracts.py")),
+        ),
+        ("exists: docs/manual/P3-e2e.md (real Claude checklist)", exists("docs/manual/P3-e2e.md")),
+        ("PHASE_STATE lists P4 tasks", next_phase_tasks_listed(4)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
     "P0": p0_checks,
     "P1": p1_checks,
     "P2": p2_checks,
+    "P3": p3_checks,
 }
 
 
@@ -304,15 +405,27 @@ def main(argv: list[str]) -> int:
         print("  해당 Phase 착수 시 scripts/gate.py 에 검사를 먼저 추가하세요.")
         return 1
 
-    results = [(name, fn()) for name, fn in GATES[phase]()]
-    width = max(len(n) for n, _ in results)
-    for name, ok in results:
+    in_ci = os.environ.get("CI") == "true"
+    checks = GATES[phase]()
+    width = max(len(n) for n, _ in checks)
+    results: list[tuple[str, bool]] = []
+    skipped: list[str] = []
+    for name, fn in checks:
+        if in_ci and name in LOCAL_ONLY:
+            print(f"  SKIP  {name.ljust(width)}  (CI에 도구 없음 — 로컬 Gate에서 확인)")
+            skipped.append(name)
+            continue
+        ok = fn()
+        results.append((name, ok))
         print(f"  {'PASS' if ok else 'FAIL'}  {name.ljust(width)}")
     failed = [n for n, ok in results if not ok]
     print(f"\ngate {phase}: {len(results) - len(failed)}/{len(results)} passed")
     if failed:
         print(f"gate {phase}: FAIL")
         return 1
+    if skipped:
+        print(f"gate {phase}: PASS (CI: local-only {len(skipped)}건 제외, 완료 판정은 로컬)")
+        return 0
     print(f"gate {phase}: PASS")
     return 0
 

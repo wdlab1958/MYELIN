@@ -42,3 +42,37 @@
 - P3 Gate에 다음 테스트를 포함한다: 잘못된 JSON·필드 누락·Vault 루트 미지정 → 모두 exit 2.
 - P3 CI에 `claude plugin validate --strict ./plugin` 을 추가한다 (CI에 Claude Code CLI 설치 필요 — 불가 시 로컬 Gate로 대체하고 ADR 갱신).
 - 사양은 바뀔 수 있으므로 P3 착수 시 이 ADR을 다시 대조한다.
+
+---
+
+## Rev 2 — P3 착수 시 재대조 (2026-10-18, Claude Code 2.1.302)
+
+추가 확인 출처: Skills (`code.claude.com/docs/en/skills`), Permissions (`…/permissions`),
+Marketplace reference (`…/plugins/marketplace-reference`).
+
+### 새로 확인한 사양
+1. **플러그인은 사용자 단위로 활성화**된다 — 플러그인 Hook은 그 사용자의 **모든 프로젝트**에서 실행된다.
+2. **권한 규칙 평가 순서:** deny → ask → allow, 첫 일치가 결정. allow로 deny의 예외를 만들 수 없다.
+   `Edit(path)` deny는 Write·Edit 도구뿐 아니라 **Bash가 인식하는 파일 명령(sed, tee)과 리다이렉트(`>`) 대상**에도 적용된다.
+   `Write(path)`·`NotebookEdit(path)` 경로 규칙은 무시되므로 `Edit(path)` 로 쓴다. `Read(path)` deny는 같은 경로의 Write·Edit도 막는다.
+   경로 문법: `/path` = 설정 파일 기준(프로젝트 루트), `//path` = 절대경로. gitignore 패턴.
+   한계: Python 스크립트처럼 파일을 직접 여는 하위 프로세스는 막지 못한다 (OS 수준은 sandbox).
+3. **SKILL.md frontmatter:** `name`, `description`, `argument-hint`, `disable-model-invocation`(true면 사용자만 호출),
+   `allowed-tools`(그 턴만 사전 승인, 제한 아님), `disallowed-tools` 등. 플러그인 Skill은 `/myelin:<skill>` 로 호출.
+   인자는 `$ARGUMENTS`. 본문은 500줄 이하 권장.
+4. **Marketplace:** 저장소 루트 `.claude-plugin/marketplace.json` (`name`, `owner.name`, `plugins[{name, source: "./plugin"}]`).
+   사용자: `/plugin marketplace add wdlab1958/MYELIN` → `/plugin install myelin@myelin`.
+
+### 결정 변경 (Rev 1 대비)
+| # | Rev 1 | Rev 2 | 이유 |
+|---|---|---|---|
+| A | Guard는 플러그인 `hooks.json` 에만 | **주 장치 = Vault 자신의 `.claude/settings.json` Hook** (`myelin init` 이 Guard 스크립트를 `.claude/hooks/` 에 복사). 플러그인 Hook은 **보조** — 다른 프로젝트 세션에서 Vault로 쓰려는 경우를 잡는다 | 플러그인 Hook이 모든 프로젝트에서 돌기 때문에 "Vault 루트 미지정 = 차단"은 Brian의 코드 저장소 쓰기까지 막는다. Vault 안 Hook은 그 Vault에서만, 플러그인 설치 여부와 무관하게 동작하고, Vault와 함께 git으로 감사된다 |
+| B | Vault 루트 = `MYELIN_VAULT` → `CLAUDE_PROJECT_DIR`, 없으면 차단 | **Vault는 표식 파일로 판정**: `myelin.yaml` + `90_System/myelin.lock.yaml` 이 있는 조상 디렉터리. Vault 안 Hook은 자기 위치(`.claude/hooks/`)에서 Vault를 안다 | 환경변수·cwd 의존 제거. 대상 경로의 실제 위치(realpath)와 표기 위치(lexical)를 모두 검사해 심볼릭 링크 우회 차단 |
+| C | 판단 불가 = 차단 | 유지 (잘못된 JSON, 경로 누락, 예외 → exit 2). 단 **Vault와 무관한 경로는 통과** (플러그인 Hook이 다른 프로젝트에 간섭하지 않도록) | — |
+| D | 쓰기만 감시 | **읽기도 감시**: `40_IP/` 와 `classification: confidential` 노트의 `Read` 를 차단 (`myelin.yaml` `llm.route` 가 `local` 일 때 — 기본값) | Claude가 읽는 순간 노트 내용이 Anthropic으로 전송된다. Privacy model과 일치시킴. 한계: Grep 결과 줄은 막지 못함 → 문서화 |
+| E | Bash는 permissions deny | Vault `settings.json`: 보호 폴더 `Edit` deny(리다이렉트·sed·tee 포함), `Read(/40_IP/**)` deny, 파괴·네트워크 명령 deny, `myelin doctor/stats` 만 allow. 나머지 Bash는 매번 사람 승인 | 다층 방어 |
+| F | 쓰기 허용 경로 고정 | **Level별 허용** — L0 없음 · L1 `00_Inbox/ai-drafts/`, `50_Journal/reviews/` · L2 + `_patches/`, `80_Outputs/drafts/` · L3 + `40_IP/candidates/`. `.md` 만 | 명세 §3 Phase-gated Autonomy를 장치로 구현 |
+| G | — | 쓰기 Skill은 `disable-model-invocation: true` — 사람이 명시적으로 호출할 때만 | HITL |
+
+Guard 스크립트의 단일 원천은 `myelin_core/resources/myelin_guard.py` 이며, 플러그인 사본과 golden Vault 사본이 바이트 단위로 같은지 Gate가 검사한다.
+CI에는 Claude Code CLI가 없으므로 `claude plugin validate` 는 로컬 Gate에서만 실행한다 (CLI가 없으면 그 항목은 FAIL).

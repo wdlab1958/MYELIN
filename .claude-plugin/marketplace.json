@@ -1,0 +1,17 @@
+{
+  "name": "myelin",
+  "description": "MYELIN — Personal Knowledge OS powered by Obsidian + Claude. 쓸수록 빨라지는 나의 지식 신경망.",
+  "owner": {
+    "name": "Brian (WDLAB)",
+    "url": "https://github.com/wdlab1958"
+  },
+  "plugins": [
+    {
+      "name": "myelin",
+      "source": "./plugin",
+      "description": "Skills for an Obsidian knowledge vault (ingest, distill, interview, link, compose, review, ip-scan) with a fail-closed write guard.",
+      "category": "productivity",
+      "tags": ["obsidian", "knowledge-management", "second-brain"]
+    }
+  ]
+}

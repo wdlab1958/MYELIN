@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(myelin doctor *)",
+      "Bash(myelin stats *)"
+    ],
+    "deny": [
+      "Edit(/10_Domains/**)",
+      "Edit(/20_Projects/**)",
+      "Edit(/30_Resources/**)",
+      "Edit(/40_IP/*.md)",
+      "Edit(/90_System/**)",
+      "Edit(/99_Archive/**)",
+      "Edit(/myelin.yaml)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/.claude/**)",
+      "Read(/40_IP/*.md)",
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(mv *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(git clean *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(scp *)",
+      "Bash(rsync *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/myelin_guard.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

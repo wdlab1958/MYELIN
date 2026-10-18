@@ -1,0 +1,14 @@
+{
+  "name": "myelin",
+  "displayName": "MYELIN",
+  "version": "0.1.0",
+  "description": "MYELIN Personal Knowledge OS for Obsidian vaults — ingest, distill, interview, link, compose, review and ip-scan skills with a fail-closed write guard.",
+  "author": {
+    "name": "Brian (WDLAB)",
+    "url": "https://github.com/wdlab1958"
+  },
+  "homepage": "https://github.com/wdlab1958/MYELIN",
+  "repository": "https://github.com/wdlab1958/MYELIN",
+  "license": "Apache-2.0",
+  "keywords": ["obsidian", "knowledge-management", "second-brain", "pkm", "zettelkasten"]
+}

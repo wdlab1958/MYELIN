@@ -46,7 +46,7 @@ def compute_stats(vault: Path, today: date | None = None) -> VaultStats:
     s.by_domain = dict(sorted(Counter(d for n in notes for d in n.frontmatter.domain).items()))
 
     inbox = [n for n in notes if (n.path or "").startswith(INBOX)]
-    s.inbox_items = len(inbox)
+    s.inbox_items = len(inbox) + len(scan.raw_captures)  # frontmatter 없는 메모 포함
     if inbox:
         s.inbox_avg_age_days = round(
             sum((today - n.frontmatter.created).days for n in inbox) / len(inbox), 1

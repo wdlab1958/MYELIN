@@ -1,34 +1,36 @@
 # PHASE_STATE
-current_phase: P2
+current_phase: P3
 status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 09:40 KST
-approved: "GO P2" (Brian, 2026-10-18 08:26)
-gate: P2 PASS (docs/reports/P2.md)
+last_updated: 2026-10-18 09:50 KST
+approved: "GO P3" (Brian, 2026-10-18 08:52)
+gate: P3 PASS (docs/reports/P3.md)
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
 - P1 — Core Model & Domain Pack: Gate PASS 7/7 (docs/reports/P1.md)
-- [x] P2-T1 scripts/gate.py 에 P2 Gate 검사 추가
-- [x] P2-T2 Typer CLI: init / add-domain / doctor / stats / packs
-- [x] P2-T3 init: 대화형(--interactive) + 비대화형, 3+1 Domain, Level, 비어 있지 않은 경로면 중단
-- [x] P2-T4 렌더링: 폴더·MOC·템플릿·taxonomy.md·interviews.md·Vault CLAUDE.md·myelin.yaml·lock + ADR-0005
-- [x] P2-T5 템플릿 id: tp.date.now("YYYYMMDD-HHmm-ssSSS") — 사용자 스크립트 불필요 (myelin.core 1.1.0)
-- [x] P2-T6 add-domain: 노트 불변, myelin.yaml round-trip(주석·순서·들여쓰기 보존), CLAUDE.md 마커 구간만 갱신
-- [x] P2-T7 doctor 8규칙 + location 규칙 (소스 안 = error, 다른 git·공개 원격 = warning)
-- [x] P2-T8 stats (§11.1, --json)
-- [x] P2-T9 fixtures: golden/brian (CLI 실행 결과), violations/ + expected (9건)
-- [x] P2-T10 개인정보 보호: init 위치 거부, README "Privacy model" 절
+- P2 — CLI Scaffolder: Gate PASS 7/7 (docs/reports/P2.md)
+- [x] P3-T1 ADR-0002 재대조 → Rev 2 (Hook 주 장치를 Vault settings로, 읽기 차단, Level별 허용, 다층 권한)
+- [x] P3-T1b P3 Gate (claude plugin validate는 local-only — CI는 SKIP 표시)
+- [x] P3-T2 plugin.json (myelin 0.1.0) + 저장소 루트 marketplace.json — claude plugin validate --strict 통과
+- [x] P3-T3 Guard (myelin_core/resources/myelin_guard.py): 쓰기 Level 게이트 + 40_IP·confidential 읽기 차단
+- [x] P3-T4 plugin hooks/hooks.json (보조 Guard — 비-Vault 경로는 통과)
+- [x] P3-T5 Guard 테스트 (별도 프로세스 실행) + in-process 테스트 + 사본 일치 테스트
+- [x] P3-T6 Skills 7종 (출력 계약 블록, 모두 disable-model-invocation)
+- [x] P3-T7 Level 0~3 — Guard 허용 경로 + Skill 사전 점검, 최소 Level-1에서 차단 확인
+- [x] P3-T8 init이 Vault .claude/settings.json(권한 + Hook) + Guard 사본 생성 → golden 갱신
+- [x] P3-T9 Skill 출력 계약 e2e + docs/manual/P3-e2e.md (실제 Claude 수동 체크리스트 14항목)
+- [x] (보정) doctor 범위: 50_Journal·80_Outputs·00_Inbox/clips 제외, Inbox raw capture 허용 — ADR-0005 보정
 
-## Next (P3 — "GO P3" 승인 후 시작)
-- [ ] P3-T1 scripts/gate.py 에 P3 Gate 검사 추가, ADR-0002를 현행 Claude Code 문서와 재대조
-- [ ] P3-T2 plugin/.claude-plugin/plugin.json (name: myelin)
-- [ ] P3-T3 scripts/guard_write.py — 표준 라이브러리만, 모든 예외 → exit 2, Vault 루트 = MYELIN_VAULT → CLAUDE_PROJECT_DIR
-- [ ] P3-T4 hooks/hooks.json — exec 형식, matcher Write|Edit|MultiEdit|NotebookEdit
-- [ ] P3-T5 Guard 테스트: 허용/허용 외/Vault 밖/심볼릭 링크/../잘못된 JSON/필드 누락/루트 미지정
-- [ ] P3-T6 Skills: ingest, distill, interview, link, compose, review, ip-scan
-- [ ] P3-T7 Level 0~3 개방 로직 (myelin.yaml level)
-- [ ] P3-T8 Vault용 .claude/settings.json 템플릿 (Bash 쓰기 deny) — init 렌더링에 포함
-- [ ] P3-T9 fixture e2e: /ingest·/distill 결과물이 myelin doctor 통과
+## Next (P4 — "GO P4" 승인 후 시작)
+- [ ] P4-T1 scripts/gate.py 에 P4 Gate 검사 추가
+- [ ] P4-T2 MCP Python SDK 도입, stdio 서버 골격 (ADR-0006: SDK·전송·보안 경계)
+- [ ] P4-T3 SQLite FTS5 색인 (.myelin/index.db), 증분 갱신 — doctor 스캔 범위와 동일
+- [ ] P4-T4 tools: search_notes, get_note, query_frontmatter, list_domains, vault_stats
+- [ ] P4-T5 Guard와 같은 읽기 정책: 40_IP·confidential 은 결과에서 제외 (llm.route)
+- [ ] P4-T6 write_draft — myelin.yaml 명시 허용 + Level·경로 규칙은 Guard 로직 재사용
+- [ ] P4-T7 경로 이탈·심볼릭 링크 차단 테스트
+- [ ] P4-T8 5,000 노트 fixture 생성기 + 성능 테스트 (search p95 < 300ms)
+- [ ] P4-T9 Claude Desktop / Claude Code 연결 가이드
 
 ## Blockers
 - (없음)

@@ -8,18 +8,20 @@ from pathlib import Path
 from myelin_core.errors import NoteParseError
 from myelin_core.note import Note, WikiLink, parse_note_file
 
-# 노트로 검사하는 폴더. 90_System(템플릿·사전), _patches, 숨김 폴더는 노트가 아니다.
+# 지식 노트로 검사하는 폴더 (ADR-0005 §6, P3 보정).
+# 제외: 90_System(템플릿·사전), _patches, 50_Journal(일일·리뷰 노트), 80_Outputs(산출물 문서),
+#       00_Inbox/clips(웹 클리핑 원문), 숨김 폴더 — 이들은 노트 스키마를 따르지 않는다.
 CONTENT_DIRS = (
     "00_Inbox",
     "10_Domains",
     "20_Projects",
     "30_Resources",
     "40_IP",
-    "50_Journal",
-    "80_Outputs",
     "99_Archive",
 )
+SKIP_PREFIXES = ("00_Inbox/clips/",)
 INBOX = "00_Inbox/"
+AI_DRAFTS = "00_Inbox/ai-drafts/"
 
 
 @dataclass
@@ -27,7 +29,20 @@ class VaultScan:
     root: Path
     notes: list[Note] = field(default_factory=list)
     errors: list[tuple[str, NoteParseError]] = field(default_factory=list)
+    raw_captures: list[str] = field(default_factory=list)  # frontmatter 없는 Inbox 메모
     files: set[str] = field(default_factory=set)  # 모든 비숨김 파일의 이름(소문자)
+
+
+def _is_raw_capture(rel: str, err: NoteParseError) -> bool:
+    """Inbox에 frontmatter 없이 빠르게 적은 메모는 오류가 아니라 '처리 전 원료'다.
+
+    단 Claude가 쓰는 ai-drafts 는 항상 스키마를 지켜야 한다.
+    """
+    return (
+        rel.startswith(INBOX)
+        and not rel.startswith(AI_DRAFTS)
+        and err.issues[0].code == "missing_frontmatter"
+    )
 
 
 @dataclass
@@ -48,12 +63,20 @@ def scan_vault(root: Path) -> VaultScan:
         if not path.is_file() or _hidden(rel):
             continue
         scan.files.add(path.name.lower())
-        if path.suffix != ".md" or rel.parts[0] not in CONTENT_DIRS:
+        posix = rel.as_posix()
+        if (
+            path.suffix != ".md"
+            or rel.parts[0] not in CONTENT_DIRS
+            or posix.startswith(SKIP_PREFIXES)
+        ):
             continue
         try:
             scan.notes.append(parse_note_file(path, root=root))
         except NoteParseError as err:
-            scan.errors.append((rel.as_posix(), err))
+            if _is_raw_capture(posix, err):
+                scan.raw_captures.append(posix)
+            else:
+                scan.errors.append((posix, err))
     return scan
 
 
