@@ -1,8 +1,9 @@
 # PHASE_STATE
 current_phase: P6
-status: in_progress            # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-18 09:35 KST
+status: awaiting_approval      # in_progress | gate_pending | awaiting_approval
+last_updated: 2026-10-18 10:20 KST
 approved: "GO P6" (Brian, 2026-10-18 09:32)
+gate: P6 PASS (docs/reports/P6.md)
 
 ## Done
 - P0 — Bootstrap: Gate PASS 29/29 (docs/reports/P0.md)
@@ -11,16 +12,17 @@ approved: "GO P6" (Brian, 2026-10-18 09:32)
 - P3 — Plugin + Guard: Gate PASS 8/8 (docs/reports/P3.md)
 - P4 — MCP Server: Gate PASS 6/6 (docs/reports/P4.md)
 - P5 — Emboss Design System: Gate PASS 8/8 (docs/reports/P5.md)
+- P6 — MYELIN Hub: Gate PASS 10/10 (docs/reports/P6.md)
 
-## Next (P6)
-- [x] P6-T1 scripts/gate.py 에 P6 Gate 검사 추가
-- [x] P6-T2 Hub API (FastAPI, 127.0.0.1 바인딩, core·index 재사용) + ADR-0008
-- [x] P6-T3 API: stats, domains, inbox/drafts, promote/reject(→ git commit), packs
-- [x] P6-T4 web: Vite + React + TS + Tailwind(Emboss preset) — 색은 토큰만 (lint)
-- [x] P6-T5 화면: Dashboard, My Domains, Inbox/Review Gate, Domain Packs, Settings
-- [x] P6-T6 온보딩 마법사 (CLI init 로직 재사용)
-- [x] P6-T7 Playwright e2e: 온보딩 → 첫 노트 verified 승격, 승격 시 git commit
-- [x] P6-T8 사용자 행위 없는 Vault 쓰기 0 검증, 화면별 스크린샷
+## Next (P7 — "GO P7" 승인 후 시작)
+- 선행 조건(사람): 명세 §9.1 정책 3종(지식 소유권, 외부 AI 사용 범위, 직무발명) 합의
+- [ ] P7-T1 scripts/gate.py 에 P7 Gate 검사 추가
+- [ ] P7-T2 Commons Git 구조 · Pack Registry (조직 Pack은 별도 private 저장소)
+- [ ] P7-T3 publish 흐름: verified + share:true + classification ≤ internal → Commons PR (Hub "Commons 제안")
+- [ ] P7-T4 비식별 체크리스트 (고객명·IP·기밀) — 자동 검사 + 사람 확인
+- [ ] P7-T5 Org Pack 2종 확정 (챔피언 협업)
+- [ ] P7-T6 opt-in 익명 지표 수집
+- [ ] P7-T7 파일럿 가이드 · 60분 워크숍 자료
 
 ## Blockers
 - (없음)
@@ -38,7 +40,8 @@ approved: "GO P6" (Brian, 2026-10-18 09:32)
 ## Backlog (Phase 범위 밖)
 - phase-P0, phase-P1 태그 push — 세션 git 경로에서 태그 push 차단. Brian 로컬에서 push
 - 조직별 Org Pack(예: 소속 회사용)은 별도 private 저장소에서 관리 (공개 저장소에는 Example Org만)
-- Hub에서 Guard 차단 이벤트 표시 (P6)
+- Hub에서 Guard 차단 이벤트 표시 — Guard 이벤트 기록(로그) 설계 선행
+- Hub 좁은 화면(< 1280px) 레이아웃
 - 템플릿 id 식(tp.date.now "YYYYMMDD-HHmm-ssSSS")을 실제 Obsidian+Templater에서 확인 (docs/manual/P3-e2e.md #14)
 - Obsidian에 Emboss 테마 적용 모습 확인 (Brian 수동)
 - 다크 모드 토큰 (v1.0 이후)
