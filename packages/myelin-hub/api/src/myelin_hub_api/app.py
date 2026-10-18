@@ -80,6 +80,14 @@ class PublishBody(BaseModel):
     push: bool = False
 
 
+class CustomDomain(BaseModel):
+    id: str = Field(min_length=1, max_length=32)
+    name: str = Field(min_length=1, max_length=80)
+    description: str = ""
+    accent: str = "violet"
+    sub_mocs: list[str] = Field(default_factory=list, max_length=12)
+
+
 class OnboardBody(BaseModel):
     name: str = Field(min_length=1)
     team: str = ""
@@ -90,6 +98,7 @@ class OnboardBody(BaseModel):
     packs: list[str] = Field(default_factory=list)
     level: int = Field(default=1, ge=0, le=3)
     language: str = "ko"
+    custom_domains: list[CustomDomain] = Field(default_factory=list, max_length=4)
 
 
 def require_user_click(x_myelin_intent: str | None = Header(default=None)) -> None:

@@ -425,3 +425,68 @@ def test_static_no_path_traversal(
         ):
             r = c.get(probe)
             assert "SECRET" not in r.text, probe
+
+
+def test_domains_expose_sub_moc_notes(client: TestClient, vault_root: Path) -> None:
+    d = {x["id"]: x for x in client.get("/api/domains").json()}
+    subs = d["D3"]["sub_moc_notes"]
+    assert [s["name"] for s in subs] == d["D3"]["sub_mocs"] and all(s["note"] is None for s in subs)
+    (vault_root / "10_Domains/D3/D3 - Sim2Real.md").write_text(
+        "---\nid: 20261018-1000-sim2real-moc\ntype: moc\ndomain: [D3]\ncreated: 2026-10-18\n---\n"
+        "# Sim2Real\n",
+        encoding="utf-8",
+    )
+    subs = {
+        s["name"]: s["note"]
+        for s in {x["id"]: x for x in client.get("/api/domains").json()}["D3"]["sub_moc_notes"]
+    }
+    assert subs["Sim2Real"] == "10_Domains/D3/D3 - Sim2Real.md"
+
+
+def test_onboarding_with_custom_domains(empty_client: TestClient) -> None:
+    """A new user defines their own domains — no dependence on Brian's reference pack."""
+    c = empty_client
+    root: Path = c.app.state.root  # type: ignore[attr-defined]
+    body = {
+        "name": "새 사용자",
+        "primary": "CLOUD-SEC",
+        "research": "LLM-SEC",
+        "level": 1,
+        "custom_domains": [
+            {
+                "id": "cloud-sec",
+                "name": "클라우드 보안",
+                "description": "CSP 설정 진단",
+                "accent": "cyan",
+                "sub_mocs": ["IAM", "네트워크", "로깅"],
+            },
+            {"id": "LLM-SEC", "name": "LLM 보안", "accent": "lime"},
+        ],
+    }
+    r = c.post("/api/onboarding", headers=CLICK, json=body)
+    assert r.status_code == 200, r.text
+    assert (root / "packs/me.my-domains/pack.yaml").exists()
+    v = c.get("/api/vault").json()
+    assert (
+        v["domains"] == {"CLOUD-SEC": "primary", "LLM-SEC": "research"}
+        and "me.my-domains" in v["packs"]
+    )
+    assert "brian.physical-ai" not in v["packs"]
+    d = {x["id"]: x for x in c.get("/api/domains").json()}
+    assert d["CLOUD-SEC"]["pack"] == "me.my-domains" and d["CLOUD-SEC"]["sub_mocs"] == [
+        "IAM",
+        "네트워크",
+        "로깅",
+    ]
+    assert (root / "10_Domains/CLOUD-SEC/_MOC.md").exists()
+    packs = {p["name"]: p for p in c.get("/api/packs").json()}
+    assert packs["me.my-domains"]["editable"] and packs["me.my-domains"]["active"]
+    assert c.get("/api/doctor").json()["errors"] == 0
+
+
+def test_onboarding_rejects_bad_custom_domain(empty_client: TestClient) -> None:
+    c = empty_client
+    body = {"name": "x", "primary": "BAD", "custom_domains": [{"id": "bad!", "name": "x"}]}
+    r = c.post("/api/onboarding", headers=CLICK, json=body)
+    assert r.status_code == 422 and "custom domain" in r.json()["detail"]
+    assert c.get("/api/vault").json()["ready"] is False

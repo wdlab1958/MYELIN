@@ -51,6 +51,7 @@ from myelin_core.vault import (
 
 GUARD_LOG = f"{RUNTIME}/guard.log"
 WELCOME_TITLE = "MYELIN 시작하기"
+PERSONAL_PACK = "me.my-domains"  # personal pack written by the onboarding wizard's custom domains
 
 
 class HubError(ValueError):
@@ -231,6 +232,13 @@ class HubService:
         out = []
         for did, role in v.config.domains.roles.items():
             moc = f"{DOMAINS}/{did}/_MOC.md"
+            info = declared.get(did, {})
+            subs = []
+            for name in info.get("sub_mocs", []):
+                rel = f"{DOMAINS}/{did}/{did} - {name}.md"
+                subs.append(
+                    {"name": name, "path": rel, "note": rel if (v.root / rel).exists() else None}
+                )
             out.append(
                 {
                     "id": did,
@@ -238,7 +246,8 @@ class HubService:
                     "notes": counts.get(did, 0),
                     "verified": verified.get(did, 0),
                     "moc": moc if (v.root / moc).exists() else None,
-                    **declared.get(did, {}),
+                    "sub_moc_notes": subs,
+                    **info,
                 }
             )
         return out
@@ -552,6 +561,11 @@ class HubService:
         if self.vault is not None:
             raise HubError("Vault already initialised", 409)
         now = now or datetime.now()
+        custom = list(data.get("custom_domains") or [])
+        packs_wanted = list(data.get("packs", []))
+        if custom:
+            self._write_personal_pack(custom)
+            packs_wanted.append(PERSONAL_PACK)
         try:
             cfg = MyelinConfig.model_validate(
                 {
@@ -561,7 +575,7 @@ class HubService:
                         "email": data.get("email", ""),
                     },
                     "language": data.get("language", "ko"),
-                    "packs": list(dict.fromkeys(["myelin.core", *data.get("packs", [])])),
+                    "packs": list(dict.fromkeys(["myelin.core", *packs_wanted])),
                     "domains": {
                         k: data.get(k) for k in ("primary", "research", "growth") if data.get(k)
                     },
@@ -668,3 +682,47 @@ class HubService:
             "onboarding_minutes": onboarding_minutes(v.root),
             "events": [{"event": e.get("event"), "ts": e.get("ts")} for e in events(v.root)][-20:],
         }
+
+    # ------------------------------------------------------------------ onboarding: custom domains
+    def _write_personal_pack(self, custom: list[dict[str, Any]]) -> Path:
+        """Create <vault>/packs/me.my-domains/pack.yaml from the wizard's '직접 정의' domains.
+
+        The user's own domains are a Personal Pack (정본 §5.1) — Brian's reference pack is only
+        a starting point others may or may not pick. Validated with the Pack model before writing.
+        """
+        domains = []
+        for c in custom:
+            did = str(c.get("id", "")).strip().upper().replace(" ", "-")
+            domains.append(
+                {
+                    "id": did,
+                    "name": str(c.get("name", "")).strip() or did,
+                    "accent": str(c.get("accent", "violet")).strip() or "violet",
+                    "description": str(c.get("description", "")).strip(),
+                    "sub_mocs": [str(x).strip() for x in c.get("sub_mocs", []) if str(x).strip()],
+                    "note_types": ["evergreen", "lesson", "literature", "checklist", "adr"],
+                    "classification_default": "internal",
+                }
+            )
+        data = {
+            "pack": PERSONAL_PACK,
+            "version": "1.0.0",
+            "kind": "personal",
+            "maintainer": "me",
+            "requires": ["myelin.core>=1.0"],
+            "description": "온보딩 마법사에서 직접 정의한 내 Domain",
+            "domains": domains,
+        }
+        try:
+            Pack.model_validate(data)
+        except ValueError as exc:
+            raise HubError(f"invalid custom domain: {exc}", 422) from None
+        pdir = self.root / "packs" / PERSONAL_PACK
+        pdir.mkdir(parents=True, exist_ok=True)
+        y = YAML()
+        y.default_flow_style = False
+        buf = io.StringIO()
+        buf.write("# 온보딩 마법사가 만든 개인 Pack — Domain Packs 화면에서 편집한다\n")
+        y.dump(data, buf)
+        (pdir / "pack.yaml").write_text(buf.getvalue(), encoding="utf-8")
+        return pdir

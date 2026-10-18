@@ -31,7 +31,12 @@ export type Stats = {
 export type Domain = {
   id: string; role: string; notes: number; verified: number; moc: string | null; name?: string; accent?: string;
   description?: string; pack?: string; sub_mocs?: string[]; compose_targets?: string[];
+  sub_moc_notes?: { name: string; path: string; note: string | null }[];
 };
+export type SearchHit = NoteRow & { snippet: string; rank: number };
+/** Obsidian URI helpers (path-based, no vault name needed). */
+export const obsidianOpen = (abs: string) => `obsidian://open?path=${encodeURIComponent(abs)}`;
+export const obsidianNew = (abs: string) => `obsidian://new?path=${encodeURIComponent(abs)}`;
 export type NoteRow = {
   path: string; id: string; title: string; type: string; status: string; origin: string; domains: string[]; tags: string[];
   created: string; reviewed: string | null; classification: string; doctor_ok?: boolean; error?: string;

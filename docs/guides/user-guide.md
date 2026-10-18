@@ -2,7 +2,8 @@
 
 > 쓸수록 빨라지는 나의 지식 신경망. 경험을 노트로 감싸고(캡처), 반복해서 연결·재사용할수록(Distill·Link·Compose) 지식 경로가 빨라진다.
 
-## 1. 설치 (15분 목표)
+## 1. 설치 (15분 목표) — 다운로드 → 설치 → 초기화
+순서는 **git clone → `scripts/install.sh` → `myelin-hub --vault <빈 폴더>` → 온보딩 마법사**이다. Vault 는 빈 폴더에서 새로 만들며, 다른 사람의 노트나 Domain 을 가져오지 않는다. 마법사에서 Domain 은 조직 Pack 에서 고르거나 직접 정의한다(Reference Pack 은 참고용).
 ```bash
 git clone <repo> myelin && cd myelin
 scripts/install.sh --vault ~/Vaults/me --claude   # python/uv 검사 → sync → Hub 빌드 → 런처 → Obsidian 테마 (+ --claude: plugin/MCP 등록)

@@ -45,7 +45,9 @@ L5 Commons      <commons repo>/ (registry · notes · proposals · metrics)
 ```
 데이터 흐름(§4.2): Capture → `00_Inbox` → `/ingest`·`/distill` → `ai-drafts`(origin claude, draft) → **Hub Review Gate(사람) Promote → commit** → `10_Domains/<D>/`(verified) → `/link` 패치 제안(`_patches/`, 사람 승인) → `/compose` → `80_Outputs` → **Commons 제안(비식별 검사 + 확인) → PR**.
 
-## 3. 빠른 시작
+## 3. 빠른 시작 — 다운로드 → 설치 → 초기화(온보딩)
+
+신규 사용자는 **빈 폴더**에서 시작한다. 온보딩 마법사에서 이름과 Primary Domain 을 정하면 Vault 가 생기고 첫 AI 초안 "MYELIN 시작하기" 가 Review Gate 에 올라온다. 다른 사람의 Vault·관심사를 복사하지 않는다 — Reference Pack(brian.physical-ai)은 참고용 선택지일 뿐이고, 마법사에서 **내 Domain 을 직접 정의**할 수 있다(개인 Pack `me.my-domains` 로 저장).
 
 ```bash
 git clone git@github.com:wdlab1958/MYELIN.git myelin && cd myelin
