@@ -1,10 +1,11 @@
 # PHASE_STATE
 
 current_phase: P3
-status: in_progress   # in_progress | gate_pending | awaiting_approval
+status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P2 완료(`phase-P0`~`phase-P2`). 2026-10-18 Brian "GO P3" 승인으로 P3 착수.
+> P0~P2 완료. P3 Gate 통과(`make gate P=3`), 보고서 `docs/reports/P3.md`, 태그 `phase-P3`.
+> **다음 Phase(P4)는 Brian의 "GO P4" 승인 후에만 착수한다.** 승인 시 current_phase를 P4, status를 in_progress로 바꾸고 아래 Next를 이어간다.
 
 ## Done
 ### P0
@@ -43,34 +44,41 @@ last_updated: 2026-10-18
 - [x] P2-T10 golden snapshot 테스트 (init 결과 디렉터리 트리+내용 일치)
 - [x] P2-T11 doctor fixture 시드 위반 100% 검출 · 오탐 0 · init < 10초 벤치
 - [x] P2-T12 make gate P=2 · reports/P2.md · tag phase-P2
+### P3
+- [x] P3-T1 plugin/.claude-plugin/plugin.json + skills 디렉터리 골격 (ADR-0002 사양 준수)
+- [x] P3-T2 hooks/hooks.json + guard_write.py (표준 라이브러리만, 판단 불가 → exit 2)
+- [x] P3-T3 Guard 테스트 — 허용 외 경로·Vault 밖·심볼릭 링크·`..` 경로·빈 file_path·비JSON 입력 차단 100%
+- [x] P3-T4 Vault용 .claude/settings.json 템플릿 (Bash 우회 deny 규칙) + CLI init에 포함
+- [x] P3-T5 Level별 Skill 개방 로직 (myelin.yaml level 0~3 → Skill 노출/비활성)
+- [x] P3-T6 /ingest SKILL.md + fixture e2e (literature 초안이 doctor 통과)
+- [x] P3-T7 /distill SKILL.md + fixture e2e
+- [x] P3-T8 /interview SKILL.md + Pack interview_bank 연동
+- [x] P3-T9 /link SKILL.md (_patches 제안 형식 정의) · /compose · /review · /ip-scan SKILL.md
+- [x] P3-T10 Level 0에서 쓰기 Skill 비활성 확인 테스트 · make gate P=3 · reports/P3.md · tag phase-P3
 
-## Next
-- [ ] P3-T1 plugin/.claude-plugin/plugin.json + skills 디렉터리 골격 (ADR-0002 사양 준수)
-- [ ] P3-T2 hooks/hooks.json + guard_write.py (표준 라이브러리만, 판단 불가 → exit 2)
-- [ ] P3-T3 Guard 테스트 — 허용 외 경로·Vault 밖·심볼릭 링크·`..` 경로·빈 file_path·비JSON 입력 차단 100%
-- [ ] P3-T4 Vault용 .claude/settings.json 템플릿 (Bash 우회 deny 규칙) + CLI init에 포함
-- [ ] P3-T5 Level별 Skill 개방 로직 (myelin.yaml level 0~3 → Skill 노출/비활성)
-- [ ] P3-T6 /ingest SKILL.md + fixture e2e (literature 초안이 doctor 통과)
-- [ ] P3-T7 /distill SKILL.md + fixture e2e
-- [ ] P3-T8 /interview SKILL.md + Pack interview_bank 연동
-- [ ] P3-T9 /link SKILL.md (_patches 제안 형식 정의) · /compose · /review · /ip-scan SKILL.md
-- [ ] P3-T10 Level 0에서 쓰기 Skill 비활성 확인 테스트 · make gate P=3 · reports/P3.md · tag phase-P3
+## Next (P4 — 승인 대기)
+- [ ] P4-T1 myelin-core 색인기 — SQLite FTS5 (.myelin/index.db), frontmatter 컬럼, 증분 갱신(mtime/hash)
+- [ ] P4-T2 stdio MCP 서버 골격 (MCP Python SDK) + Vault 루트 경계 검사 유틸
+- [ ] P4-T3 search_notes (FTS + domain/status/type 필터)
+- [ ] P4-T4 get_note (confidential 노출 정책: local 클라이언트만) · query_frontmatter
+- [ ] P4-T5 list_domains / vault_stats
+- [ ] P4-T6 write_draft — myelin.yaml 명시 허용 + Level ≥ 1일 때만 tool 등록
+- [ ] P4-T7 경로 이탈 테스트 (.., symlink, 절대경로) · 기본 읽기 전용 확인
+- [ ] P4-T8 5,000 노트 fixture 생성기 · search p95 < 300ms 벤치
+- [ ] P4-T9 Claude Desktop/Code 설정 가이드 문서 · make gate P=4 · reports/P4.md · tag phase-P4
 
 ## Blockers
 - (없음) — CI green은 GitHub 원격 push 후 확인 필요
 
 ## Decisions (→ ADR)
-- ADR-0001 기술 스택 · ADR-0002 Plugin/Hook 사양 · ADR-0003 스키마 검증 정책
-- ADR-0004 myelin.yaml 스키마 — `domains.extra` 추가(+1 자리), primary만 필수, 미지 필드 금지, `add-domain`은 extra에만 추가
-- P2 결정(기록): doctor "미등록 domain"의 기준 = 설정 Domain ∪ 설정 Pack이 선언한 Domain(Pack 해석 불가 시 설정만). 고아 노트 판정은 00_Inbox·99_Archive·moc 제외. 템플릿 placeholder 9종(`{{id}} {{date}} {{domain}} {{origin}} {{classification}} {{title}} {{source}} {{description}} {{sub_mocs}}`)은 90_System/templates 에 그대로 복사되고 치환은 Skill(P3)/Hub(P6)가 노트 생성 시 수행. 테스트 훅 `MYELIN_NOW`(ISO) 로 생성 시각 고정.
-- Vault `CLAUDE.md`·`90_System/taxonomy.md` 는 `<!-- myelin:personal:start/end -->` 블록을 재생성 시 보존.
+- ADR-0001 기술 스택 · ADR-0002 Plugin/Hook 사양 · ADR-0003 스키마 검증 정책 · ADR-0004 myelin.yaml
+- ADR-0005 Level-gated Guard — 허용 경로 Level 누적(L0 없음 / L1 ai-drafts·50_Journal / L2 +_patches·80_Outputs/drafts / L3 +40_IP/candidates), Bash Guard 추가(리다이렉션·writer·인라인 인터프리터·파괴적 git·`$(…)`·`cd`+쓰기 차단), Skill 비노출은 3겹(SKILL.md 자기검사 + CLAUDE.md 목록 + Guard), Vault `.claude/settings.json` 2차 방어
+- ADR-0006 `_patches/` 형식 — patch 1 / target / kind(append|replace|frontmatter) / rationale / status, 적용은 Hub(P6)만
+- P3 결정(기록): doctor fail-closed 규칙의 "claude 초안 위치" 기준을 ai-drafts 단일에서 §7.1 쓰기 범위 4곳(ai-drafts·50_Journal·80_Outputs/drafts·40_IP/candidates)으로 확장. `_COMMON.md` 가 모든 Skill 의 공통 규약(Vault/Level 확인 → 쓰기 범위 → Frontmatter v2 → doctor → 보고). `myelin interview-bank` 가 Pack 질문 은행을 Skill 에 공급.
 
 ## Backlog (Phase 범위 밖)
-- P3: Vault용 `.claude/settings.json` 템플릿(`Edit(...)` deny)을 `myelin init` 산출물에 추가 (ADR-0002 D5) → golden 갱신
-- P3: Bash용 PreToolUse hook (ADR-0002 D6), `claude plugin validate --strict` Gate 추가
-- P3: Skill이 템플릿 placeholder를 치환해 ai-drafts 노트를 만들 때 `render_template()` 재사용
-- P4: `.myelin/index.db` 색인 → doctor/stats 의 전체 스캔을 색인 기반으로 전환(대형 Vault)
+- P4: `.myelin/index.db` 색인 → doctor/stats 전체 스캔을 색인 기반으로 전환(대형 Vault); MCP 는 플러그인 번들 아님(ADR-0002 D7), write_draft 는 myelin.yaml 명시 허용 + Level ≥ 1
 - P5: `tokens.schema.json`; accent 집합 확장 시 ADR-0003 §6 갱신
-- P6: Hub 온보딩 마법사는 `myelin_cli.app.init` 과 동일 로직(`MyelinConfig` + `init_vault`) 공유
-- P7: a3.security-consulting Sub-MOC·용어 팀 챔피언과 확정, Org Pack 1종 추가
-- P8: plugin/README marketplace 설치 한 줄 · `uv tool install` 배포 시 Pack 번들 경로(`default_pack_roots`) 확정
+- P6: Hub Review Gate 가 `_patches` 적용(ADR-0006) + Guard 차단 이벤트 표시; 온보딩 마법사는 `init_vault` 공유
+- P7: a3.security-consulting Sub-MOC·용어 확정, Org Pack 1종 추가
+- P8: 위협 모델에서 Guard 한계 재평가(스크립트 파일 실행 부작용, `uv run myelin init` 등 CLI 경유 쓰기) · plugin/README marketplace 설치 한 줄 · Pack 번들 경로
