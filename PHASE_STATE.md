@@ -1,11 +1,10 @@
 # PHASE_STATE
 
-current_phase: P4
-status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
+current_phase: P5
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P3 완료. P4 Gate 통과(`make gate P=4`), 보고서 `docs/reports/P4.md`, 태그 `phase-P4`.
-> **다음 Phase(P5)는 Brian의 "GO P5" 승인 후에만 착수한다.** 승인 시 current_phase를 P5, status를 in_progress로 바꾸고 아래 Next를 이어간다.
+> P0~P4 완료(`phase-P0`~`phase-P4`). 2026-10-18 Brian "GO P5" 승인으로 P5 착수.
 
 ## Done
 ### P0
@@ -66,7 +65,7 @@ last_updated: 2026-10-18
 - [x] P4-T8 5,000 노트 fixture 생성기 · search p95 < 300ms 벤치
 - [x] P4-T9 Claude Desktop/Code 설정 가이드 문서 · make gate P=4 · reports/P4.md · tag phase-P4
 
-## Next (P5 — 승인 대기)
+## Next
 - [ ] P5-T1 design/tokens.json 정본 확정 (8.1·8.4 전량) + JSON Schema
 - [ ] P5-T2 생성 스크립트 tokens → CSS vars (emboss.css) / Tailwind preset / Obsidian theme.css
 - [ ] P5-T3 컴포넌트 스펙 문서 (8.3 8종) + 상태 의미 체계(8.2)
