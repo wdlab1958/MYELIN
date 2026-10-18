@@ -15,10 +15,11 @@ GOLDEN_REL = "tests/fixtures/golden/init-basic"
 
 
 def _tree(root: Path) -> dict[str, bytes]:
+    # .myelin/ is runtime state (metrics events carry timestamps) — not part of the snapshot
     return {
         p.relative_to(root).as_posix(): p.read_bytes()
         for p in sorted(root.rglob("*"))
-        if p.is_file()
+        if p.is_file() and ".myelin" not in p.relative_to(root).parts
     }
 
 

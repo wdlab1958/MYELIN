@@ -60,6 +60,7 @@ ignore = ["ANN401"]
 "scripts/gen_seeded_vault.py" = ["E501"]  # fixture 데이터 테이블
 "scripts/gen_perf_vault.py" = ["E501"]  # 어휘 테이블
 "scripts/emboss.py" = ["E501"]  # CSS 템플릿 리터럴
+"scripts/pilot.py" = ["E501"]  # 한국어 보고서 문자열
 "packages/myelin-core/src/myelin_core/render.py" = ["E501"]  # 렌더 템플릿 리터럴(한국어)
 
 # ---------------------------------------------------------------- mypy

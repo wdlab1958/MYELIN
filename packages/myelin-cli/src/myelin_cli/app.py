@@ -21,9 +21,26 @@ import typer
 from typer._click import exceptions as click_exc  # typer's vendored click
 
 from myelin_cli import __version__
+from myelin_core.commons import (
+    CommonsError,
+    DeidRule,
+    add_pack_to_registry,
+    check_publishable,
+    init_commons,
+    propose_pack,
+    publish_note,
+    registry,
+)
 from myelin_core.config import ConfigError, Domains, MyelinConfig, Owner
 from myelin_core.doctor import run_doctor
 from myelin_core.levels import LEVEL_NAMES, skill_table
+from myelin_core.metrics import (
+    aggregate,
+    org_metrics,
+    payload_is_anonymous,
+    record_event,
+    write_metrics_to_commons,
+)
 from myelin_core.packs.loader import PackError, discover_packs
 from myelin_core.scaffold import ScaffoldError, VaultExistsError, add_domain, init_vault
 from myelin_core.stats import compute_stats
@@ -220,6 +237,7 @@ def init(
         _die(str(exc))
     except (ScaffoldError, PackError) as exc:
         _die(str(exc))
+    record_event(vault.resolve(), "onboard_start", via="cli")
     typer.echo(f"✔ Vault 생성: {vault.resolve()}  ({len(plan.files)} files, {len(plan.dirs)} dirs)")
     typer.echo(
         f"  Domains: {', '.join(cfg.domains.all_ids)} · Packs: {', '.join(cfg.pack_names)} "
@@ -392,6 +410,210 @@ def interview_bank(
         assert isinstance(follow_ups, list)
         for fu in follow_ups:
             typer.echo(f"      ↳ {fu}")
+
+
+# ---------------------------------------------------------------------------------- commons
+
+
+commons_app = typer.Typer(
+    help="MYELIN Commons — 팀 공유 저장소 (정본 §9.1, ADR-0010)", no_args_is_help=True
+)
+app.add_typer(commons_app, name="commons")
+
+
+def _commons_path(vault: Vault | None, commons: Path | None) -> Path:
+    if commons is not None:
+        return commons.resolve()
+    if vault is not None and vault.config.commons.local:
+        return Path(vault.config.commons.local).expanduser().resolve()
+    _die("Commons 경로가 없습니다: --commons 또는 myelin.yaml commons.local")
+    raise AssertionError
+
+
+@commons_app.command("init")
+def commons_init(
+    path: Annotated[Path, typer.Argument(help="Commons 저장소를 만들 디렉터리")],
+) -> None:
+    """Commons 저장소 골격을 만든다 (registry/ notes/ proposals/ metrics/, git init)."""
+    created = init_commons(path)
+    typer.echo(f"✔ Commons: {path.resolve()} ({len(created)} files created)")
+
+
+@commons_app.command("add-pack")
+def commons_add_pack(
+    pack_dir: Annotated[Path, typer.Argument(help="Pack 디렉터리")],
+    commons: Annotated[Path, typer.Option("--commons", help="Commons clone")],
+    champion: Annotated[
+        list[str] | None, typer.Option("--champion", help="Domain 챔피언 (반복)")
+    ] = None,
+) -> None:
+    """Pack 을 Registry 에 등록/갱신한다 (registry/packs/<name>, index.yaml)."""
+    try:
+        entry = add_pack_to_registry(commons, pack_dir, champion)
+    except (CommonsError, PackError) as exc:
+        _die(str(exc))
+    state = "확정" if entry["champions"] else "초안(챔피언 미지정)"
+    typer.echo(f"✔ registry: {entry['name']} v{entry['version']} — {state}")
+
+
+@commons_app.command("registry")
+def commons_registry(
+    commons: Annotated[Path, typer.Argument(help="Commons clone")], as_json: JsonOpt = False
+) -> None:
+    """Registry 목록."""
+    rows = registry(commons)
+    if as_json:
+        typer.echo(json.dumps(rows, ensure_ascii=False, indent=2))
+        return
+    for r in rows:
+        ch = ", ".join(r.get("champions") or []) or "(초안)"
+        typer.echo(f"{r['name']:<28} v{r['version']:<8} {r['kind']:<10} {ch}")
+
+
+@app.command()
+def publish(
+    note: Annotated[str, typer.Argument(help="Vault 상대 경로")],
+    vault: VaultOpt = Path(),
+    commons: Annotated[
+        Path | None,
+        typer.Option("--commons", help="Commons clone (기본: myelin.yaml commons.local)"),
+    ] = None,
+    yes: Annotated[
+        bool,
+        typer.Option("--yes", "-y", help="확인 질문 생략 (스크립트용 — 검사 결과는 그대로 적용)"),
+    ] = False,
+    push: Annotated[bool, typer.Option("--push", help="브랜치를 origin 에 push")] = False,
+    pr: Annotated[bool, typer.Option("--pr", help="gh 로 PR 생성 (--push 필요)")] = False,
+    check_only: Annotated[bool, typer.Option("--check", help="검사만 하고 쓰지 않는다")] = False,
+) -> None:
+    """verified + share:true 노트를 Commons 에 제안한다 (비식별 검사 → 확인 → 브랜치 커밋)."""
+    v = _open_vault(vault)
+    target = _commons_path(v, commons) if not check_only else (commons or Path())
+    rule = DeidRule.load(target / "deid.yaml", v.root / "90_System" / "deid.yaml")
+    check = check_publishable(v, note, rule)
+    for r in check.reasons:
+        typer.echo(f"✗ {r}", err=True)
+    for h in check.deid_hits:
+        typer.echo(f"✗ 비식별 {h.kind} (line {h.line}): {h.excerpt}", err=True)
+    if not check.ok:
+        _die("publish 차단 — 위 항목을 고친 뒤 다시 시도하세요", EXIT_FINDINGS)
+    typer.echo(f"✔ 검사 통과: {check.path} ({check.note.title if check.note else ''})")
+    if check_only:
+        return
+    if not yes:
+        if not _is_tty():
+            _die("비대화형에서는 --yes 로 확인을 명시해야 합니다")
+        if not typer.confirm(f"Commons({target}) 에 제안할까요? 브랜치 publish/<id> 에 커밋됩니다"):
+            _die("취소됨", EXIT_OK)
+    try:
+        res = publish_note(v, note, target, confirmed=True, rule=rule, push=push, open_pr=pr)
+    except CommonsError as exc:
+        _die(str(exc), EXIT_FINDINGS)
+    record_event(v.root, "publish", note_id=check.note.id if check.note else "")
+    typer.echo(
+        f"✔ {res.dest} @ {res.branch} ({res.commit[:7]})"
+        + (" pushed" if res.pushed else "")
+        + (f" PR {res.pr_url}" if res.pr_url else "")
+    )
+    if not res.pushed:
+        typer.echo(f"  다음: cd {target} && git push -u origin {res.branch} && gh pr create --fill")
+
+
+@app.command("pack-propose")
+def pack_propose(
+    pack_dir: Annotated[Path, typer.Argument(help="개인 Pack 디렉터리 (<Vault>/packs/me.x)")],
+    vault: VaultOpt = Path(),
+    commons: Annotated[Path | None, typer.Option("--commons")] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y")] = False,
+) -> None:
+    """개인 Pack 을 Org Pack 후보로 Commons 에 제안한다 (propose/<name> 브랜치)."""
+    v = _open_vault(vault)
+    target = _commons_path(v, commons)
+    if not yes:
+        if not _is_tty():
+            _die("비대화형에서는 --yes 로 확인을 명시해야 합니다")
+        if not typer.confirm(f"{pack_dir} 를 Commons({target}) 에 제안할까요?"):
+            _die("취소됨", EXIT_OK)
+    try:
+        res = propose_pack(v, pack_dir, target, confirmed=True)
+    except CommonsError as exc:
+        _die(str(exc), EXIT_FINDINGS)
+    record_event(v.root, "propose_pack", pack=pack_dir.name)
+    typer.echo(f"✔ {res.dest} @ {res.branch} ({res.commit[:7]})")
+
+
+metrics_app = typer.Typer(help="opt-in 익명 지표 (정본 §11.2, ADR-0010)", no_args_is_help=True)
+app.add_typer(metrics_app, name="metrics")
+
+
+@metrics_app.command("show")
+def metrics_show(vault: VaultOpt = Path(), as_json: JsonOpt = False) -> None:
+    """이 Vault 의 익명 지표 페이로드를 보인다 (전송하지 않음)."""
+    v = _open_vault(vault)
+    payload = org_metrics(v)
+    problems = payload_is_anonymous(payload, v)
+    if as_json:
+        typer.echo(
+            json.dumps(
+                {"payload": payload, "anonymous": not problems, "problems": problems},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+    for k, val in payload.items():
+        typer.echo(f"{k:<20} {val}")
+    typer.echo(f"anonymous: {'yes' if not problems else 'NO — ' + '; '.join(problems)}")
+    typer.echo(f"opt-in: {v.config.commons.metrics_opt_in} (myelin.yaml commons.metrics_opt_in)")
+
+
+@metrics_app.command("send")
+def metrics_send(
+    vault: VaultOpt = Path(),
+    commons: Annotated[Path | None, typer.Option("--commons")] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y")] = False,
+) -> None:
+    """익명 지표를 Commons clone 의 metrics/ 에 쓴다 (opt-in + 사용자 확인)."""
+    v = _open_vault(vault)
+    target = _commons_path(v, commons)
+    if not v.config.commons.metrics_opt_in:
+        _die(
+            "opt-in 이 꺼져 있습니다 (myelin.yaml commons.metrics_opt_in: true 로 바꾸세요)",
+            EXIT_FINDINGS,
+        )
+    payload = org_metrics(v)
+    typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
+    if not yes:
+        if not _is_tty():
+            _die("비대화형에서는 --yes 로 확인을 명시해야 합니다")
+        if not typer.confirm("위 숫자만 Commons 에 보냅니다. 진행할까요?"):
+            _die("취소됨", EXIT_OK)
+    try:
+        dest = write_metrics_to_commons(v, target)
+    except (PermissionError, ValueError) as exc:
+        _die(str(exc), EXIT_FINDINGS)
+    typer.echo(f"✔ {dest}")
+
+
+@metrics_app.command("aggregate")
+def metrics_aggregate(
+    commons: Annotated[Path, typer.Argument(help="Commons clone")], as_json: JsonOpt = False
+) -> None:
+    """Commons metrics/ 를 주 단위로 집계한다 (§11.2 표)."""
+    data = aggregate(commons)
+    if as_json:
+        typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
+        return
+    typer.echo(
+        f"{'week':<10}{'users':>6}{'active':>7}{'ratio':>7}{'pub':>5}{'prop':>5}"
+        "  onboarding median / ≤15"
+    )
+    for week, r in data.items():
+        typer.echo(
+            f"{week:<10}{r['users']:>6}{r['active_users']:>7}{r['active_ratio']:>7}"
+            f"{r['published']:>5}{r['pack_proposals']:>5}"
+            f"  {r['onboarding_minutes_median']} / {r['onboarding_within_15']}"
+        )
 
 
 def run(argv: list[str]) -> int:

@@ -12,5 +12,5 @@ level: 2
 llm:
   default: claude
   route: {confidential: local, 40_IP/**: local}
-commons: {enabled: false}
+commons: {enabled: false, metrics_opt_in: false}
 mcp: {write_draft: false, expose_confidential: false}
