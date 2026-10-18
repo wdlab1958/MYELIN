@@ -26,4 +26,31 @@ body { margin: 0; background: var(--mx-surface); color: var(--mx-ink); font-fami
 .hub-textarea:focus { outline: var(--mx-focus-ring); outline-offset: var(--mx-focus-offset); }
 .hub-pre { white-space: pre-wrap; font-family: var(--mx-font-mono); font-size: var(--mx-font-size-sm); background: var(--mx-surface-2); padding: var(--mx-space-4); border-radius: var(--mx-radius-control); }
 .hub-brand { font-weight: 800; letter-spacing: -0.02em; font-size: var(--mx-font-size-lg); padding: 0 var(--mx-space-4) var(--mx-space-4); }
-.hub-toast { position: fixed; right: var(--mx-space-5); bottom: var(--mx-space-5); z-index: 10; }
+/* toast sits above the assistant bubble (bottom-right) so the two never overlap */
+.hub-toast { position: fixed; right: var(--mx-space-5); bottom: calc(var(--mx-space-5) + 72px); z-index: 10; }
+
+/* ---- 도움말 챗봇 (우측 하단 말풍선 → 모달). 토큰만 사용. */
+.hub-fab { position: fixed; right: var(--mx-space-5); bottom: var(--mx-space-5); z-index: 30; display: inline-flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-3) var(--mx-space-4); border: 0; border-radius: var(--mx-radius-chip); background: var(--mx-violet-600); color: var(--mx-on-violet); font: inherit; font-weight: 700; cursor: pointer; box-shadow: var(--mx-shadow-glow-violet); }
+.hub-fab:focus-visible { outline: var(--mx-focus-ring); outline-offset: var(--mx-focus-offset); }
+.hub-fab svg { width: 20px; height: 20px; }
+.hub-chat-backdrop { position: fixed; inset: 0; z-index: 40; background: var(--mx-shadow-dark); opacity: .35; }
+.hub-chat { position: fixed; right: var(--mx-space-5); bottom: var(--mx-space-5); z-index: 50; width: min(440px, calc(100vw - 2 * var(--mx-space-5))); height: min(620px, calc(100vh - 2 * var(--mx-space-5))); display: flex; flex-direction: column; overflow: hidden; background: var(--mx-surface); border-radius: var(--mx-radius-card); box-shadow: var(--mx-shadow-raised); }
+.hub-chat__head { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--mx-space-3); padding: var(--mx-space-4) var(--mx-space-5); border-bottom: 1px solid var(--mx-border); }
+.hub-chat__head > div:first-child { min-width: 0; flex: 1; }
+.hub-chat__head .mx-chip { white-space: nowrap; flex-shrink: 0; }
+.hub-chat__title { font-weight: 800; letter-spacing: -0.01em; }
+.hub-chat__sub { color: var(--mx-muted); font-size: var(--mx-font-size-xs); }
+.hub-chat__close { flex-shrink: 0; white-space: nowrap; padding: var(--mx-space-2) var(--mx-space-3); }
+.hub-chat__body { flex: 1; overflow-y: auto; padding: var(--mx-space-4) var(--mx-space-5); display: grid; gap: var(--mx-space-3); align-content: start; }
+.hub-msg { max-width: 88%; padding: var(--mx-space-3) var(--mx-space-4); border-radius: var(--mx-radius-control); font-size: var(--mx-font-size-sm); line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hub-msg--user { justify-self: end; background: var(--mx-violet-50); border: 1px solid var(--mx-violet-600); }
+.hub-msg--assistant { justify-self: start; background: var(--mx-surface-2); box-shadow: var(--mx-shadow-inset); }
+.hub-msg code { font-family: var(--mx-font-mono); font-size: var(--mx-font-size-xs); background: var(--mx-surface); padding: 0 var(--mx-space-1); border-radius: var(--mx-space-1); }
+.hub-msg__meta { color: var(--mx-muted); font-size: var(--mx-font-size-xs); margin-top: var(--mx-space-2); }
+.hub-msg__cites { margin: var(--mx-space-2) 0 0; padding-left: var(--mx-space-5); font-size: var(--mx-font-size-xs); }
+.hub-chat__suggest { display: flex; flex-wrap: wrap; gap: var(--mx-space-2); padding: 0 var(--mx-space-5) var(--mx-space-3); }
+.hub-chat__suggest .mx-btn { padding: var(--mx-space-1) var(--mx-space-3); font-size: var(--mx-font-size-xs); font-weight: 600; }
+.hub-chat__input { display: flex; gap: var(--mx-space-2); padding: var(--mx-space-3) var(--mx-space-5) var(--mx-space-4); border-top: 1px solid var(--mx-border); }
+.hub-chat__input .mx-input { flex: 1; }
+.hub-chat__foot { color: var(--mx-muted); font-size: var(--mx-font-size-xs); text-align: center; padding: 0 var(--mx-space-5) var(--mx-space-3); }
+@media (max-width: 760px) { .hub-chat { right: var(--mx-space-3); bottom: var(--mx-space-3); width: calc(100vw - 2 * var(--mx-space-3)); height: calc(100vh - 2 * var(--mx-space-3)); } }

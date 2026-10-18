@@ -31,7 +31,7 @@
 | **MYELIN CLI** | [`packages/myelin-cli`](packages/myelin-cli) | `myelin init`(3+1 마법사) · `add-domain` · `doctor`(규칙 8종) · `stats`(§11.1) · `skills` · `interview-bank` · `publish` · `pack-propose` · `metrics` · `commons` |
 | **MYELIN for Claude Code** | [`plugin/`](plugin/) | Skill 7종 `/myelin:ingest distill interview review link compose ip-scan`, Fail-closed Guard(`guard_write.py`, `guard_bash.py`, 표준 라이브러리만), 로컬 marketplace |
 | **MYELIN MCP** | [`packages/myelin-mcp`](packages/myelin-mcp) | stdio 서버, 읽기 전용 기본(`search_notes get_note query_frontmatter list_domains vault_stats`), opt-in `write_draft`, 기밀 비노출 기본, SQLite FTS5 색인 |
-| **MYELIN Hub** | [`packages/myelin-hub`](packages/myelin-hub) | FastAPI + React 18/Vite/Tailwind. Dashboard · My Domains · Inbox/Review Gate · Domain Packs · Settings · 온보딩 마법사. 모든 쓰기는 클릭 헤더 + git commit |
+| **MYELIN Hub** | [`packages/myelin-hub`](packages/myelin-hub) | FastAPI + React 18/Vite/Tailwind. Dashboard · My Domains · Inbox/Review Gate · Domain Packs · Settings · 온보딩 마법사 · 우측 하단 **도움말 챗봇**(로컬 Ollama, 읽기 전용). 모든 쓰기는 클릭 헤더 + git commit |
 | **MYELIN Emboss** | [`design/`](design/), [`theme/`](theme/) | `tokens.json` 단일 원천 → `emboss.css`·Tailwind preset·Obsidian theme 생성, 대비 4.5:1 자동 검사, 색 하드코딩 lint, 컴포넌트 갤러리 |
 | **MYELIN Commons** | `myelin_core.commons` | 팀 공유 저장소 구조·Pack Registry·공개 하드 게이트·비식별 스캔·확인 단계·`publish/<id>` 브랜치/PR·Pack 제안·익명 지표(opt-in) |
 
@@ -134,6 +134,7 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 | [0010](docs/adr/0010-commons-policy.md) | Commons 공개 게이트·비식별·확인 단계·브랜치/PR·Pack 진화·익명 지표·온보딩 계측 |
 | [0011](docs/adr/0011-confidential-routing-devices.md) | 기밀 라우팅 장치화: `MYELIN_LLM=local` 세션만 `40_IP/**`·confidential 접근, Read/Grep/Glob Guard, MCP 강제, Vault pre-commit 훅 |
 | [0012](docs/adr/0012-myelin-strength-and-reuse-metrics.md) | 미엘린 강도 0~3, 재사용 KPI 3종, Commons 인용 집계·top_contributors, Hub push/PR |
+| [0013](docs/adr/0013-hub-assistant.md) | Hub 도움말 챗봇 — 읽기 전용, 로컬 Ollama 전용(비-loopback 이면 기밀 제외), 지식 기반 폴백, 입력 가드 |
 
 ## 9. 문서
 

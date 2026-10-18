@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0 — 2026-10-19 (Hub 도움말 챗봇)
+- hub: 우측 하단 말풍선 → 모달 **도움말 챗봇**(ADR-0013). `GET /api/assistant/status`, `POST /api/assistant/chat`. 내장 지식 `assistant_kb.md`(17절) + Vault FTS 발췌(근거 노트를 Obsidian 링크로) + Vault 상태(Level·Domain·KPI 이탈·검토 대기)를 로컬 Ollama(`MYELIN_ASSISTANT_URL`·`MYELIN_ASSISTANT_MODEL`, 기본 exaone3.5 → qwen2.5 …)에 주입. 읽기 전용(클릭 헤더 불필요, Vault 불변), 엔드포인트가 loopback 이 아니면 confidential·`40_IP/**` 제외(ADR-0011 기준), Ollama 없으면 **지식 기반 모드**로 200 응답, 인젝션·비밀값 요청 거부, 한자 드리프트 제거, 한글 IME 중 Enter/ESC 무시. Review 토스트는 말풍선 위로
+- tests: `test_assistant.py` 23건 · e2e "도움말 챗봇" 시나리오(12번째) — kb 모드 고정 · 위협 모델 T22
+
 ## v1.2.0 — 2026-10-18 (설계 철학 갭 보완 · 정본 Rev 2.1 부록)
 설계 철학 세 의도와 구현의 갭(`docs/reports/QA-2026-10-18.md` §5)을 장치로 닫았다. 요구사항은 `docs/spec/MYELIN_Rev2.1-addendum.md`, 결정은 ADR-0011·0012.
 - 복리(의도 1): 노트별 **미엘린 강도 0~3**(피인용·산출물 재료·Commons 인용), KPI `reuse_ratio`·`reuse_lag_days`·`compose_sources_avg` 와 목표 판정, Dashboard "Myelination" 분포·재사용 비율, 노트 표의 `myelin ×N` 텍스트 라벨, `myelin stats` 출력 확장

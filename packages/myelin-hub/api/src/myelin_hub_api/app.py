@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -20,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from myelin_hub_api import __version__
+from myelin_hub_api.assistant import Assistant
 from myelin_hub_api.service import HubError, HubService
 
 INTENT_HEADER = "x-myelin-intent"
@@ -91,6 +92,17 @@ class CustomDomain(BaseModel):
     sub_mocs: list[str] = Field(default_factory=list, max_length=12)
 
 
+class AssistantMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+
+class AssistantBody(BaseModel):
+    """우측 하단 도움말 챗봇의 대화. 마지막 메시지는 user (service 가 검사)."""
+
+    messages: list[AssistantMessage] = Field(min_length=1, max_length=40)
+
+
 class OnboardBody(BaseModel):
     name: str = Field(min_length=1)
     team: str = ""
@@ -121,6 +133,8 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     app.state.service = svc
+    assistant = Assistant(svc)
+    app.state.assistant = assistant
     app.add_middleware(HostOriginGuard)
 
     @app.exception_handler(HubError)
@@ -232,6 +246,20 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     @app.get("/api/metrics")
     def metrics() -> dict[str, Any]:
         return s().metrics()
+
+    # ---------------------------------------------------------------- 도움말 챗봇 (ADR-0013)
+    @app.get("/api/assistant/status")
+    def assistant_status() -> dict[str, Any]:
+        return assistant.status()
+
+    @app.post("/api/assistant/chat")
+    def assistant_chat(body: AssistantBody) -> dict[str, Any]:
+        # Vault 를 바꾸지 않으므로 쓰기 헤더(ADR-0009)를 요구하지 않는다. 색인만 최신으로.
+        s()
+        try:
+            return assistant.chat([m.model_dump() for m in body.messages])
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from None
 
     # ---------------------------------------------------------------- writes (user click only)
     @app.post("/api/review/promote/{ref:path}", dependencies=[Depends(require_user_click)])

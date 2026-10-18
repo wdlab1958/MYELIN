@@ -29,7 +29,8 @@ CLI 로 하려면 `myelin init --vault ~/Vaults/me`. 둘 다 같은 로직이다
 5. 경험은 `/myelin:interview` 로 lesson 노트에.
 6. **승격은 읽은 뒤에**: Review Gate 의 Promote 는 "내용 읽기" 로 본문을 연 뒤에만 켜진다. 읽지 않은 승격은 장치가 막는다.
 7. **환류**: `/myelin:compose` 로 만든 산출물에는 `## 환류 후보` 절이 생긴다. `/myelin:distill 80_Outputs/drafts/<산출물>.md` 로 그 절을 원자 노트 초안으로 되돌리고 Review Gate 에서 승격한다. 산출물 안에만 남은 지식은 다시 쓰이지 않는다.
-8. **강도(myelin ×N)**: Dashboard 와 My Domains 의 노트 표에 노트별 강도가 텍스트로 보인다. 1 = verified, 2 = 두 곳 이상에서 링크되거나 산출물 재료로 쓰임, 3 = Commons 에서 인용됨. Dashboard 의 "재사용 비율"·"재투입 소요일"·"산출물당 재료 수" 가 목표를 벗어나면 "목표 이탈" 이 뜬다(ADR-0012).
+8. **모르면 도우미에게**: Hub 우측 하단 말풍선(도우미)을 누르면 MYELIN 도우미(AI)가 열린다. 개념·절차·명령과 이 Vault 의 상태(Level·Domain·KPI·관련 노트)를 답하고 근거 노트를 Obsidian 링크로 준다. 로컬 Ollama(`http://127.0.0.1:11434`)가 켜져 있으면 LLM 이 답하고, 없으면 "지식 기반 모드" 로 내장 지식 절을 그대로 보여 준다. 도우미는 안내만 하며 승격·적용·공개는 여전히 사람이 버튼으로 한다(ADR-0013).
+9. **강도(myelin ×N)**: Dashboard 와 My Domains 의 노트 표에 노트별 강도가 텍스트로 보인다. 1 = verified, 2 = 두 곳 이상에서 링크되거나 산출물 재료로 쓰임, 3 = Commons 에서 인용됨. Dashboard 의 "재사용 비율"·"재투입 소요일"·"산출물당 재료 수" 가 목표를 벗어나면 "목표 이탈" 이 뜬다(ADR-0012).
 
 ## 4. Claude Code 에서
 - Vault 폴더에서 `claude` 실행. plugin 이 설치되어 있으면 `/myelin:ingest` 등이 보인다(없으면 `claude --plugin-dir <repo>/plugin`).
@@ -60,3 +61,4 @@ MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 **테마 + 파일 �
 - `myelin doctor` 오류 → 메시지의 규칙 이름(schema / fail-closed / orphan / confidential-share / broken-link / duplicate-id / domain / temporal)으로 `docs/reports/P2.md` 표 참조.
 - Guard 가 전부 막는다 → Vault 에 `myelin.yaml` 이 있는지, `level` 이 0 이 아닌지 확인.
 - Hub 가 403 → localhost 로 접속하는지(`127.0.0.1`), 다른 사이트 탭에서 호출하지 않았는지.
+- 도우미가 "지식 기반 모드" → Ollama 가 꺼져 있거나 모델이 없다. `ollama serve` 후 다시 열면 LLM 모드가 된다. 다른 주소·모델은 `MYELIN_ASSISTANT_URL` · `MYELIN_ASSISTANT_MODEL` 환경변수로 지정한다(loopback 이 아닌 주소면 기밀 노트는 컨텍스트에서 빠진다).

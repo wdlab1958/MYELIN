@@ -15,6 +15,14 @@ const API = `http://127.0.0.1:${process.env.MYELIN_E2E_API_PORT ?? "8799"}`;
 const state = () => JSON.parse(readFileSync(path.join(__dirname, ".e2e-state.json"), "utf-8")) as { vault: string };
 const git = (args: string) => execSync(`git ${args}`, { cwd: state().vault, encoding: "utf-8" }).trim();
 
+const SHOTS = process.env.MYELIN_E2E_SCREENSHOTS === "1";
+const OUT = path.resolve(__dirname, "../../../../docs/reports/P6");
+async function shot(page: Page, name: string) {
+  if (!SHOTS) return;
+  if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
+  await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage: true });
+}
+
 function watchConsole(page: Page): string[] {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
@@ -212,6 +220,47 @@ test.describe.serial("Hub 메뉴 흐름 — Domains · Packs · Patches · Commo
     await expect(page.getByTestId("domain-detail")).toContainText(/myelin ×\d/);
     const status = (await (await fetch(`${API}/api/git/status`)).json()) as { clean: boolean };
     expect(status.clean).toBeTruthy();
+    expect(errors).toEqual([]);
+  });
+
+  test("도움말 챗봇: 우측 하단 말풍선 → 모달 → 질문에 답하고 Vault 를 바꾸지 않는다", async ({ page }) => {
+    const errors = watchConsole(page);
+    await page.goto("/review");
+    const fab = page.getByTestId("assistant-fab");
+    await expect(fab).toBeVisible();
+    const vp = page.viewportSize()!;
+    const box = (await fab.boundingBox())!;
+    expect(box.x + box.width).toBeGreaterThan(vp.width - 80); // bottom-right corner
+    expect(box.y + box.height).toBeGreaterThan(vp.height - 80);
+    await fab.click();
+    const dialog = page.getByTestId("assistant-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("role", "dialog");
+    await expect(page.getByTestId("assistant-mode")).toHaveText("지식 기반 모드"); // e2e API runs without Ollama
+    await expect(page.getByTestId("assistant-msg-assistant")).toHaveCount(1); // welcome
+    await expect(page.getByTestId("assistant-suggestions").getByRole("button")).toHaveCount(4);
+    await expect(page.getByTestId("assistant-input")).toBeFocused();
+    const before = git("rev-parse HEAD");
+    await page.getByTestId("assistant-input").fill("Level 2 에서 쓸 수 있는 Skill 은?");
+    await page.getByTestId("assistant-send").click();
+    const reply = page.getByTestId("assistant-msg-assistant").nth(1);
+    await expect(reply).toContainText("/link");
+    await expect(reply).toContainText("근거:");
+    await expect(page.getByTestId("assistant-msg-user")).toHaveText("Level 2 에서 쓸 수 있는 Skill 은?");
+    await expect(page.getByTestId("assistant-suggestions")).toHaveCount(0);
+    // a Vault question cites notes with Obsidian links
+    await page.getByTestId("assistant-input").fill("MYELIN 시작하기 노트가 있나요?");
+    await page.getByTestId("assistant-input").press("Enter");
+    const cites = page.getByTestId("assistant-msg-assistant").nth(2).getByTestId("assistant-citations");
+    await expect(cites).toBeVisible();
+    await expect(cites.getByRole("link").first()).toHaveAttribute("href", /^obsidian:\/\/open\?path=/);
+    // read-only: no commit, clean tree
+    expect(git("rev-parse HEAD")).toBe(before);
+    expect(git("status --porcelain")).toBe("");
+    await shot(page, "assistant");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(fab).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

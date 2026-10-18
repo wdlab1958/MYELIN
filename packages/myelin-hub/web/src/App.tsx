@@ -7,6 +7,7 @@ import Review from "./pages/Review";
 import Packs from "./pages/Packs";
 import Settings from "./pages/Settings";
 import Onboarding from "./pages/Onboarding";
+import Assistant from "./components/Assistant";
 
 const NAV = [
   ["/", "Dashboard"],
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <Assistant vault={vault} />
     </div>
   );
 }

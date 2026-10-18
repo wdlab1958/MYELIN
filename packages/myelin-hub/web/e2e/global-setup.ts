@@ -14,7 +14,8 @@ export default async function globalSetup() {
   // The Vault pre-commit device (ADR-0011 §5) runs `${MYELIN_BIN:-myelin} doctor --staged`; on CI
   // runners `myelin` is not on PATH, so point it at the workspace venv for the tests' own commits.
   process.env.MYELIN_BIN ??= path.join(repo, ".venv", "bin", "myelin");
-  const env = { ...process.env, MYELIN_PACKS: path.join(repo, "packs") };
+  // 도움말 챗봇(ADR-0013)은 로컬 Ollama 가 있으면 LLM 모드가 되어 답이 비결정적이다 → 닫힌 포트로 kb 모드 고정.
+  const env = { ...process.env, MYELIN_PACKS: path.join(repo, "packs"), MYELIN_ASSISTANT_URL: "http://127.0.0.1:9" };
   const api: ChildProcess = spawn("uv", ["run", "myelin-hub", "--vault", vault, "--port", port, "--no-web"], {
     cwd: repo, env, stdio: ["ignore", "pipe", "pipe"],
   });

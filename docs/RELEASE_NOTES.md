@@ -1,3 +1,8 @@
+# MYELIN v1.3.0 — Release Notes (2026-10-19)
+
+## v1.3.0 — Hub 도움말 챗봇
+Hub 모든 화면의 우측 하단 말풍선에서 MYELIN 도우미(AI)가 열린다. 개념·사용법·절차와 이 Vault 의 상태를 답하고 근거 노트를 Obsidian 링크로 준다. 로컬 Ollama 가 있으면 LLM 모드, 없으면 지식 기반 모드(내장 지식 절 그대로). 읽기 전용이며 Vault 를 바꾸지 않는다. 설정: `MYELIN_ASSISTANT_URL`(기본 `http://127.0.0.1:11434`) · `MYELIN_ASSISTANT_MODEL`. ADR-0013, `CHANGELOG.md` v1.3.0.
+
 # MYELIN v1.2.0 — Release Notes (2026-10-18)
 
 ## v1.2.0 — 설계 철학 갭 보완

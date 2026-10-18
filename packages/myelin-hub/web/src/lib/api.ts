@@ -72,3 +72,11 @@ export type PublishResult = {
   branch: string; commit: string; dest: string; pushed: boolean; pr_url: string | null;
   push_error?: string | null; pr_error?: string | null; next_step?: string | null;
 };
+export type AssistantStatus = {
+  available: boolean; mode: "llm" | "kb"; model: string | null; url: string; local: boolean; name: string; error: string | null;
+};
+export type AssistantCitation = { path: string; title: string; status: string; classification: string; snippet: string };
+export type AssistantReply = {
+  content: string; mode: "llm" | "kb" | "refused"; model: string | null; citations: AssistantCitation[]; sections: string[];
+  notice: string | null; finish_reason: string;
+};
