@@ -2,7 +2,7 @@
 #   make test            run all tests
 #   make lint            ruff check + format check
 #   make typecheck       mypy (strict)
-#   make gate P=<n>      run Phase gate checks (scripts/gate.py)
+#   make gate P=<n>      run Phase gate checks 0-9 (scripts/gate.py)
 #   make phases          regenerate docs/phases/P*.md from the spec
 #   make schemas         export JSON Schemas to docs/spec/schema/
 #   make fixtures        regenerate tests/fixtures/vaults/{basic,seeded-violations}

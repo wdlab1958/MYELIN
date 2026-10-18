@@ -504,12 +504,77 @@ GATES: dict[int, list[Check]] = {
         ),
         Check("emboss: tokens in sync · a11y · lint", sh(["bash", "-c", EMBOSS_ALL])),
     ],
+    9: [
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "patches: plan/diff/digest, allowlist, fail-closed, applied/rejected moves",
+            sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_patches.py"]),
+        ),
+        Check(
+            "hub: preview + digest-checked apply (409 on mismatch)",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-hub/api/tests/test_api.py",
+                    "-k",
+                    "patches_preview",
+                ]
+            ),
+        ),
+        Check(
+            "install: --claude opt-in, obsidian installer sanity",
+            sh(["uv", "run", "pytest", "-q", "tests/test_install.py"]),
+        ),
+        Check(
+            "scaffold: Obsidian theme pre-installed in new vaults",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-core/tests/test_scaffold.py",
+                    "-k",
+                    "obsidian",
+                ]
+            ),
+        ),
+        Check(
+            "web: typecheck + build",
+            sh(["npm", "run", "--prefix", "packages/myelin-hub/web", "build"]),
+        ),
+        Check("emboss: tokens in sync · a11y · lint", sh(["bash", "-c", EMBOSS_ALL])),
+        Check(
+            "init golden snapshot matches",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-cli/tests/test_golden.py::test_init_matches_golden",
+                ]
+            ),
+        ),
+        Check(
+            "CHANGELOG has v1.1.0",
+            lambda: (
+                "## v1.1.0" in (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"),
+                "CHANGELOG.md",
+            ),
+        ),
+    ],
 }
 
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2 or not argv[1].isdigit() or int(argv[1]) not in GATES:
-        print("usage: gate.py <phase 0-8>", file=sys.stderr)
+        print("usage: gate.py <phase 0-9>", file=sys.stderr)
         return 2
     n = int(argv[1])
     print(f"== MYELIN Gate P{n} ==")
