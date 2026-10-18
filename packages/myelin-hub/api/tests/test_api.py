@@ -292,3 +292,65 @@ def test_guard_events_surface(client: TestClient, vault_root: Path) -> None:
     ev = client.get("/api/guard").json()
     assert len(ev) == 1 and ev[0]["message"] == "blocked x"
     assert client.get("/api/stats").json()["guard_blocks_7d"] == 1
+
+
+def test_commons_candidates_and_publish(
+    client: TestClient, vault_root: Path, tmp_path: Path
+) -> None:
+    from myelin_core.commons import init_commons
+
+    before = tree_hash(vault_root)
+    cands = client.get("/api/commons/candidates").json()
+    assert len(cands) == 6 and all(c["ok"] for c in cands)
+    assert tree_hash(vault_root) == before
+    good = "10_Domains/D2/WCET 예산은 측정값의 1.5배로 잡는다.md"
+    assert (
+        client.post(f"/api/commons/publish/{good}", json={"confirmed": True}).status_code == 403
+    )  # no click
+    assert (
+        client.post(
+            f"/api/commons/publish/{good}", headers=CLICK, json={"confirmed": False}
+        ).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            f"/api/commons/publish/{good}", headers=CLICK, json={"confirmed": True}
+        ).status_code
+        == 409
+    )  # no clone
+    commons = tmp_path / "commons"
+    init_commons(commons)
+    s = client.get("/api/settings").json()
+    s["commons"] = {"enabled": False, "local": str(commons)}
+    assert client.put("/api/settings", headers=CLICK, json=s).status_code == 200
+    bad = "40_IP/candidates/Agentic CAD 검증 루프.md"
+    r = client.post(f"/api/commons/publish/{bad}", headers=CLICK, json={"confirmed": True})
+    assert r.status_code == 422 and "confidential" in r.json()["detail"]
+    r = client.post(f"/api/commons/publish/{good}", headers=CLICK, json={"confirmed": True})
+    assert r.status_code == 200, r.text
+    assert r.json()["branch"] == "publish/20260907-0800-wcet-budget" and r.json()["pushed"] is False
+    m = client.get("/api/metrics").json()
+    assert m["anonymous"] is True and m["opt_in"] is False and m["payload"]["published"] == 1
+    assert "brian@example.org" not in json_dumps(m["payload"])
+
+
+def json_dumps(o: object) -> str:
+    import json
+
+    return json.dumps(o, ensure_ascii=False)
+
+
+def test_onboarding_records_metrics(empty_client: TestClient) -> None:
+    c = empty_client
+    body = {"name": "New User", "primary": "D1", "packs": ["brian.physical-ai"], "level": 1}
+    assert c.post("/api/onboarding", headers=CLICK, json=body).status_code == 200
+    assert (
+        c.post(
+            "/api/review/promote/00_Inbox/ai-drafts/MYELIN 시작하기.md", headers=CLICK
+        ).status_code
+        == 200
+    )
+    m = c.get("/api/metrics").json()
+    assert [e["event"] for e in m["events"]] == ["onboard_start", "first_promote"]
+    assert m["onboarding_minutes"] is not None and m["onboarding_minutes"] < 15

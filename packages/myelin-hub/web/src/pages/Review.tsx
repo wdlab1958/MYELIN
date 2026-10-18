@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { get, userPost, type NoteRow, type PatchRow } from "../lib/api";
+import { get, userPost, type Candidate, type NoteRow, type PatchRow } from "../lib/api";
 
 export default function Review({ onChanged }: { onChanged: () => void }) {
   const [drafts, setDrafts] = useState<NoteRow[]>([]);
   const [patches, setPatches] = useState<PatchRow[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [justPromoted, setJustPromoted] = useState<string | null>(null);
+  const [cands, setCands] = useState<Candidate[]>([]);
+  const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const load = useCallback(() => get<{ drafts: NoteRow[]; patches: PatchRow[] }>("/api/review").then((r) => { setDrafts(r.drafts); setPatches(r.patches); }), []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); void get<Candidate[]>("/api/commons/candidates").then(setCands).catch(() => setCands([])); }, [load]);
 
   const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string) => {
     try {
@@ -48,6 +50,26 @@ export default function Review({ onChanged }: { onChanged: () => void }) {
             <div className="hub-row">
               <button type="button" className="mx-btn mx-btn-promote" disabled={!!p.error || p.status !== "proposed"} onClick={() => act(() => userPost(`/api/patches/${encodeURIComponent(p.file)}/apply`), `Apply ${p.file}`)}>Apply</button>
               <button type="button" className="mx-btn" disabled={!!p.error || p.status !== "proposed"} onClick={() => act(() => userPost(`/api/patches/${encodeURIComponent(p.file)}/reject`), `Reject ${p.file}`)}>Reject</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <h2 className="hub-h2">Commons 후보 ({cands.length})</h2>
+      <p className="hub-sub">share: true 인 verified 노트. 비식별 검사를 통과하고 사람이 확인한 것만 Commons 브랜치에 제안된다 (ADR-0010).</p>
+      <div className="mx-card" style={{ padding: "0 var(--mx-space-4)" }} data-testid="commons-list">
+        {cands.length === 0 && <div className="mx-review-row mx-muted">share: true 로 표시된 노트가 없습니다.</div>}
+        {cands.map((c) => (
+          <div className="mx-review-row" key={c.path} data-testid="commons-row">
+            {c.ok ? <span className="mx-chip mx-chip--verified">publishable</span> : <span className="mx-badge--blocked">blocked</span>}
+            <div>
+              <div className="mx-review-row__title">{c.title}</div>
+              <div className="mx-review-row__meta">{c.path}</div>
+              {c.reasons.map((r) => <div key={r} className="mx-review-row__meta">✗ {r}</div>)}
+              {c.deid_hits.map((h, i) => <div key={i} className="mx-review-row__meta">✗ 비식별 {h.kind} (line {h.line}): {h.excerpt}</div>)}
+              {c.ok && <label className="hub-row mx-review-row__meta"><input type="checkbox" checked={!!confirmed[c.path]} onChange={(e) => setConfirmed({ ...confirmed, [c.path]: e.target.checked })} /> 고객명·IP·기밀이 없음을 확인했습니다</label>}
+            </div>
+            <div className="hub-row">
+              <button type="button" className="mx-btn mx-btn-promote" disabled={!c.ok || !confirmed[c.path]} onClick={() => act(() => userPost(`/api/commons/publish/${encodeURI(c.path)}`, { confirmed: true }), `Commons 제안 ${c.title}`)} data-testid="commons-publish">Commons 제안</button>
             </div>
           </div>
         ))}

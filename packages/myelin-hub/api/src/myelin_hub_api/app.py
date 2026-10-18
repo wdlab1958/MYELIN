@@ -37,6 +37,11 @@ class PackBody(BaseModel):
     pack_yaml: str = Field(min_length=1)
 
 
+class PublishBody(BaseModel):
+    confirmed: bool = False  # the UI's '비식별 확인' checkbox
+    push: bool = False
+
+
 class OnboardBody(BaseModel):
     name: str = Field(min_length=1)
     team: str = ""
@@ -156,6 +161,14 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     def settings() -> dict[str, Any]:
         return svc.settings()
 
+    @app.get("/api/commons/candidates")
+    def commons_candidates() -> list[dict[str, Any]]:
+        return s().commons_candidates()
+
+    @app.get("/api/metrics")
+    def metrics() -> dict[str, Any]:
+        return s().metrics()
+
     # ---------------------------------------------------------------- writes (user click only)
     @app.post("/api/review/promote/{ref:path}", dependencies=[Depends(require_user_click)])
     def promote(ref: str, body: PromoteBody | None = None) -> dict[str, Any]:
@@ -184,6 +197,11 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     @app.put("/api/packs/{name}", dependencies=[Depends(require_user_click)])
     def save_pack(name: str, body: PackBody) -> dict[str, Any]:
         return svc.save_pack(name, body.pack_yaml)
+
+    @app.post("/api/commons/publish/{ref:path}", dependencies=[Depends(require_user_click)])
+    def commons_publish(ref: str, body: PublishBody | None = None) -> dict[str, Any]:
+        b = body or PublishBody()
+        return svc.commons_publish(ref, confirmed=b.confirmed, push=b.push)
 
     @app.post("/api/onboarding", dependencies=[Depends(require_user_click)])
     def onboarding(body: OnboardBody) -> dict[str, Any]:

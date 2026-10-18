@@ -7,6 +7,7 @@ Reads never write (audited by tests).
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import re
@@ -20,10 +21,18 @@ from typing import Any
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
+from myelin_core.commons import CommonsError, DeidRule, candidates, publish_note
 from myelin_core.config import MyelinConfig, dump_config
 from myelin_core.doctor import run_doctor
 from myelin_core.index import VaultIndex, open_index
 from myelin_core.levels import skill_table
+from myelin_core.metrics import (
+    events,
+    onboarding_minutes,
+    org_metrics,
+    payload_is_anonymous,
+    record_event,
+)
 from myelin_core.note import NoteParseError, dump_note, read_note
 from myelin_core.packs.loader import PackError, discover_packs, load_pack
 from myelin_core.patches import PatchError, read_patch
@@ -359,6 +368,8 @@ class HubService:
         commit = self._commit(
             [rel, self._rel(str(dest))], f"[myelin:review] promote {src.stem} → {target_domain}"
         )
+        if not any(e.get("event") == "first_promote" for e in events(v.root)):
+            record_event(v.root, "first_promote", via="hub")
         self._idx()
         return {
             "path": self._rel(str(dest)),
@@ -596,6 +607,7 @@ class HubService:
         except (ScaffoldError, PackError) as exc:
             raise HubError(str(exc), 422) from None
         self.reload()
+        record_event(self.root, "onboard_start", via="hub")
         welcome = self._write_welcome(cfg, now)
         self.ensure_git()
         return {"root": str(self.root), "files": len(plan.files), "welcome": welcome}
@@ -632,3 +644,57 @@ class HubService:
         )
         path.write_text(text, encoding="utf-8")
         return self._rel(str(path))
+
+    # ------------------------------------------------------------------ commons (ADR-0010)
+    def _commons_path(self) -> Path:
+        v = self._v()
+        local = v.config.commons.local
+        if not local:
+            raise HubError("Commons clone not configured (myelin.yaml commons.local)", 409)
+        p = Path(local).expanduser()
+        if not (p / ".git").exists():
+            raise HubError(f"Commons clone missing at {p} — run `myelin commons init`", 409)
+        return p
+
+    def _deid_rule(self) -> DeidRule:
+        v = self._v()
+        files = [v.root / "90_System" / "deid.yaml"]
+        local = v.config.commons.local
+        if local:
+            files.insert(0, Path(local).expanduser() / "deid.yaml")
+        return DeidRule.load(*files)
+
+    def commons_candidates(self) -> list[dict[str, Any]]:
+        """share:true notes with their publish check (read-only)."""
+        return [c.to_dict() for c in candidates(self._v(), self._deid_rule())]
+
+    def commons_publish(self, ref: str, confirmed: bool, push: bool = False) -> dict[str, Any]:
+        v = self._v()
+        if not confirmed:
+            raise HubError("publish requires the human confirmation flag (비식별 확인)", 422)
+        rel = self._rel(ref)
+        try:
+            res = publish_note(
+                v, rel, self._commons_path(), confirmed=True, rule=self._deid_rule(), push=push
+            )
+        except CommonsError as exc:
+            raise HubError(str(exc), 422) from None
+        record_event(v.root, "publish", path_hash=hashlib.sha256(rel.encode()).hexdigest()[:8])
+        return {
+            "branch": res.branch,
+            "commit": res.commit,
+            "dest": res.dest,
+            "pushed": res.pushed,
+            "pr_url": res.pr_url,
+        }
+
+    def metrics(self) -> dict[str, Any]:
+        v = self._v()
+        payload = org_metrics(v)
+        return {
+            "payload": payload,
+            "anonymous": not payload_is_anonymous(payload, v),
+            "opt_in": v.config.commons.metrics_opt_in,
+            "onboarding_minutes": onboarding_minutes(v.root),
+            "events": [{"event": e.get("event"), "ts": e.get("ts")} for e in events(v.root)][-20:],
+        }

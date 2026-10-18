@@ -43,3 +43,7 @@ export type PackRow = {
   name: string; version: string; kind: string; maintainer: string; description: string; active: boolean; editable: boolean;
   domains: { id: string; name: string; accent: string; sub_mocs: string[] }[];
 };
+export type Candidate = {
+  path: string; title: string; eligible: boolean; ok: boolean; reasons: string[];
+  deid_hits: { kind: string; line: number; excerpt: string }[];
+};
