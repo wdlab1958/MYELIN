@@ -1,12 +1,10 @@
 # PHASE_STATE
 
-current_phase: P7
-status: gate_pending   # in_progress | gate_pending | awaiting_approval
+current_phase: P8
+status: in_progress   # in_progress | gate_pending | awaiting_approval
 last_updated: 2026-10-18
 
-> P0~P6 완료(`phase-P0`~`phase-P6`). P7 구현 Task 는 완료, **Gate 의 사람 참여 항목 2개가 대기 중**(파일럿 5명 온보딩 ≤15분 · 피드백 리포트).
-> 자동 검사는 모두 통과(`make gate P=7` 의 HUMAN 2항목만 FAIL). 보고서 `docs/reports/P7.md`.
-> **태그 `phase-P7` 과 P8 착수는 파일럿 결과 기록 후** — Brian 이 `python3 scripts/pilot.py record …` 로 5명 이상 기록하고 `docs/reports/P7/pilot-feedback.md` 의 TBD 를 채운 뒤 `make gate P=7` PASS → 태그 → "GO P8".
+> P0~P6 완료(`phase-P0`~`phase-P6`). P7 구현 완료, Gate 의 사람 참여 항목 2개(파일럿 5명 ≤15분 · 피드백 리포트)는 **열린 채** — 2026-10-18 Brian 이 "GO P8" 로 P8 착수를 승인(파일럿은 병행 운영, 결과 기록 후 `make gate P=7` → `phase-P7` 태그).
 
 ## Done
 ### P0
@@ -99,7 +97,7 @@ last_updated: 2026-10-18
 - [ ] P7-T8(사람): 파일럿 운영 — `docs/guides/pilot-guide.md` 로 5~10명 온보딩, `scripts/pilot.py record --vault <참가자 Vault>` 로 기록(이름 미저장), `scripts/pilot.py report`
 - [ ] P7-T8(사람): `docs/reports/P7/pilot-feedback.md` 작성(TBD 제거), Org Pack 2종 챔피언 이름을 Registry 에 기입(`myelin commons add-pack … --champion`)
 - [ ] P7-T8: `make gate P=7` PASS → `docs/reports/P7.md` 갱신 → `git tag phase-P7` → 승인 요청
-### P8 — 승인 대기
+### P8
 - [ ] P8-T1 위협 모델(STRIDE) 문서 — Guard 우회, MCP 경로 이탈, Commons 유출, 공급망
 - [ ] P8-T2 High 항목 조치 및 회귀 테스트
 - [ ] P8-T3 설치 스크립트 (uv tool install, plugin 등록, MCP 설정, Theme 복사)
