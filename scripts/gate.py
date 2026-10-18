@@ -437,7 +437,54 @@ def p4_checks() -> list[Check]:
     ]
 
 
+def _design_cmd(*args: str) -> Callable[[], bool]:
+    def _run() -> bool:
+        import subprocess
+
+        res = subprocess.run(
+            [sys.executable, "design/build.py", *args], cwd=ROOT, capture_output=True, text=True
+        )
+        out = (res.stdout + res.stderr).strip()
+        if res.returncode != 0 and out:
+            print("    ! " + out[-800:].replace("\n", "\n    ! "))
+        return res.returncode == 0
+
+    _run.__name__ = "design/build.py " + " ".join(args)
+    return _run
+
+
+def p5_screenshot_current() -> bool:
+    """갤러리 스크린샷이 현재 디자인(갤러리 HTML + CSS)으로 찍힌 것인지."""
+    import hashlib
+
+    shot = ROOT / "docs/reports/P5/gallery.png"
+    stamp = ROOT / "docs/reports/P5/gallery.sha256"
+    if not shot.exists() or not stamp.exists():
+        return False
+    h = hashlib.sha256()
+    for rel in ("design/gallery/index.html", "design/dist/tokens.css", "design/src/components.css"):
+        h.update((ROOT / rel).read_bytes())
+    return stamp.read_text(encoding="utf-8").strip() == h.hexdigest()
+
+
+def p5_checks() -> list[Check]:
+    return [
+        ("exists: design/tokens.json (single source)", exists("design/tokens.json")),
+        ("generated files up to date (css, tailwind, obsidian)", guarded(_design_cmd("--check"))),
+        ("contrast: text pairs >= 4.5:1, neon never text", guarded(_design_cmd("--contrast"))),
+        ("lint: no hard-coded colors/shadows outside tokens", guarded(_design_cmd("--lint"))),
+        ("tokens tests", guarded(p3_pytest("tests/design"))),
+        (
+            "obsidian theme manifest + theme.css",
+            exists("theme/obsidian-myelin-emboss/manifest.json"),
+        ),
+        ("gallery screenshot matches current design", guarded(p5_screenshot_current)),
+        ("PHASE_STATE lists P6 tasks", next_phase_tasks_listed(6)),
+    ]
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P5": p5_checks,
     "P4": p4_checks,
     "P0": p0_checks,
     "P1": p1_checks,

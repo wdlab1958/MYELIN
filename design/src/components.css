@@ -1,0 +1,150 @@
+/* MYELIN Emboss 컴포넌트 (명세 §8.3). 색·그림자는 모두 토큰 변수 — lint가 리터럴을 막는다.
+   원칙: 표면은 조용히(그림자만), 신호는 선명하게(Violet·Neon). 네온 위 글자는 항상 --mx-ink. */
+
+.mx-surface {
+  background: var(--mx-surface);
+  color: var(--mx-ink);
+  font-family: var(--mx-font-sans);
+}
+
+/* Card · KPI Tile — Raised */
+.mx-card {
+  background: var(--mx-surface);
+  border-radius: var(--mx-radius-card);
+  box-shadow: var(--mx-shadow-raised);
+  padding: var(--mx-space-5);
+}
+.mx-kpi__label { color: var(--mx-muted); font-size: var(--mx-font-size-sm); }
+.mx-kpi__value { font-size: var(--mx-font-size-kpi); font-weight: 800; line-height: 1.1; color: var(--mx-ink); }
+.mx-kpi__value--violet { color: var(--mx-violet-ink); }
+.mx-kpi__value--lime { color: var(--mx-lime-ink); }
+.mx-kpi__value--cyan { color: var(--mx-cyan-ink); }
+.mx-kpi__sub { color: var(--mx-muted); font-size: var(--mx-font-size-xs); }
+.mx-glow--ai { box-shadow: var(--mx-shadow-raised), 0 0 32px var(--mx-glow-cyan); }
+.mx-glow--verified { box-shadow: var(--mx-shadow-raised), 0 0 32px var(--mx-glow-lime); }
+
+/* Buttons */
+.mx-btn {
+  font: inherit;
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius-control);
+  background: var(--mx-surface);
+  color: var(--mx-ink);
+  box-shadow: var(--mx-shadow-raised-sm);
+  padding: var(--mx-space-2) var(--mx-space-4);
+  cursor: pointer;
+  transition: box-shadow var(--mx-motion-fast) var(--mx-motion-ease);
+}
+.mx-btn:active,
+.mx-btn.is-pressed { box-shadow: var(--mx-shadow-inset-sm); }
+.mx-btn--primary {
+  background: var(--mx-violet);
+  border-color: var(--mx-violet);
+  color: var(--mx-white);
+  box-shadow: var(--mx-shadow-primary);
+  font-weight: 700;
+}
+.mx-btn--promote { background: var(--mx-lime); border-color: var(--mx-lime); color: var(--mx-ink); font-weight: 700; }
+
+/* Focus — 그림자만으로 focus를 표현하지 않는다 (가드레일 3) */
+.mx-btn:focus-visible,
+.mx-input:focus,
+.mx-nav__item:focus-visible,
+.mx-orb:focus-visible {
+  outline: var(--mx-focus-ring);
+  outline-offset: var(--mx-focus-offset);
+}
+
+/* Input · Search — Inset */
+.mx-input {
+  font: inherit;
+  color: var(--mx-ink);
+  background: var(--mx-surface);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius-control);
+  box-shadow: var(--mx-shadow-inset);
+  padding: var(--mx-space-3) var(--mx-space-4);
+}
+.mx-input::placeholder { color: var(--mx-muted); }
+
+/* Nav — 활성 항목은 Inset + Violet 글자 */
+.mx-nav { display: flex; flex-direction: column; gap: var(--mx-space-1); }
+.mx-nav__item {
+  color: var(--mx-ink);
+  padding: var(--mx-space-3) var(--mx-space-4);
+  border-radius: var(--mx-radius-control);
+  text-decoration: none;
+}
+.mx-nav__item.is-active { box-shadow: var(--mx-shadow-inset-sm); color: var(--mx-violet-ink); font-weight: 700; }
+
+/* Status Chip — 색만으로 전달하지 않는다: 항상 텍스트 라벨 (가드레일 4) */
+.mx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mx-space-1);
+  border-radius: var(--mx-radius-chip);
+  padding: 2px var(--mx-space-3);
+  font-size: var(--mx-font-size-xs);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.mx-chip--verified { background: var(--mx-status-verified-bg); color: var(--mx-status-verified-fg); }
+.mx-chip--ai { background: var(--mx-status-ai-bg); color: var(--mx-status-ai-fg); }
+.mx-chip--draft {
+  background: var(--mx-status-draft-bg);
+  color: var(--mx-status-draft-fg);
+  border-color: var(--mx-status-draft-line);
+}
+.mx-chip--blocked {
+  background: var(--mx-status-blocked-bg);
+  color: var(--mx-status-blocked-fg);
+  border-color: var(--mx-status-blocked-line);
+}
+.mx-badge--blocked {
+  display: inline-block;
+  background: var(--mx-status-blocked-bg);
+  color: var(--mx-status-blocked-fg);
+  border: 2px solid var(--mx-status-blocked-line);
+  border-radius: var(--mx-radius-control);
+  padding: var(--mx-space-2) var(--mx-space-4);
+  font-weight: 700;
+}
+
+/* Domain Orb — Raised 원 + Pack accent glow */
+.mx-orb {
+  --mx-orb-glow: var(--mx-accent-violet-glow);
+  --mx-orb-ink: var(--mx-accent-violet-ink);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: var(--mx-surface);
+  box-shadow: var(--mx-shadow-raised), 0 0 28px var(--mx-orb-glow);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.mx-orb__label { font-size: var(--mx-font-size-xl); font-weight: 800; color: var(--mx-ink); }
+.mx-orb__name { font-size: var(--mx-font-size-xs); color: var(--mx-orb-ink); padding: 0 var(--mx-space-3); }
+.mx-orb[data-accent="violet"] { --mx-orb-glow: var(--mx-accent-violet-glow); --mx-orb-ink: var(--mx-accent-violet-ink); }
+.mx-orb[data-accent="cyan"] { --mx-orb-glow: var(--mx-accent-cyan-glow); --mx-orb-ink: var(--mx-accent-cyan-ink); }
+.mx-orb[data-accent="lime"] { --mx-orb-glow: var(--mx-accent-lime-glow); --mx-orb-ink: var(--mx-accent-lime-ink); }
+.mx-orb[data-accent="magenta"] { --mx-orb-glow: var(--mx-accent-magenta-glow); --mx-orb-ink: var(--mx-accent-magenta-ink); }
+.mx-orb[data-accent="amber"] { --mx-orb-glow: var(--mx-accent-amber-glow); --mx-orb-ink: var(--mx-accent-amber-ink); }
+.mx-orb[data-accent="slate"] { --mx-orb-glow: var(--mx-accent-slate-glow); --mx-orb-ink: var(--mx-accent-slate-ink); }
+
+/* Review Row */
+.mx-review-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mx-space-3);
+  padding: var(--mx-space-3) 0;
+  border-bottom: 1px solid var(--mx-line);
+}
+.mx-review-row__title { flex: 1; color: var(--mx-ink); }
+.mx-review-row__meta { color: var(--mx-muted); font-size: var(--mx-font-size-xs); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-btn { transition: none; }
+}

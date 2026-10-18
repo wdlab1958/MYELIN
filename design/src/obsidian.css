@@ -1,0 +1,87 @@
+/* Obsidian 변수 매핑 + 엠보 적용 — 라이트 테마만. 색은 모두 --mx-* (lint 대상). */
+.theme-light {
+  --background-primary: var(--mx-surface);
+  --background-primary-alt: var(--mx-surface-well);
+  --background-secondary: var(--mx-surface);
+  --background-secondary-alt: var(--mx-surface-well);
+  --background-modifier-border: var(--mx-line);
+  --background-modifier-form-field: var(--mx-surface);
+  --text-normal: var(--mx-ink);
+  --text-muted: var(--mx-muted);
+  --text-faint: var(--mx-muted);
+  --text-accent: var(--mx-violet-ink);
+  --text-accent-hover: var(--mx-violet);
+  --text-on-accent: var(--mx-white);
+  --interactive-accent: var(--mx-violet);
+  --interactive-accent-hover: var(--mx-violet-ink);
+  --link-color: var(--mx-violet-ink);
+  --link-external-color: var(--mx-violet-ink);
+  --tag-color: var(--mx-violet-ink);
+  --tag-background: var(--mx-violet-50);
+  --font-text-theme: var(--mx-font-sans);
+  --font-interface-theme: var(--mx-font-sans);
+  --font-monospace-theme: var(--mx-font-mono);
+  --radius-m: var(--mx-radius-sm);
+  --radius-l: var(--mx-radius-control);
+}
+
+/* 파일 탐색기 — 활성 파일은 Inset */
+.theme-light .nav-file-title.is-active,
+.theme-light .nav-folder-title.is-active,
+.theme-light .tree-item-self.is-active {
+  background: var(--mx-surface);
+  box-shadow: var(--mx-shadow-inset-sm);
+  color: var(--mx-violet-ink);
+  border-radius: var(--mx-radius-sm);
+}
+
+/* 버튼 — Raised, 누르면 Inset. 주 버튼은 Violet */
+.theme-light button:not(.clickable-icon):not(.mod-cta):not(.mod-warning) {
+  background: var(--mx-surface);
+  box-shadow: var(--mx-shadow-raised-sm);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius-control);
+}
+.theme-light button:not(.clickable-icon):active { box-shadow: var(--mx-shadow-inset-sm); }
+.theme-light button.mod-cta {
+  background: var(--mx-violet);
+  color: var(--mx-white);
+  box-shadow: var(--mx-shadow-primary);
+  border-radius: var(--mx-radius-control);
+}
+
+/* 입력창 — Inset + 경계선, focus는 링 */
+.theme-light input[type="text"],
+.theme-light input[type="search"],
+.theme-light textarea {
+  background: var(--mx-surface);
+  box-shadow: var(--mx-shadow-inset-sm);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius-control);
+}
+.theme-light input[type="text"]:focus,
+.theme-light input[type="search"]:focus,
+.theme-light textarea:focus {
+  outline: var(--mx-focus-ring);
+  outline-offset: var(--mx-focus-offset);
+}
+
+/* Properties(frontmatter) · Callout — Raised 카드 */
+.theme-light .metadata-container,
+.theme-light .callout {
+  background: var(--mx-surface);
+  box-shadow: var(--mx-shadow-raised-sm);
+  border-radius: var(--mx-radius-control);
+  border: none;
+}
+
+/* 태그 — Chip */
+.theme-light a.tag {
+  border-radius: var(--mx-radius-chip);
+  background: var(--mx-violet-50);
+  color: var(--mx-violet-ink);
+}
+
+/* frontmatter 상태를 cssclasses 로 표시하고 싶을 때: cssclasses: [mx-verified] 등 */
+.theme-light .markdown-preview-view.mx-verified .inline-title { box-shadow: inset 0 -4px 0 var(--mx-lime); }
+.theme-light .markdown-preview-view.mx-ai .inline-title { box-shadow: inset 0 -4px 0 var(--mx-cyan); }

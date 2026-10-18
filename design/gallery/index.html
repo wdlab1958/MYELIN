@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MYELIN Emboss — Component Gallery</title>
+  <link rel="stylesheet" href="../dist/tokens.css" />
+  <link rel="stylesheet" href="../src/components.css" />
+  <style>
+    /* 갤러리 배치 전용 — 색·그림자는 쓰지 않는다 (lint 대상) */
+    body { margin: 0; }
+    .page { max-width: 1240px; margin: 0 auto; padding: var(--mx-space-6) var(--mx-space-5); }
+    .row { display: flex; flex-wrap: wrap; gap: var(--mx-space-5); align-items: flex-start; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--mx-space-5); }
+    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--mx-space-5); }
+    .stack { display: flex; flex-direction: column; gap: var(--mx-space-3); }
+    h1 { font-size: var(--mx-font-size-xl); margin: 0; }
+    h2 { font-size: var(--mx-font-size-lg); margin: var(--mx-space-7) 0 var(--mx-space-4); }
+    h3 { font-size: var(--mx-font-size-md); margin: 0 0 var(--mx-space-4); }
+    .muted { color: var(--mx-muted); font-size: var(--mx-font-size-sm); }
+    .bar { display: flex; align-items: center; gap: var(--mx-space-5); }
+    .bar .mx-input { flex: 1; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; background: var(--mx-lime); }
+    .swatch { width: 100%; height: 56px; border-radius: var(--mx-radius-sm); box-shadow: var(--mx-shadow-inset-sm); }
+    .sw { font-size: var(--mx-font-size-xs); }
+    .sw code { font-family: var(--mx-font-mono); }
+    .swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--mx-space-4); }
+    .orbs { display: flex; gap: var(--mx-space-6); flex-wrap: wrap; padding: var(--mx-space-3); }
+    .side { width: 220px; }
+    ul.rules { margin: 0; padding-left: var(--mx-space-5); line-height: 1.8; }
+  </style>
+</head>
+<body class="mx-surface">
+  <main class="page">
+    <section class="mx-card bar">
+      <h1>MYELIN</h1><span class="dot" aria-hidden="true"></span><span class="muted">Emboss Design System · v0.1</span>
+      <input class="mx-input" placeholder="노트·개념·프로젝트 검색" aria-label="검색" />
+      <button class="mx-btn mx-btn--primary">/ingest +</button>
+    </section>
+
+    <h2>KPI Tile — Raised · 상태 색 숫자 (*-ink)</h2>
+    <section class="grid-4">
+      <div class="mx-card"><div class="mx-kpi__label">Evergreen</div><div class="mx-kpi__value mx-kpi__value--violet">128</div><div class="mx-kpi__sub">+11 this week</div></div>
+      <div class="mx-card mx-glow--ai"><div class="mx-kpi__label">AI Drafts</div><div class="mx-kpi__value mx-kpi__value--cyan">14</div><div class="mx-kpi__sub">origin: claude · 검토 대기</div></div>
+      <div class="mx-card mx-glow--verified"><div class="mx-kpi__label">Verified Rate</div><div class="mx-kpi__value mx-kpi__value--lime">62%</div><div class="mx-kpi__sub">목표 40–70%</div></div>
+      <div class="mx-card"><div class="mx-kpi__label">Cross-domain</div><div class="mx-kpi__value">18%</div><div class="mx-kpi__sub">목표 ≥ 15%</div></div>
+    </section>
+
+    <h2>Domain Orb — Pack accent 6종</h2>
+    <section class="mx-card">
+      <div class="orbs">
+        <div class="mx-orb" data-accent="violet" tabindex="0"><span class="mx-orb__label">D1</span><span class="mx-orb__name">AI / ML / AX</span></div>
+        <div class="mx-orb" data-accent="cyan" tabindex="0"><span class="mx-orb__label">D2</span><span class="mx-orb__name">Embedded SW</span></div>
+        <div class="mx-orb" data-accent="lime" tabindex="0"><span class="mx-orb__label">D3</span><span class="mx-orb__name">Robotics</span></div>
+        <div class="mx-orb" data-accent="magenta" tabindex="0"><span class="mx-orb__label">D4</span><span class="mx-orb__name">Auto Design</span></div>
+        <div class="mx-orb" data-accent="amber" tabindex="0"><span class="mx-orb__label">SEC</span><span class="mx-orb__name">보안 컨설팅</span></div>
+        <div class="mx-orb" data-accent="slate" tabindex="0"><span class="mx-orb__label">R1</span><span class="mx-orb__name">LLM 보안</span></div>
+      </div>
+    </section>
+
+    <h2>Review Gate · Navigation</h2>
+    <section class="grid-2">
+      <div class="mx-card">
+        <h3>Review Gate</h3>
+        <div class="mx-review-row"><span class="mx-chip mx-chip--verified">verified</span><span class="mx-review-row__title">WCET 예산은 추론 지연을 포함해야 한다</span><span class="mx-review-row__meta">D2·D3</span></div>
+        <div class="mx-review-row"><span class="mx-chip mx-chip--draft">draft</span><span class="mx-review-row__title">MCP 경로 제한 패턴</span><span class="mx-review-row__meta">D1</span></div>
+        <div class="mx-review-row"><span class="mx-chip mx-chip--ai">ai-draft</span><span class="mx-review-row__title">Sim2Real 도메인 랜덤화 요약</span><button class="mx-btn mx-btn--promote">Promote</button><button class="mx-btn">Reject</button></div>
+        <div class="mx-review-row"><span class="mx-chip mx-chip--ai">ai-draft</span><span class="mx-review-row__title">SolidWorks API 매크로 카탈로그</span><span class="mx-review-row__meta">D4</span></div>
+        <p><span class="mx-badge--blocked">● fail-closed: 40_IP 쓰기 차단 1건</span></p>
+      </div>
+      <div class="mx-card side">
+        <h3>Navigation</h3>
+        <nav class="mx-nav">
+          <a class="mx-nav__item" href="#">Dashboard</a>
+          <a class="mx-nav__item is-active" href="#">My Domains</a>
+          <a class="mx-nav__item" href="#">Inbox · AI Drafts</a>
+          <a class="mx-nav__item" href="#">Review Gate</a>
+          <a class="mx-nav__item" href="#">Domain Packs</a>
+          <a class="mx-nav__item" href="#">Settings</a>
+        </nav>
+      </div>
+    </section>
+
+    <h2>Controls — Raised / Inset / Focus</h2>
+    <section class="mx-card row">
+      <button class="mx-btn mx-btn--primary">Primary (화면당 1개)</button>
+      <button class="mx-btn">Secondary</button>
+      <button class="mx-btn is-pressed">Pressed (Inset)</button>
+      <input class="mx-input" placeholder="입력창 — Inset + 경계선" aria-label="예시 입력" />
+      <input class="mx-input" style="outline: var(--mx-focus-ring); outline-offset: var(--mx-focus-offset)" value="Focus — 2px Violet ring" aria-label="focus 예시" />
+      <span class="mx-chip mx-chip--blocked">blocked</span>
+    </section>
+
+    <h2>Tokens</h2>
+    <section class="mx-card">
+      <div class="swatches" id="swatches"></div>
+    </section>
+
+    <h2>접근성 가드레일 (명세 §8.3, 토큰으로 강제)</h2>
+    <section class="mx-card">
+      <ul class="rules">
+        <li>네온(Lime·Cyan·Magenta·Amber)은 채움·glow·링 전용 — 글자색으로 쓰면 lint 실패. 숫자 강조는 *-ink 토큰.</li>
+        <li>텍스트 조합 18쌍 모두 WCAG 4.5:1 이상 — <code>python design/build.py --contrast</code></li>
+        <li>입력·버튼은 그림자 + 1px 경계선, focus는 링 — 그림자만으로 경계·focus를 표현하지 않는다.</li>
+        <li>상태는 색 + 텍스트 라벨(verified · ai-draft · draft · blocked).</li>
+        <li>다크 모드는 v1.0 범위 밖 — Obsidian 테마는 라이트만 바꾼다.</li>
+      </ul>
+    </section>
+  </main>
+  <script>
+    // 토큰 값은 CSS에서 읽어 보여준다 (HTML에 색을 적지 않는다)
+    const names = ["surface", "ink", "muted", "line", "violet", "violet-ink", "lime", "lime-ink",
+      "cyan", "cyan-ink", "magenta", "magenta-ink", "amber", "amber-ink", "slate", "slate-ink",
+      "violet-50", "magenta-50"];
+    const css = getComputedStyle(document.documentElement);
+    const box = document.getElementById("swatches");
+    for (const n of names) {
+      const v = css.getPropertyValue("--mx-" + n).trim();
+      const el = document.createElement("div");
+      el.className = "sw";
+      el.innerHTML = `<div class="swatch" style="background: var(--mx-${n})"></div><code>--mx-${n}</code><br><span class="muted">${v}</span>`;
+      box.appendChild(el);
+    }
+  </script>
+</body>
+</html>
