@@ -1,10 +1,17 @@
 [project]
 name = "myelin-hub-api"
-version = "0.0.1"
-description = "MYELIN Hub API (FastAPI) — dashboard, review gate, onboarding"
+version = "0.1.0"
+description = "MYELIN Hub API (FastAPI) — dashboard, review gate, onboarding. localhost only."
 license = "Apache-2.0"
 requires-python = ">=3.12"
-dependencies = ["myelin-core"]
+dependencies = [
+    "myelin-core",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+]
+
+[project.scripts]
+myelin-hub = "myelin_hub_api.cli:main"
 
 [build-system]
 requires = ["hatchling"]

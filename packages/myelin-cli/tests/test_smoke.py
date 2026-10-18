@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 
 from myelin_cli import main as cli
 from myelin_cli.main import app, default_packs_dir
+from myelin_core import onboarding
 
 ROOT = Path(__file__).resolve().parents[3]
 PACKS = ["--packs", str(ROOT / "packs")]
@@ -187,6 +188,7 @@ def test_default_packs_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> N
     monkeypatch.delenv("MYELIN_PACKS")
     assert default_packs_dir() == ROOT / "packs"
     monkeypatch.setattr(cli, "__file__", str(tmp_path / "a" / "b" / "c" / "d" / "main.py"))
+    monkeypatch.setattr(onboarding, "__file__", str(tmp_path / "a" / "b" / "c" / "d" / "x.py"))
     result = runner.invoke(app, ["packs"])
     assert result.exit_code == 1 and "MYELIN_PACKS" in result.output
 

@@ -14,8 +14,8 @@ approved: "GO P6" (Brian, 2026-10-18 09:32)
 
 ## Next (P6)
 - [x] P6-T1 scripts/gate.py 에 P6 Gate 검사 추가
-- [ ] P6-T2 Hub API (FastAPI, 127.0.0.1 바인딩, core·index 재사용) + ADR-0008
-- [ ] P6-T3 API: stats, domains, inbox/drafts, promote/reject(→ git commit), packs
+- [x] P6-T2 Hub API (FastAPI, 127.0.0.1 바인딩, core·index 재사용) + ADR-0008
+- [x] P6-T3 API: stats, domains, inbox/drafts, promote/reject(→ git commit), packs
 - [ ] P6-T4 web: Vite + React + TS + Tailwind(Emboss preset) — 색은 토큰만 (lint)
 - [ ] P6-T5 화면: Dashboard, My Domains, Inbox/Review Gate, Domain Packs, Settings
 - [ ] P6-T6 온보딩 마법사 (CLI init 로직 재사용)
@@ -33,6 +33,7 @@ approved: "GO P6" (Brian, 2026-10-18 09:32)
 - ADR-0005: myelin.yaml·lock 스키마, 파일 쓰기 규칙(노트 불변·round-trip·마커), 템플릿 id, Vault 위치 정책 (+P3 보정: doctor 범위)
 - ADR-0006: MCP 서버 — SDK 2.x stdio, trigram 색인, 보호 노트 색인 제외, write_draft opt-in
 - ADR-0007: Emboss 토큰 단일 원천, 명세 색 4건 대비 조정, 가드레일을 검사(contrast·lint)로
+- ADR-0008: Hub localhost 전용·사용자 행위 없는 쓰기 0, Review Gate는 status·reviewed만 변경 + git commit, llm.route는 Hub에서 변경 불가
 
 ## Backlog (Phase 범위 밖)
 - phase-P0, phase-P1 태그 push — 세션 git 경로에서 태그 push 차단. Brian 로컬에서 push

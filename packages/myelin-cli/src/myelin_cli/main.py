@@ -6,7 +6,6 @@ CLI는 얇은 어댑터다. 모든 판단은 myelin_core가 한다.
 from __future__ import annotations
 
 import json
-import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -15,20 +14,13 @@ from typing import Annotated, Any, NoReturn
 import typer
 
 from myelin_cli import __version__
-from myelin_core.config import (
-    CONFIG_FILE,
-    ConfigError,
-    add_domain_to_data,
-    load_config,
-    parse_config,
-    update_config,
-)
+from myelin_core.config import CONFIG_FILE
 from myelin_core.doctor import run_doctor
 from myelin_core.errors import Issue, MyelinError
 from myelin_core.loader import CORE_PACK, LoadedPack, discover_packs, resolve
-from myelin_core.lock import load_lock
+from myelin_core.onboarding import InitRequest, find_packs_dir, prepare_add_domain, prepare_init
 from myelin_core.safety import init_target_issues
-from myelin_core.scaffold import apply_plan, domain_index, plan_add_domain, plan_init
+from myelin_core.scaffold import apply_plan, domain_index
 from myelin_core.stats import compute_stats
 
 app = typer.Typer(
@@ -66,17 +58,10 @@ def _today(value: str | None) -> date:
 
 
 def default_packs_dir() -> Path:
-    env = os.environ.get("MYELIN_PACKS")
-    if env:
-        return Path(env)
-    here = Path(__file__).resolve()
-    for candidate in (here.parent / "_packs", here.parents[4] / "packs"):
-        if (candidate / CORE_PACK / "pack.yaml").is_file():
-            return candidate
-    _fail(
-        "Domain Pack을 찾을 수 없습니다",
-        [Issue("--packs", "--packs 옵션이나 MYELIN_PACKS 환경변수로 Pack 폴더를 지정하세요")],
-    )
+    try:
+        return find_packs_dir(extra=[Path(__file__).resolve().parent / "_packs"])
+    except MyelinError as err:
+        _fail(err.message, err.issues)
 
 
 def _load_packs(packs_dir: Path | None) -> dict[str, LoadedPack]:
@@ -175,24 +160,21 @@ def init_cmd(
         research = research or typer.prompt("--research (없으면 Enter)", default="") or None
         growth = growth or typer.prompt("--growth (없으면 Enter)", default="") or None
 
+    req = InitRequest(
+        owner=owner,
+        packs=tuple(p.name for p in resolved if p.name != CORE_PACK),
+        primary=primary_id,
+        research=research,
+        growth=growth,
+        extra=extra,
+        level=level,
+        language=language,
+    )
     try:
-        cfg = parse_config(
-            {
-                "owner": {"name": owner},
-                "language": language,
-                "packs": [p.name for p in resolved],
-                "domains": {
-                    "primary": primary_id,
-                    "research": research,
-                    "growth": growth,
-                    "extra": [extra] if extra else [],
-                },
-                "level": level,
-            }
-        )
-        plan = plan_init(cfg, resolved, _today(today))
+        prepared = prepare_init(target, req, available, _today(today))
     except MyelinError as err:
         _fail(err.message, err.issues)
+    cfg, plan = prepared.config, prepared.plan
 
     typer.echo(f"Vault: {target}  ·  Domains: {', '.join(cfg.domains.all())}  ·  Level {cfg.level}")
     typer.echo(f"파일 {len(plan.files)}개를 만듭니다.")
@@ -217,39 +199,10 @@ def add_domain_cmd(
     today: TodayOpt = None,
 ) -> None:
     """기존 Vault에 Domain을 추가한다. 노트는 건드리지 않는다."""
-    if role not in ("research", "growth", "extra"):
-        _fail("role 오류", [Issue("--role", "research | growth | extra 중 하나")])
+    available = _load_packs(packs) if Path(vault / CONFIG_FILE).is_file() else {}
     try:
-        cfg = load_config(vault)
-        load_lock(vault)
-    except ConfigError as err:
-        _fail(err.message, err.issues)
-    if domain in cfg.domains.all():
-        _fail("이미 있는 Domain입니다", [Issue("--domain", domain)])
-    current = getattr(cfg.domains, role)
-    if current:
-        _fail(
-            "3+1 규칙: 해당 자리가 이미 차 있습니다",
-            [Issue(f"{CONFIG_FILE}.domains.{role}", f"현재 {current}")],
-        )
-
-    available = _load_packs(packs)
-    wanted = [p for p in cfg.packs if p != CORE_PACK]
-    added = {pack} if pack and pack not in cfg.packs else set()
-    resolved = _resolve([*wanted, *added], available)
-    added = {p.name for p in resolved} - set(cfg.packs)
-    if domain not in domain_index(resolved):
-        _fail(
-            "Domain을 찾을 수 없습니다",
-            [Issue("--domain", f"{domain} — --pack 으로 Pack을 지정하세요")],
-        )
-
-    try:
-        new_cfg, text = update_config(
-            vault, lambda data: add_domain_to_data(data, role, domain, sorted(added))
-        )
-        plan = plan_add_domain(vault, new_cfg, text, resolved, added, domain, _today(today))
-        apply_plan(vault, plan)
+        prepared = prepare_add_domain(vault, domain, role, pack, available, _today(today))
+        apply_plan(vault, prepared.plan)
     except MyelinError as err:
         _fail(err.message, err.issues)
     typer.secho(f"✓ {domain} 을(를) {role} 로 추가했습니다.", fg=typer.colors.GREEN)
