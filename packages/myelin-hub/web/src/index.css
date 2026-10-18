@@ -1,0 +1,22 @@
+@import "@design/dist/emboss.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* layout helpers only; colors come from emboss.css tokens */
+html, body, #root { min-height: 100%; }
+body { margin: 0; background: var(--mx-surface); color: var(--mx-ink); font-family: var(--mx-font-sans); }
+.hub-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.hub-side { padding: var(--mx-space-5) var(--mx-space-4); position: sticky; top: 0; height: 100vh; }
+.hub-main { padding: var(--mx-space-6) var(--mx-space-6) var(--mx-space-7); max-width: 1200px; }
+.hub-grid { display: grid; gap: var(--mx-space-5); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.hub-row { display: flex; flex-wrap: wrap; gap: var(--mx-space-3); align-items: center; }
+.hub-stack { display: grid; gap: var(--mx-space-3); }
+.hub-h1 { font-size: var(--mx-font-size-xl); margin: 0 0 var(--mx-space-2); }
+.hub-h2 { font-size: var(--mx-font-size-lg); margin: var(--mx-space-6) 0 var(--mx-space-3); }
+.hub-sub { color: var(--mx-muted); font-size: var(--mx-font-size-sm); margin: 0 0 var(--mx-space-5); }
+.hub-textarea { width: 100%; min-height: 360px; padding: var(--mx-space-4); border: 1px solid var(--mx-border); border-radius: var(--mx-radius-control); background: var(--mx-surface); color: var(--mx-ink); font-family: var(--mx-font-mono); font-size: var(--mx-font-size-sm); box-shadow: var(--mx-shadow-inset); }
+.hub-textarea:focus { outline: var(--mx-focus-ring); outline-offset: var(--mx-focus-offset); }
+.hub-pre { white-space: pre-wrap; font-family: var(--mx-font-mono); font-size: var(--mx-font-size-sm); background: var(--mx-surface-2); padding: var(--mx-space-4); border-radius: var(--mx-radius-control); }
+.hub-brand { font-weight: 800; letter-spacing: -0.02em; font-size: var(--mx-font-size-lg); padding: 0 var(--mx-space-4) var(--mx-space-4); }
+.hub-toast { position: fixed; right: var(--mx-space-5); bottom: var(--mx-space-5); z-index: 10; }
