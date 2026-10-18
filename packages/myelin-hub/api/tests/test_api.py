@@ -1,0 +1,294 @@
+"""P6-T1/T5/T6/T7/T9 — Hub API: reads never write, writes need a user click, promote → commit."""
+
+from __future__ import annotations
+
+import subprocess
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from .conftest import CLICK, tree_hash
+
+READ_ENDPOINTS = [
+    "/api/health",
+    "/api/vault",
+    "/api/stats",
+    "/api/doctor",
+    "/api/domains",
+    "/api/notes?status=verified",
+    "/api/search?q=WCET",
+    "/api/notes/20260907-0800-wcet-budget",
+    "/api/review",
+    "/api/guard",
+    "/api/git/log",
+    "/api/git/status",
+    "/api/packs",
+    "/api/packs/brian.physical-ai",
+    "/api/settings",
+]
+
+
+def _log(root: Path) -> list[str]:
+    out = subprocess.run(
+        ["git", "log", "--pretty=%s"], cwd=root, capture_output=True, text=True
+    ).stdout
+    return out.splitlines()
+
+
+def test_reads_never_write(client: TestClient, vault_root: Path) -> None:
+    before = tree_hash(vault_root)
+    for url in READ_ENDPOINTS:
+        r = client.get(url)
+        assert r.status_code == 200, (url, r.text)
+    # a pure validation POST does not write either
+    yaml_ok = (
+        "pack: me.x\nkind: personal\nmaintainer: m\nrequires: [myelin.core]\n"
+        "domains: [{id: X, name: x}]\n"
+    )
+    r = client.post("/api/packs/validate", json={"pack_yaml": yaml_ok})
+    assert r.status_code == 200 and r.json()["ok"]
+    assert tree_hash(vault_root) == before
+    assert _log(vault_root) == ["fixture"]
+
+
+def test_vault_summary_and_stats(client: TestClient) -> None:
+    v = client.get("/api/vault").json()
+    assert v["ready"] and v["level"] == 2 and v["domains"]["D1"] == "primary"
+    assert {s["skill"] for s in v["skills"] if s["enabled"]} == {
+        "/ingest",
+        "/distill",
+        "/interview",
+        "/review",
+        "/link",
+        "/compose",
+    }
+    st = client.get("/api/stats?today=2026-10-18").json()
+    assert st["notes"] == 35 and st["review_queue"] == 4 and st["guard_blocks_7d"] == 0
+    assert client.get("/api/stats?today=bad").status_code == 400
+    d = client.get("/api/domains").json()
+    assert [x["id"] for x in d] == ["D1", "D3", "D4", "D2"] and d[0][
+        "moc"
+    ] == "10_Domains/D1/_MOC.md"
+    assert d[0]["verified"] >= 1 and d[0]["name"] == "AI/ML/AX Platform"
+    n = client.get("/api/notes/10_Domains/D2/WCET 예산은 측정값의 1.5배로 잡는다.md").json()
+    assert n["id"] == "20260907-0800-wcet-budget" and "backlinks" in n
+    assert client.get("/api/notes/../x.md").status_code in (400, 404)
+    assert client.get("/api/notes/nope").status_code == 404
+    assert client.get("/api/notes?order=rank").status_code == 400
+
+
+def test_writes_require_user_click(client: TestClient, vault_root: Path) -> None:
+    before = tree_hash(vault_root)
+    draft = "00_Inbox/ai-drafts/Lit - 양자화 서베이.md"
+    assert client.post(f"/api/review/promote/{draft}").status_code == 403
+    assert client.post(f"/api/review/reject/{draft}").status_code == 403
+    assert client.put("/api/settings", json={}).status_code == 403
+    assert client.put("/api/packs/me.x", json={"pack_yaml": "x"}).status_code == 403
+    assert client.post("/api/patches/x.patch.md/apply").status_code == 403
+    assert client.post("/api/onboarding", json={"name": "x", "primary": "D1"}).status_code == 403
+    assert tree_hash(vault_root) == before
+
+
+def test_promote_creates_commit_and_moves_note(client: TestClient, vault_root: Path) -> None:
+    draft = "00_Inbox/ai-drafts/Lit - 양자화 서베이.md"
+    r = client.post(f"/api/review/promote/{draft}", headers=CLICK)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["path"] == "10_Domains/D2/Lit - 양자화 서베이.md" and body["domain"] == "D2"
+    assert not (vault_root / draft).exists() and (vault_root / body["path"]).exists()
+    text = (vault_root / body["path"]).read_text(encoding="utf-8")
+    assert "status: verified" in text and "origin: mixed" in text and "reviewed: " in text
+    assert _log(vault_root)[0] == "[myelin:review] promote Lit - 양자화 서베이 → D2"
+    assert client.get("/api/git/status").json()["clean"]
+    assert client.get("/api/notes?status=verified&domain=D2").json()
+    # promoting again → 404; promoting a non-draft path → 400
+    assert client.post(f"/api/review/promote/{draft}", headers=CLICK).status_code == 404
+    assert (
+        client.post("/api/review/promote/10_Domains/D1/_MOC.md", headers=CLICK).status_code == 400
+    )
+    # explicit domain override must be configured
+    other = "00_Inbox/ai-drafts/Dogbot 실험 09 초안.md"
+    assert (
+        client.post(
+            f"/api/review/promote/{other}", headers=CLICK, json={"domain": "D9"}
+        ).status_code
+        == 422
+    )
+    r = client.post(f"/api/review/promote/{other}", headers=CLICK, json={"domain": "D1"})
+    assert r.status_code == 200 and r.json()["domain"] == "D1"
+    assert "domain: [D3, D1]" in (vault_root / r.json()["path"]).read_text(encoding="utf-8")
+
+
+def test_promote_refuses_invalid_or_domainless(client: TestClient, vault_root: Path) -> None:
+    bad = vault_root / "00_Inbox/ai-drafts/broken.md"
+    bad.write_text("no frontmatter", encoding="utf-8")
+    assert (
+        client.post("/api/review/promote/00_Inbox/ai-drafts/broken.md", headers=CLICK).status_code
+        == 422
+    )
+    q = client.get("/api/review").json()
+    assert any(d["path"].endswith("broken.md") and d["doctor_ok"] is False for d in q["drafts"])
+    nod = vault_root / "00_Inbox/ai-drafts/nodomain.md"
+    nod.write_text(
+        "---\nid: 20261018-1000-nd\ntype: fleeting\ncreated: 2026-10-18\norigin: claude\n---\nx\n",
+        encoding="utf-8",
+    )
+    assert (
+        client.post("/api/review/promote/00_Inbox/ai-drafts/nodomain.md", headers=CLICK).status_code
+        == 422
+    )
+    r = client.post(
+        "/api/review/promote/00_Inbox/ai-drafts/nodomain.md", headers=CLICK, json={"domain": "D1"}
+    )
+    assert r.status_code == 200
+
+
+def test_reject_archives_with_commit(client: TestClient, vault_root: Path) -> None:
+    draft = "00_Inbox/ai-drafts/평가 지표 회의 - 원자 노트 1.md"
+    r = client.post(f"/api/review/reject/{draft}", headers=CLICK, json={"reason": "중복"})
+    assert r.status_code == 200
+    assert r.json()["path"].startswith("99_Archive/rejected/")
+    assert "status: deprecated" in (vault_root / r.json()["path"]).read_text(encoding="utf-8")
+    assert _log(vault_root)[0].startswith(
+        "[myelin:review] reject 평가 지표 회의 - 원자 노트 1 — 중복"
+    )
+
+
+def test_patches_apply_and_reject(client: TestClient, vault_root: Path, repo_root: Path) -> None:
+    import shutil
+
+    src = repo_root / "tests/fixtures/skill-outputs/link"
+    for p in src.glob("*.patch.md"):
+        shutil.copy(p, vault_root / "_patches" / p.name)
+    q = client.get("/api/review").json()
+    assert {p["file"] for p in q["patches"]} == {p.name for p in src.glob("*.patch.md")}
+    moc_before = (vault_root / "10_Domains/D2/_MOC.md").read_text(encoding="utf-8")
+    r = client.post("/api/patches/20261018-1700-d2-moc-missing-links.patch.md/apply", headers=CLICK)
+    assert r.status_code == 200 and r.json()["status"] == "applied"
+    moc_after = (vault_root / "10_Domains/D2/_MOC.md").read_text(encoding="utf-8")
+    assert (
+        moc_after.startswith(moc_before.rstrip("\n"))
+        and "[[ISR 안에서 로그를 찍지 않는다]]" in moc_after
+    )
+    assert "status: applied" in (
+        vault_root / "_patches/20261018-1700-d2-moc-missing-links.patch.md"
+    ).read_text(encoding="utf-8")
+    assert (
+        _log(vault_root)[0]
+        == "[myelin:link] apply patch 20261018-1700-d2-moc-missing-links.patch.md"
+    )
+    assert (
+        client.post(
+            "/api/patches/20261018-1700-d2-moc-missing-links.patch.md/apply", headers=CLICK
+        ).status_code
+        == 409
+    )
+    # replace patch whose `before` does not occur exactly once → 422, target untouched
+    tgt = vault_root / "10_Domains/D2/WCET 예산은 측정값의 1.5배로 잡는다.md"
+    before = tgt.read_text(encoding="utf-8")
+    r = client.post("/api/patches/20261018-1705-wcet-note-related.patch.md/apply", headers=CLICK)
+    assert r.status_code in (200, 422)
+    if r.status_code == 422:
+        assert tgt.read_text(encoding="utf-8") == before
+    r = client.post("/api/patches/20261018-1705-wcet-note-related.patch.md/reject", headers=CLICK)
+    assert r.status_code in (200, 409)
+    assert client.post("/api/patches/nope.patch.md/apply", headers=CLICK).status_code == 404
+
+
+def test_settings_roundtrip(client: TestClient, vault_root: Path) -> None:
+    s = client.get("/api/settings").json()
+    s["level"] = 3
+    s["mcp"] = {"write_draft": True, "expose_confidential": False}
+    r = client.put("/api/settings", headers=CLICK, json=s)
+    assert r.status_code == 200 and r.json()["settings"]["level"] == 3
+    assert "level: 3" in (vault_root / "myelin.yaml").read_text(encoding="utf-8")
+    assert "Level 3" in (vault_root / "CLAUDE.md").read_text(encoding="utf-8")
+    assert _log(vault_root)[0] == "[myelin:settings] update myelin.yaml"
+    assert client.get("/api/vault").json()["level"] == 3
+    s["level"] = 9
+    assert client.put("/api/settings", headers=CLICK, json=s).status_code == 422
+
+
+def test_pack_editor(client: TestClient, vault_root: Path) -> None:
+    packs = {p["name"]: p for p in client.get("/api/packs").json()}
+    assert packs["brian.physical-ai"]["active"] and not packs["brian.physical-ai"]["editable"]
+    src = client.get("/api/packs/brian.physical-ai").json()
+    assert src["pack_yaml"].startswith("#") and not src["editable"]
+    yaml_text = (
+        "pack: me.side\nkind: personal\nmaintainer: me\nrequires: [myelin.core>=1.0]\n"
+        "domains:\n  - {id: SIDE, name: Side, accent: cyan, sub_mocs: [a]}\n"
+    )
+    assert (
+        client.post("/api/packs/validate", json={"pack_yaml": "pack: [bad"}).json()["ok"] is False
+    )
+    assert (
+        client.put("/api/packs/me.other", headers=CLICK, json={"pack_yaml": yaml_text}).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/packs/a3.x",
+            headers=CLICK,
+            json={"pack_yaml": yaml_text.replace("me.side", "a3.x")},
+        ).status_code
+        == 403
+    )
+    r = client.put("/api/packs/me.side", headers=CLICK, json={"pack_yaml": yaml_text})
+    assert r.status_code == 200, r.text
+    assert (vault_root / "packs/me.side/pack.yaml").read_text(encoding="utf-8") == yaml_text
+    assert _log(vault_root)[0] == "[myelin:packs] save me.side"
+    packs = {p["name"]: p for p in client.get("/api/packs").json()}
+    assert packs["me.side"]["editable"] and not packs["me.side"]["active"]
+    assert client.get("/api/packs/me.nope").status_code == 404
+
+
+def test_onboarding_flow(empty_client: TestClient) -> None:
+    c = empty_client
+    root: Path = c.app.state.root  # type: ignore[attr-defined]
+    assert c.get("/api/health").json()["ready"] is False
+    assert c.get("/api/vault").json()["ready"] is False
+    assert c.get("/api/stats").status_code == 409  # not initialised
+    assert c.get("/api/packs").status_code == 200  # wizard needs the registry
+    body = {
+        "name": "New User",
+        "primary": "D1",
+        "research": "D3",
+        "packs": ["brian.physical-ai"],
+        "level": 1,
+    }
+    assert c.post("/api/onboarding", json=body).status_code == 403
+    r = c.post("/api/onboarding", headers=CLICK, json=body)
+    assert r.status_code == 200, r.text
+    assert r.json()["welcome"] == "00_Inbox/ai-drafts/MYELIN 시작하기.md"
+    assert (
+        (root / "myelin.yaml").exists()
+        and (root / ".git").exists()
+        and (root / ".claude/settings.json").exists()
+    )
+    assert c.get("/api/vault").json()["ready"] is True
+    assert c.get("/api/git/status").json()["clean"]
+    assert _log(root) == ["[myelin:init] vault created"]
+    q = c.get("/api/review").json()
+    assert [d["title"] for d in q["drafts"]] == ["MYELIN 시작하기"]
+    r = c.post("/api/review/promote/00_Inbox/ai-drafts/MYELIN 시작하기.md", headers=CLICK)
+    assert r.status_code == 200 and r.json()["path"] == "10_Domains/D1/MYELIN 시작하기.md"
+    assert _log(root)[0] == "[myelin:review] promote MYELIN 시작하기 → D1"
+    assert c.get("/api/stats").json()["by_status"].get("verified", 0) >= 3  # 2 MOCs + welcome
+    assert c.post("/api/onboarding", headers=CLICK, json=body).status_code == 409
+    assert c.post(
+        "/api/onboarding", headers=CLICK, json={"name": "x", "primary": "D9"}
+    ).status_code in (409, 422)
+
+
+def test_guard_events_surface(client: TestClient, vault_root: Path) -> None:
+    import json
+    import time
+
+    log = vault_root / ".myelin" / "guard.log"
+    log.parent.mkdir(exist_ok=True)
+    log.write_text(
+        json.dumps({"ts": time.time(), "message": "blocked x"}) + "\nnot json\n", encoding="utf-8"
+    )
+    ev = client.get("/api/guard").json()
+    assert len(ev) == 1 and ev[0]["message"] == "blocked x"
+    assert client.get("/api/stats").json()["guard_blocks_7d"] == 1

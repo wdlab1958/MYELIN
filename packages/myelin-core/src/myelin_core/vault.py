@@ -73,7 +73,15 @@ def default_pack_roots(vault: Path | None = None) -> list[Path]:
         if (parent / "packs" / "myelin.core" / "pack.yaml").is_file():
             roots.append(parent / "packs")
             break
-    return roots
+    # de-duplicate by resolved path (e.g. $MYELIN_PACKS pointing at the repo packs/), keep order
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for r in roots:
+        key = r.resolve()
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+    return unique
 
 
 @dataclass

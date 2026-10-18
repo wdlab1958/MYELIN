@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 CONFIG_FILE = "myelin.yaml"
@@ -30,9 +31,32 @@ class BlockedError(Exception):
     """Raise to block the tool call; the message is shown to Claude."""
 
 
+_LOG_VAULT: Path | None = None
+
+
 def block(msg: str) -> int:
     print(f"MYELIN guard: {msg}", file=sys.stderr)
+    _log_block(msg)
     return BLOCK
+
+
+def _log_block(msg: str) -> None:
+    """Append a JSONL event to <Vault>/.myelin/guard.log so the Hub can show blocks (P6)."""
+    vault = _LOG_VAULT
+    if vault is None:
+        for c in (os.environ.get("MYELIN_VAULT"), os.environ.get("CLAUDE_PROJECT_DIR")):
+            if c and (Path(c) / CONFIG_FILE).is_file():
+                vault = Path(c)
+                break
+    if vault is None:
+        return
+    try:
+        log_dir = vault / ".myelin"
+        log_dir.mkdir(exist_ok=True)
+        with (log_dir / "guard.log").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": time.time(), "message": msg}, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
 
 
 def read_event() -> dict:
@@ -65,6 +89,8 @@ def find_vault(ev: dict) -> Path:
         except (OSError, RuntimeError):
             continue
         if (root / CONFIG_FILE).is_file():
+            global _LOG_VAULT
+            _LOG_VAULT = root
             return root
     raise BlockedError(f"Vault 를 찾을 수 없습니다 (myelin.yaml 없음). 확인한 경로: {tried} — 차단")
 
