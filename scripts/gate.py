@@ -354,9 +354,80 @@ GATES: dict[int, list[Check]] = {
         Check("PHASE_STATE has P7 tasks", phase_state_lists_next_phase_tasks(6)),
     ],
     7: [
-        Check("confidential/share:false publish blocked 100%", not_implemented("publish 차단")),
-        Check("pilot ≥5 onboarded ≤15min", not_implemented("파일럿 온보딩")),
-        Check("pilot feedback report", not_implemented("피드백 리포트")),
+        Check("ruff check", sh(["uv", "run", "ruff", "check", "."])),
+        Check("mypy --strict", sh(["uv", "run", "mypy"])),
+        Check("pytest (all)", sh(["uv", "run", "pytest", "-q"])),
+        Check(
+            "commons: confidential / share:false publish blocked 100%",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-core/tests/test_commons.py",
+                    "-k",
+                    "blocks or gates or requires",
+                ]
+            ),
+        ),
+        Check(
+            "commons: every outbound path needs human confirmation",
+            sh(
+                [
+                    "uv",
+                    "run",
+                    "pytest",
+                    "-q",
+                    "packages/myelin-cli/tests/test_cli_commons.py",
+                    "packages/myelin-hub/api/tests/test_api.py",
+                    "-k",
+                    "publish or propose or commons",
+                ]
+            ),
+        ),
+        Check(
+            "metrics: payload anonymous (no vault content)",
+            sh(["uv", "run", "pytest", "-q", "packages/myelin-core/tests/test_metrics.py"]),
+        ),
+        Check(
+            "org packs: 4 packs validate (incl. a3.incident-response)",
+            sh(["uv", "run", "python", "scripts/validate_packs.py"]),
+        ),
+        Check(
+            "pilot kit docs present",
+            lambda: (
+                all(
+                    (ROOT / p).exists()
+                    for p in (
+                        "docs/guides/pilot-guide.md",
+                        "docs/guides/workshop-60min.md",
+                        "docs/guides/day1-checklist.md",
+                        "docs/reports/P7/pilot-feedback.md",
+                        "docs/spec/commons.md",
+                    )
+                ),
+                "pilot-guide · workshop-60min · day1-checklist · pilot-feedback · commons spec",
+            ),
+        ),
+        Check(
+            "web: typecheck + build",
+            sh(["npm", "run", "--prefix", "packages/myelin-hub/web", "build"]),
+        ),
+        Check(
+            "HUMAN pilot: ≥5 onboarded ≤15 min (scripts/pilot.py check)",
+            sh(["python3", "scripts/pilot.py", "check"]),
+        ),
+        Check(
+            "HUMAN pilot: feedback report filled (no TBD)",
+            lambda: (
+                "TBD"
+                not in (ROOT / "docs/reports/P7/pilot-feedback.md").read_text(encoding="utf-8"),
+                "docs/reports/P7/pilot-feedback.md",
+            ),
+        ),
+        Check("ADR-0010 commons policy", adr_exists("0010", "commons-policy")),
+        Check("PHASE_STATE has P8 tasks", phase_state_lists_next_phase_tasks(7)),
     ],
     8: [
         Check("threat model: 0 High open", not_implemented("위협모델 High 0")),
