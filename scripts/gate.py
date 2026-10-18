@@ -639,7 +639,140 @@ def p7_pilot_docs() -> bool:
     return not missing
 
 
+# ── P8 — Hardening & v1.0 ───────────────────────────────────────────────
+THREATS = ROOT / "docs/security/threats.yaml"
+FIRST_RUN = ROOT / "docs/reports/P8/first-run.json"
+TRADEMARK = ROOT / "docs/legal/trademark-check.md"
+FIRST_RUN_LIMIT_S = 15 * 60
+
+
+def p8_threat_model() -> bool:
+    """STRIDE 항목: High 는 모두 mitigated, mitigated 항목은 존재하는 증거(테스트)를 가진다."""
+    from myelin_core.yamlio import load_yaml
+
+    data = load_yaml(THREATS.read_text(encoding="utf-8"), "threats.yaml", ValueError)
+    items = data.get("threats", []) if isinstance(data, dict) else []
+    stride = {"S", "T", "R", "I", "D", "E"}
+    ok = bool(items)
+    seen: set[str] = set()
+    for t in items:
+        tid = t.get("id", "?")
+        seen |= set(t.get("stride", []))
+        if t.get("severity") == "high" and t.get("status") != "mitigated":
+            print(f"    ! {tid}: High 이면서 {t.get('status')}")
+            ok = False
+        if t.get("status") == "mitigated":
+            ev = [e for e in t.get("evidence", []) if not (ROOT / e.split("::")[0]).exists()]
+            if not t.get("evidence") or ev:
+                print(f"    ! {tid}: 증거 없음 {ev or ''}")
+                ok = False
+    if seen != stride:
+        print(f"    ! STRIDE 범주 누락: {sorted(stride - seen)}")
+        ok = False
+    print(f"    · 위협 {len(items)}건")
+    return ok
+
+
+def p8_first_run() -> bool:
+    """설치 → init → 초안 → Hub 승격(git commit) 을 새 폴더에서 실제로 실행해 시간을 잰다."""
+    import json
+    import subprocess
+
+    res = subprocess.run(
+        [sys.executable, "scripts/first_run.py", "--out", str(FIRST_RUN)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=FIRST_RUN_LIMIT_S + 120,
+    )
+    if res.returncode != 0:
+        print("    ! " + (res.stdout + res.stderr)[-800:])
+        return False
+    data = json.loads(FIRST_RUN.read_text(encoding="utf-8"))
+    print(f"    · 설치 {data['install_s']}s · 첫 verified까지 총 {data['total_s']}s")
+    return bool(data["verified"]) and bool(data["commit"]) and data["total_s"] < FIRST_RUN_LIMIT_S
+
+
+def p8_docs() -> bool:
+    need = (
+        "scripts/install.sh",
+        "docs/guides/install.md",
+        "docs/guides/user.md",
+        "docs/guides/admin.md",
+        "docs/security/threat-model.md",
+        "docs/release/v1.0.0.md",
+        "docs/retro.md",
+    )
+    missing = [n for n in need if not (ROOT / n).is_file()]
+    if missing:
+        print(f"    ! 없음: {missing}")
+    notes = ROOT / "docs/release/v1.0.0.md"
+    if notes.is_file() and "다크 모드" not in notes.read_text(encoding="utf-8"):
+        print("    ! 릴리스 노트에 알려진 제약(다크 모드) 없음")
+        return False
+    return not missing
+
+
+def p8_trademark_recorded() -> bool:
+    """KIPRIS 검색 결과 기록 (제9류·제42류, GitHub org명)."""
+    if not TRADEMARK.is_file():
+        return False
+    text = TRADEMARK.read_text(encoding="utf-8")
+    return all(k in text for k in ("제9류", "제42류", "GitHub"))
+
+
+def p8_trademark_reviewed() -> bool:
+    """사람 증거: 상표 판단은 사람이 한다 — `reviewed_by:` 가 채워져 있어야 한다."""
+    if not TRADEMARK.is_file():
+        return False
+    m = re.search(r"^reviewed_by:[ \t]*(\S.*)$", TRADEMARK.read_text(encoding="utf-8"), re.M)
+    return m is not None and m.group(1).strip() not in ("", '""', "null")
+
+
+def p8_versions() -> bool:
+    import tomllib
+
+    bad = []
+    for pkg in ("myelin-core", "myelin-cli", "myelin-mcp", "myelin-hub/api"):
+        meta = tomllib.loads((ROOT / f"packages/{pkg}/pyproject.toml").read_text(encoding="utf-8"))
+        if meta["project"]["version"] != "1.0.0":
+            bad.append(pkg)
+    if bad:
+        print(f"    ! 1.0.0 아님: {bad}")
+    return not bad
+
+
+TRADEMARK_REVIEW = "HUMAN trademark/name clearance reviewed (reviewed_by)"
+
+
+def p8_checks() -> list[Check]:
+    return [
+        ("threat model (STRIDE): High 0, mitigations have evidence", guarded(p8_threat_model)),
+        ("install script + guides + release notes + retro", guarded(p8_docs)),
+        ("package versions 1.0.0", guarded(p8_versions)),
+        ("fresh install -> first verified note < 15 min (automated)", guarded(p8_first_run)),
+        ("KIPRIS / GitHub name search recorded", guarded(p8_trademark_recorded)),
+        (TRADEMARK_REVIEW, guarded(p8_trademark_reviewed)),
+        ("full regression: P0-P6 gates", guarded(p8_regression)),
+    ]
+
+
+def p8_regression() -> bool:
+    import subprocess
+
+    ok = True
+    for n in range(7):
+        res = subprocess.run(
+            [sys.executable, "scripts/gate.py", str(n)], cwd=ROOT, capture_output=True, text=True
+        )
+        if res.returncode != 0:
+            print(f"    ! gate P{n} FAIL")
+            ok = False
+    return ok
+
+
 GATES: dict[str, Callable[[], list[Check]]] = {
+    "P8": p8_checks,
     "P7": p7_checks,
     "P6": p6_checks,
     "P5": p5_checks,
