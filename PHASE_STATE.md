@@ -17,7 +17,7 @@ approved: "GO" — Desktop 기능 이식 (Brian, 2026-10-18 12:03)
 
 ## Next (P9 — Desktop 구현 기능 이식, v1.1)
 - [x] P9-T1 scripts/gate.py 에 P9 Gate 검사 추가
-- [ ] P9-T2 구조화 patch 형식(ADR-0010) — core 파서·적용 계획, /link 스킬 출력 계약 갱신
+- [x] P9-T2 구조화 patch 형식(ADR-0010) — core 파서·적용 계획, /link 스킬 출력 계약 갱신
 - [ ] P9-T3 Hub Review Gate에서 patch 미리보기·적용·반려 (사람 클릭 + git commit)
 - [ ] P9-T4 개인 Pack → Org Pack 제안 (`myelin commons propose-pack`, 확인 + 비식별 + 브랜치)
 - [ ] P9-T5 익명 지표 집계 (`myelin metrics aggregate`, 익명성 검사)
@@ -42,6 +42,7 @@ approved: "GO" — Desktop 기능 이식 (Brian, 2026-10-18 12:03)
 - ADR-0007: Emboss 토큰 단일 원천, 명세 색 4건 대비 조정, 가드레일을 검사(contrast·lint)로
 - ADR-0008: Hub localhost 전용·사용자 행위 없는 쓰기 0, Review Gate는 status·reviewed만 변경 + git commit, llm.route는 Hub에서 변경 불가
 - ADR-0009: Commons(로컬 clone 브랜치 제안 → 별도 확인 push), 공개 자격 차단·비식별 자동 차단·사람 확인 5항목, opt-in 익명 지표(파일만)
+- ADR-0010: 구조화 patch (append·replace·frontmatter 허용 키) — Claude 제안, Hub에서 사람 클릭으로 적용 + git commit
 
 ## Backlog (Phase 범위 밖)
 - Claude Desktop 구현에만 있던 기능 검토·이식: Hub `_patches` 적용, pack-propose, metrics aggregate, install.sh 의 플러그인·MCP·테마 자동 설정 (docs/reports/compare-main-2026-10-18.md §4)

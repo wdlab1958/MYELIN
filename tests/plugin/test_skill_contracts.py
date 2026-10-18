@@ -19,6 +19,7 @@ from myelin_core.doctor import run_doctor
 from myelin_core.errors import MyelinError
 from myelin_core.frontmatter import Origin, Status
 from myelin_core.note import parse_note, split_frontmatter
+from myelin_core.patches import plan_patch
 from myelin_core.scaffold import GUARD_FILE
 from myelin_core.yamlio import load_yaml
 
@@ -94,6 +95,12 @@ def test_output_contract(tmp_path: Path, name: str) -> None:
         if f.severity == "error"
     ]
     assert errors == [], errors
+
+    # patch 출력은 구조화 형식이고 실제 Vault에 적용 계획이 세워져야 한다 (P9)
+    if rel.startswith("_patches/"):
+        plan = plan_patch(vault, rel, date(2026, 10, 18))
+        assert plan.meta.skill == name and plan.meta.status == "proposed"
+        return
 
     # 노트형 출력은 AI 기여가 표시된 초안이어야 한다
     if body.startswith("---"):

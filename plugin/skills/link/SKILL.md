@@ -21,28 +21,35 @@ disable-model-invocation: true
 - AI 초안(`origin: claude`, 미검증)을 verified 노트에서 링크하자고 제안하지 않는다 (doctor `failclosed_link`).
 - 서로 다른 Domain을 잇는 후보는 따로 표시한다 — 가장 가치가 큰 연결이다.
 
-## 2. 쓰기
-- 경로: `_patches/YYYYMMDD-link-<영문-키워드>.md`
+## 2. 쓰기 — 구조화 patch (Hub에서 사람이 적용)
+- **대상 노트 하나 = patch 파일 하나.** 경로: `_patches/YYYYMMDD-HHMM-<영문-키워드>.patch.md`
+- `kind` 는 셋 중 하나:
+  - `append` — 대상 끝(또는 `under:` 로 지정한 제목 구획의 끝)에 줄을 더한다. MOC 갱신은 이것으로.
+  - `replace` — `## before` 가 대상 본문에 **정확히 한 번** 있어야 한다. `## after` 로 바꾼다.
+  - `frontmatter` — `## set` 에 `tags`·`source`·`projects`·`aliases`·`confidence` 만. status·origin·classification 은 못 바꾼다.
+- `target` 은 Vault 기준 경로. `40_IP/`·confidential 노트는 대상으로 삼지 않는다.
+- `rationale` 은 한 줄 근거. Cross-domain 연결이면 `rationale` 앞에 `[cross-domain]` 을 붙인다.
 
-<!-- myelin:output path="_patches/{{slug}}-link.md" -->
+<!-- myelin:output path="_patches/{{slug}}-link.patch.md" -->
 ```markdown
-# Patch: 링크 제안 — [[{{note}}]]
-
-> 생성: {{date}} · `/myelin:link` · 적용은 사람이 한다. 적용 후 이 파일은 지운다.
-
-## 1. `{{note}}` 에 추가
-- [ ] `## 연결` 아래에 `- 관련: [[...]] — <근거 한 줄>`
-
-## 2. MOC 갱신
-- [ ] `10_Domains/{{domain}}/_MOC.md` `## 핵심 Evergreen` 에 `- [[...]]`
-
-## Cross-domain
-- [ ] 
-
-## 제안하지 않은 것 (이유)
-- 
+---
+patch: 1
+target: 10_Domains/{{domain}}/_MOC.md
+kind: append
+under: "## 핵심 Evergreen"
+origin: claude
+skill: link
+created: {{date}}
+rationale: 같은 개념을 다루는 verified 노트가 MOC에서 빠져 있음
+status: proposed
+---
+## append
+- [[{{note}}]]
 ```
 <!-- /myelin:output -->
 
+제안하지 않은 후보와 이유는 patch가 아니라 사용자에게 보고한다.
+
 ## 3. 보고
-- patch 경로, 제안 개수, Cross-domain 후보 수.
+- patch 파일 목록(대상·kind), Cross-domain 후보 수, 제안하지 않은 후보와 이유.
+- 적용은 사람이 MYELIN Hub → Review Gate → Patches 에서 diff를 보고 누른다.
