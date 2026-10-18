@@ -1,0 +1,99 @@
+/* GENERATED from design/tokens.json by scripts/emboss.py — do not edit · v1.0.0
+   MYELIN Emboss — Obsidian theme (light only; dark is out of scope for v1.0, §8.3 guardrail 5). */
+.theme-light, .theme-dark {
+  --mx-surface: #EEF0F6;
+  --mx-surface-2: #E6E9F2;
+  --mx-shadow-light: #FFFFFF;
+  --mx-shadow-dark: rgba(163,177,198,0.62);
+  --mx-ink: #2D2A3E;
+  --mx-muted: #5F6378;
+  --mx-border: #DADEE9;
+  --mx-violet-600: #7C3AED;
+  --mx-violet-50: #F3F0FF;
+  --mx-neon-lime: #B6FF3B;
+  --mx-lime-ink: #3F6A0A;
+  --mx-neon-cyan: #22E4FF;
+  --mx-cyan-ink: #0E7490;
+  --mx-neon-magenta: #FF3DCB;
+  --mx-magenta-ink: #BE188C;
+  --mx-magenta-50: #FFEBF9;
+  --mx-on-violet: #FFFFFF;
+  --mx-shadow-raised: 12px 12px 24px rgba(163,177,198,0.62), -12px -12px 24px #FFFFFF;
+  --mx-shadow-raised-sm: 6px 6px 12px rgba(163,177,198,0.62), -6px -6px 12px #FFFFFF;
+  --mx-shadow-inset: inset 6px 6px 12px rgba(163,177,198,0.62), inset -6px -6px 12px #FFFFFF;
+  --mx-shadow-glow-violet: 0 8px 24px rgba(124,58,237,0.45);
+  --mx-shadow-glow-ai: 0 0 32px rgba(34,228,255,0.35);
+  --mx-shadow-ring-lime: 0 0 0 3px #B6FF3B;
+  --mx-radius-card: 28px;
+  --mx-radius-control: 20px;
+  --mx-radius-chip: 999px;
+  --mx-space-1: 4px;
+  --mx-space-2: 8px;
+  --mx-space-3: 12px;
+  --mx-space-4: 16px;
+  --mx-space-5: 24px;
+  --mx-space-6: 32px;
+  --mx-space-7: 48px;
+  --mx-font-sans: 'Pretendard Variable', Pretendard, 'Inter', system-ui, -apple-system, 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --mx-font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --mx-font-size-xs: 12px;
+  --mx-font-size-sm: 14px;
+  --mx-font-size-md: 16px;
+  --mx-font-size-lg: 20px;
+  --mx-font-size-xl: 28px;
+  --mx-font-size-kpi: 40px;
+  --mx-motion-myelinate: myelinate 600ms ease-out;
+  --mx-focus-ring: 2px solid #7C3AED;
+  --mx-focus-offset: 2px;
+  --background-primary: var(--mx-surface);
+  --background-primary-alt: var(--mx-surface-2);
+  --background-secondary: var(--mx-surface);
+  --background-secondary-alt: var(--mx-surface-2);
+  --background-modifier-border: var(--mx-border);
+  --text-normal: var(--mx-ink);
+  --text-muted: var(--mx-muted);
+  --text-faint: var(--mx-muted);
+  --text-accent: var(--mx-violet-600);
+  --text-accent-hover: var(--mx-violet-600);
+  --text-on-accent: var(--mx-on-violet);
+  --interactive-accent: var(--mx-violet-600);
+  --interactive-accent-hover: var(--mx-violet-600);
+  --link-color: var(--mx-violet-600);
+  --tag-background: var(--mx-violet-50);
+  --tag-color: var(--mx-violet-600);
+  --font-text: var(--mx-font-sans);
+  --font-monospace: var(--mx-font-mono);
+  --radius-s: var(--mx-radius-control);
+  --radius-m: var(--mx-radius-control);
+  --radius-l: var(--mx-radius-card);
+  --shadow-s: var(--mx-shadow-raised-sm);
+  --shadow-l: var(--mx-shadow-raised);
+}
+/* status identity (§8.2) — add `cssclasses: [mx-status-verified]` (or mx-status-ai-draft / mx-status-blocked)
+   to a note's frontmatter. Obsidian puts those classes on the reading/editing view container, so we mark
+   the note title: a Lime ring = verified (myelinated), a Cyan glow = ai-draft, a Magenta outline = blocked.
+   A text label follows the title so the state is never conveyed by colour alone (§8.3 guardrail 4). */
+.mx-status-verified .inline-title, .mx-status-ai-draft .inline-title, .mx-status-blocked .inline-title {
+  display: inline-block; padding: 0 var(--mx-space-3); border-radius: var(--mx-radius-control);
+}
+.mx-status-verified .inline-title { box-shadow: var(--mx-shadow-ring-lime); }
+.mx-status-verified .inline-title::after {
+  content: "verified"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  background: var(--mx-neon-lime); color: var(--mx-ink); font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}
+.mx-status-ai-draft .inline-title { box-shadow: var(--mx-shadow-glow-ai); }
+.mx-status-ai-draft .inline-title::after {
+  content: "ai-draft"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  background: var(--mx-neon-cyan); color: var(--mx-ink); font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}
+.mx-status-blocked .inline-title { box-shadow: 0 0 0 2px var(--mx-neon-magenta); }
+.mx-status-blocked .inline-title::after {
+  content: "blocked"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  border: 2px solid var(--mx-neon-magenta); background: var(--mx-magenta-50); color: var(--mx-magenta-ink);
+  font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}
+/* emboss surfaces for cards/callouts */
+.theme-light .callout, .theme-dark .callout { background: var(--mx-surface); border-radius: var(--mx-radius-control); box-shadow: var(--mx-shadow-raised-sm); border: 1px solid var(--mx-border); }
+.theme-light .markdown-source-view.mod-cm6 .cm-content, .theme-dark .markdown-source-view.mod-cm6 .cm-content { caret-color: var(--mx-violet-600); }
+.theme-light input[type="text"], .theme-light input[type="search"], .theme-dark input[type="text"], .theme-dark input[type="search"] { box-shadow: var(--mx-shadow-inset); border: 1px solid var(--mx-border); border-radius: var(--mx-radius-control); }
+.theme-light input:focus-visible, .theme-dark input:focus-visible { outline: var(--mx-focus-ring); outline-offset: var(--mx-focus-offset); }

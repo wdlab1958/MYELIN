@@ -179,3 +179,31 @@ def test_add_domain_ambiguous(tmp_path: Path, packs_dir: Path) -> None:
         add_domain(v, "D4", NOW, pack_roots=[extra])
     add_domain(v, "D4", NOW, pack_name="brian.physical-ai", pack_roots=[extra])
     assert load_config(root).domains.extra == ["D4"]
+
+
+def test_init_preinstalls_obsidian_theme(tmp_path: Path, packs_dir: Path) -> None:
+    """A fresh Vault opens in Obsidian with MYELIN Emboss already selected (no manual step)."""
+    import json
+
+    root = tmp_path / "vault"
+    init_vault(root, _cfg(), NOW, pack_roots=[packs_dir])
+    theme = root / ".obsidian/themes/MYELIN Emboss"
+    assert (theme / "theme.css").is_file() and (theme / "manifest.json").is_file()
+    assert (
+        json.loads((theme / "manifest.json").read_text(encoding="utf-8"))["name"] == "MYELIN Emboss"
+    )
+    app = json.loads((root / ".obsidian/appearance.json").read_text(encoding="utf-8"))
+    assert app["cssTheme"] == "MYELIN Emboss" and app["theme"] == "moonstone"
+    # theme.css is the generated one (single source: design/tokens.json)
+    assert "GENERATED from design/tokens.json" in (theme / "theme.css").read_text(encoding="utf-8")
+
+
+def test_init_without_theme_source_still_works(
+    tmp_path: Path, packs_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import myelin_core.scaffold as sc
+
+    monkeypatch.setattr(sc, "default_theme_dir", lambda: None)
+    root = tmp_path / "vault"
+    init_vault(root, _cfg(), NOW, pack_roots=[packs_dir])
+    assert not (root / ".obsidian").exists() and (root / "myelin.yaml").exists()

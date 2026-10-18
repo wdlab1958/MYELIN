@@ -212,9 +212,29 @@ def gen_theme(data: dict[str, Any]) -> str:
   --shadow-s: var(--mx-shadow-raised-sm);
   --shadow-l: var(--mx-shadow-raised);
 }}
-/* status identity (frontmatter via cssclasses or Dataview) — §8.2 */
-.theme-light .mx-status-verified, .theme-dark .mx-status-verified {{ box-shadow: var(--mx-shadow-ring-lime); }}
-.theme-light .mx-status-ai-draft, .theme-dark .mx-status-ai-draft {{ box-shadow: var(--mx-shadow-glow-ai); }}
+/* status identity (§8.2) — add `cssclasses: [mx-status-verified]` (or mx-status-ai-draft / mx-status-blocked)
+   to a note's frontmatter. Obsidian puts those classes on the reading/editing view container, so we mark
+   the note title: a Lime ring = verified (myelinated), a Cyan glow = ai-draft, a Magenta outline = blocked.
+   A text label follows the title so the state is never conveyed by colour alone (§8.3 guardrail 4). */
+.mx-status-verified .inline-title, .mx-status-ai-draft .inline-title, .mx-status-blocked .inline-title {{
+  display: inline-block; padding: 0 var(--mx-space-3); border-radius: var(--mx-radius-control);
+}}
+.mx-status-verified .inline-title {{ box-shadow: var(--mx-shadow-ring-lime); }}
+.mx-status-verified .inline-title::after {{
+  content: "verified"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  background: var(--mx-neon-lime); color: var(--mx-ink); font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}}
+.mx-status-ai-draft .inline-title {{ box-shadow: var(--mx-shadow-glow-ai); }}
+.mx-status-ai-draft .inline-title::after {{
+  content: "ai-draft"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  background: var(--mx-neon-cyan); color: var(--mx-ink); font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}}
+.mx-status-blocked .inline-title {{ box-shadow: 0 0 0 2px var(--mx-neon-magenta); }}
+.mx-status-blocked .inline-title::after {{
+  content: "blocked"; margin-left: var(--mx-space-3); padding: 2px var(--mx-space-3); border-radius: var(--mx-radius-chip);
+  border: 2px solid var(--mx-neon-magenta); background: var(--mx-magenta-50); color: var(--mx-magenta-ink);
+  font-size: var(--mx-font-size-xs); font-weight: 700; vertical-align: middle;
+}}
 /* emboss surfaces for cards/callouts */
 .theme-light .callout, .theme-dark .callout {{ background: var(--mx-surface); border-radius: var(--mx-radius-control); box-shadow: var(--mx-shadow-raised-sm); border: 1px solid var(--mx-border); }}
 .theme-light .markdown-source-view.mod-cm6 .cm-content, .theme-dark .markdown-source-view.mod-cm6 .cm-content {{ caret-color: var(--mx-violet-600); }}

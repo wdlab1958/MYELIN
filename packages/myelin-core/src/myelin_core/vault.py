@@ -60,6 +60,23 @@ SKIP_DIRS: frozenset[str] = frozenset(
 NON_NOTE_FILES: frozenset[str] = frozenset({"CLAUDE.md", "README.md"})
 
 
+OBSIDIAN_DIR = ".obsidian"
+OBSIDIAN_THEME_NAME = "MYELIN Emboss"
+
+
+def default_theme_dir() -> Path | None:
+    """Generated Obsidian theme dir (`theme/obsidian-myelin-emboss/`): $MYELIN_THEME_DIR or repo."""
+    env = os.environ.get("MYELIN_THEME_DIR")
+    if env and (Path(env) / "theme.css").is_file():
+        return Path(env)
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        cand = parent / "theme" / "obsidian-myelin-emboss"
+        if (cand / "theme.css").is_file() and (cand / "manifest.json").is_file():
+            return cand
+    return None
+
+
 def default_pack_roots(vault: Path | None = None) -> list[Path]:
     """Pack search roots: $MYELIN_PACKS, <Vault>/packs, then the repo `packs/` of this checkout."""
     roots: list[Path] = []

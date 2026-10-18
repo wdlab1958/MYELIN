@@ -18,16 +18,46 @@ from myelin_core.vault import (
     AI_WRITE_ALLOW,
     DOMAINS,
     MOC_FILE,
+    OBSIDIAN_DIR,
+    OBSIDIAN_THEME_NAME,
     RUNTIME,
     STANDARD_DIRS,
     TAXONOMY_MD,
     TEMPLATES,
     Vault,
     default_pack_roots,
+    default_theme_dir,
 )
 
 CLAUDE_MD = "CLAUDE.md"
 CLAUDE_SETTINGS = ".claude/settings.json"
+OBSIDIAN_APPEARANCE = f"{OBSIDIAN_DIR}/appearance.json"
+# Light only (정본 §8.3 guardrail 5); "moonstone" is Obsidian's light base scheme.
+OBSIDIAN_APPEARANCE_BODY = (
+    '{\n  "cssTheme": "'
+    + OBSIDIAN_THEME_NAME
+    + '",\n  "theme": "moonstone",\n  "baseFontSize": 16\n}\n'
+)
+
+
+def obsidian_files(theme_dir: Path | None = None) -> dict[str, str]:
+    """Files that make a fresh Vault open in Obsidian with MYELIN Emboss already selected.
+
+    Obsidian keeps a pre-existing .obsidian/ folder, so writing the theme and appearance.json
+    before the first open means no manual Settings > Appearance step (user guide 9.1).
+    Returns {} when the generated theme cannot be found (e.g. core installed without the repo).
+    """
+    theme_dir = theme_dir or default_theme_dir()
+    if theme_dir is None:
+        return {}
+    base = f"{OBSIDIAN_DIR}/themes/{OBSIDIAN_THEME_NAME}"
+    return {
+        f"{base}/manifest.json": (theme_dir / "manifest.json").read_text(encoding="utf-8"),
+        f"{base}/theme.css": (theme_dir / "theme.css").read_text(encoding="utf-8"),
+        OBSIDIAN_APPEARANCE: OBSIDIAN_APPEARANCE_BODY,
+    }
+
+
 GITIGNORE = ".gitignore"
 GITIGNORE_BODY = (
     "# MYELIN runtime (index, logs) — never commit\n.myelin/\n"
@@ -123,6 +153,7 @@ def plan_init(cfg: MyelinConfig, packs: list[LoadedPack], now: datetime) -> Scaf
     plan.files[TAXONOMY_MD] = render_taxonomy_md(_taxonomy_entries(packs), now)  # type: ignore[arg-type]
     plan.files[CLAUDE_MD] = render_claude_md(cfg, packs, now, None, ai_write_allow=AI_WRITE_ALLOW)
     plan.files[CLAUDE_SETTINGS] = render_claude_settings()
+    plan.files.update(obsidian_files())
     return plan
 
 
