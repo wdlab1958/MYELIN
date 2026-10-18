@@ -28,9 +28,10 @@ from ruamel.yaml import YAML
 from myelin_core import gitops
 from myelin_core.config import VaultConfig, load_config
 from myelin_core.deid import MANUAL_CHECKLIST, POLICY_FILE, DeidReport, load_policy, scan_text
-from myelin_core.errors import Issue, MyelinError, issues_from_validation
+from myelin_core.errors import Issue, MyelinError, PackError, issues_from_validation
 from myelin_core.frontmatter import Classification, NoteType, Status
 from myelin_core.gitops import Author, GitError
+from myelin_core.loader import load_pack
 from myelin_core.note import Note
 from myelin_core.review import read_note
 from myelin_core.safety import find_source_root
@@ -372,6 +373,7 @@ def proposals(repo: Path) -> list[dict[str, str]]:
         "for-each-ref",
         "--format=%(refname:short)%09%(subject)",
         f"refs/heads/{BRANCH_PREFIX}",
+        f"refs/heads/{PROPOSE_PREFIX}",
     )
     rows = []
     for line in out.splitlines():
@@ -409,21 +411,10 @@ def propose(
     return {"branch": chk.branch, "commit": sha, "target": chk.target}
 
 
-def _commit_on_branch(
-    repo: Path, branch: str, rel: str, content: str, author: Author, chk: Check
+def _commit_files(
+    repo: Path, branch: str, files: dict[str, bytes], message: str, author: Author
 ) -> str:
-    """사용자 작업 트리·index를 건드리지 않고 HEAD 위에 한 파일을 더한 commit 을 브랜치로 만든다."""
-    blob = (
-        subprocess.run(
-            ["git", "-C", str(repo), "hash-object", "-w", "--stdin"],
-            input=content.encode("utf-8"),
-            capture_output=True,
-            check=True,
-            timeout=60,
-        )
-        .stdout.decode()
-        .strip()
-    )
+    """작업 트리·index를 건드리지 않고 HEAD 위에 파일들을 더한 commit 을 새 브랜치로 만든다."""
     with tempfile.TemporaryDirectory() as tmp:
         env = {
             "GIT_INDEX_FILE": str(Path(tmp) / "index"),
@@ -433,22 +424,138 @@ def _commit_on_branch(
             "GIT_COMMITTER_EMAIL": author.email,
         }
         _git(repo, "read-tree", "HEAD", env=env)
-        _git(repo, "update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}", env=env)
+        for rel, data in sorted(files.items()):
+            blob = (
+                subprocess.run(
+                    ["git", "-C", str(repo), "hash-object", "-w", "--stdin"],
+                    input=data,
+                    capture_output=True,
+                    check=True,
+                    timeout=60,
+                )
+                .stdout.decode()
+                .strip()
+            )
+            _git(repo, "update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}", env=env)
         tree = _git(repo, "write-tree", env=env).strip()
-        message = (
-            f"commons: {chk.title}\n\n"
-            f"commons_of: {chk.note_id}\nauthor: {author.name}\n\n"
-            "자동 비식별 검사 통과 · 작성자 확인 완료 — 챔피언 검토 필요\n"
-        )
         commit = _git(repo, "commit-tree", tree, "-p", "HEAD", "-m", message, env=env).strip()
     # 브랜치가 없을 때만 만든다 (덮어쓰지 않음)
     _git(repo, "update-ref", f"refs/heads/{branch}", commit, "0" * 40)
     return commit
 
 
+def _commit_on_branch(
+    repo: Path, branch: str, rel: str, content: str, author: Author, chk: Check
+) -> str:
+    message = (
+        f"commons: {chk.title}\n\n"
+        f"commons_of: {chk.note_id}\nauthor: {author.name}\n\n"
+        "자동 비식별 검사 통과 · 작성자 확인 완료 — 챔피언 검토 필요\n"
+    )
+    return _commit_files(repo, branch, {rel: content.encode("utf-8")}, message, author)
+
+
+# ── Personal Pack → Org Pack 제안 (명세 §9.1 Pack 진화, P9) ──────────────
+PROPOSE_PREFIX = "propose/"
+PROPOSALS_DIR = "proposals/packs"
+MAX_PACK_BYTES = 1_000_000
+
+
+def pack_proposal(vault: Path, pack_dir: Path) -> dict[str, Any]:
+    """제안 전 검사 결과 (쓰지 않는다): 파일 목록, 비식별 결과, 막는 이유."""
+    cfg = load_config(vault)
+    blocks: list[Issue] = []
+    files: dict[str, bytes] = {}
+    try:
+        repo: Path | None = commons_dir(vault, cfg)
+    except CommonsError as err:
+        repo = None
+        blocks += err.issues
+    try:
+        lp = load_pack(pack_dir)
+    except PackError as err:
+        return {"ok": False, "blocks": [i.__dict__ for i in err.issues], "files": [], "deid": []}
+    name = lp.name
+    if lp.manifest.kind.value != "personal":
+        blocks.append(Issue("kind", f"{lp.manifest.kind.value} — 개인 Pack만 제안", "not_personal"))
+    total = 0
+    for f in sorted(pack_dir.rglob("*")):
+        rel = f.relative_to(pack_dir).as_posix()
+        if any(part.startswith(".") for part in Path(rel).parts):
+            continue
+        if f.is_symlink():
+            blocks.append(Issue(rel, "심볼릭 링크", "symlink"))
+            continue
+        if f.is_file():
+            data = f.read_bytes()
+            total += len(data)
+            files[f"{PROPOSALS_DIR}/{name}/{rel}"] = data
+    if total > MAX_PACK_BYTES:
+        blocks.append(Issue("size", f"{total} bytes > {MAX_PACK_BYTES}", "too_large"))
+    policy = load_policy(repo) if repo else None
+    deid: list[Issue] = []
+    for rel, data in files.items():
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError:
+            blocks.append(Issue(rel, "UTF-8 텍스트가 아님", "binary"))
+            continue
+        for finding in scan_text(text, policy).findings:
+            issue = finding.issue()
+            deid.append(Issue(f"{rel}:{issue.loc}", issue.msg, issue.code))
+    branch = f"{PROPOSE_PREFIX}{name}"
+    if repo is not None:
+        if _branch_exists(repo, branch):
+            blocks.append(Issue("branch", f"이미 제안됨: {branch}", "already_proposed"))
+        if _exists_in_head(repo, f"{PROPOSALS_DIR}/{name}"):
+            blocks.append(Issue(f"{PROPOSALS_DIR}/{name}", "이미 있습니다", "exists"))
+    return {
+        "ok": not blocks and not deid,
+        "name": name,
+        "version": lp.manifest.version,
+        "domains": [d.id for d in lp.domains],
+        "branch": branch,
+        "files": sorted(files),
+        "blocks": [i.__dict__ for i in blocks],
+        "deid": [i.__dict__ for i in deid],
+        "_payload": files,
+    }
+
+
+def propose_pack(
+    vault: Path, pack_dir: Path, *, confirmed: bool, author: Author, today: date
+) -> dict[str, str]:
+    """사람 확인 후 Commons에 `propose/<pack>` 브랜치 commit 을 만든다. Vault·작업 트리는 그대로."""
+    if not confirmed:
+        raise CommonsError(
+            "Pack 제안은 사람의 확인이 필요합니다", [Issue("confirm", "false", "unconfirmed")]
+        )
+    check = pack_proposal(vault, pack_dir)
+    if not check["ok"]:
+        issues = [Issue(**i) for i in (*check["blocks"], *check["deid"])]
+        raise CommonsError("Pack을 제안할 수 없습니다", issues)
+    repo = commons_dir(vault, load_config(vault))
+    name = check["name"]
+    files: dict[str, bytes] = dict(check["_payload"])
+    files[f"{PROPOSALS_DIR}/{name}/PROPOSAL.md"] = (
+        f"# Org Pack 제안: {name} {check['version']}\n\n"
+        f"- 제안자: {author.name}\n- 제안일: {today.isoformat()}\n"
+        f"- Domains: {', '.join(check['domains'])}\n"
+        "- 근거: 개인 Pack으로 운영해 온 구조를 조직 공용 Pack 후보로 제안 (명세 §9.1 Pack 진화)\n"
+        "- 다음: 챔피언 검토 → org.* 이름으로 확정 → registry/packs.yaml 등록\n"
+    ).encode()
+    message = (
+        f"commons: propose pack {name} {check['version']}\n\n"
+        f"author: {author.name}\n자동 비식별 검사 통과 · 작성자 확인 — 챔피언 검토 필요\n"
+    )
+    sha = _commit_files(repo, check["branch"], files, message, author)
+    return {"branch": check["branch"], "commit": sha, "target": f"{PROPOSALS_DIR}/{name}"}
+
+
 def push(vault: Path, branch: str, remote: str = "origin") -> str:
     """두 번째 사람 행위: 제안 브랜치를 원격으로 보낸다. PR 링크는 git 호스트가 알려 준다."""
-    if not branch.startswith(BRANCH_PREFIX) or not re.fullmatch(r"[\w./-]+", branch):
+    allowed = branch.startswith((BRANCH_PREFIX, PROPOSE_PREFIX))
+    if not allowed or ".." in branch or not re.fullmatch(r"[\w./-]+", branch):
         raise CommonsError("제안 브랜치가 아닙니다", [Issue("branch", branch, "bad_branch")])
     cfg = load_config(vault)
     repo = commons_dir(vault, cfg)

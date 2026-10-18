@@ -14,13 +14,19 @@ from typing import Annotated, Any, NoReturn
 import typer
 
 from myelin_cli import __version__
-from myelin_core.commons import check_note, commons_dir, init_commons
-from myelin_core.config import CONFIG_FILE, update_config
+from myelin_core.commons import (
+    check_note,
+    commons_dir,
+    init_commons,
+    pack_proposal,
+    propose_pack,
+)
+from myelin_core.config import CONFIG_FILE, load_config, update_config
 from myelin_core.doctor import run_doctor
 from myelin_core.errors import Issue, MyelinError
 from myelin_core.gitops import Author
 from myelin_core.loader import CORE_PACK, LoadedPack, discover_packs, resolve
-from myelin_core.metrics import anonymous_metrics
+from myelin_core.metrics import aggregate, anonymous_metrics
 from myelin_core.onboarding import InitRequest, find_packs_dir, prepare_add_domain, prepare_init
 from myelin_core.safety import init_target_issues
 from myelin_core.scaffold import apply_plan, domain_index
@@ -319,6 +325,38 @@ def commons_check_cmd(
     )
 
 
+@commons_app.command("propose-pack")
+def commons_propose_pack_cmd(
+    vault: VaultArg,
+    pack_dir: Annotated[Path, typer.Argument(help="개인 Pack 폴더 (me.*)")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="확인 없이 제안 (비대화형)")] = False,
+    today: TodayOpt = None,
+) -> None:
+    """개인 Pack을 Org Pack 후보로 Commons에 제안한다 (propose/<pack> 브랜치, push는 별도)."""
+    try:
+        check = pack_proposal(vault, pack_dir)
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    for f in check["files"]:
+        typer.echo(f"  {f}")
+    issues = [Issue(**i) for i in (*check["blocks"], *check["deid"])]
+    if issues:
+        _fail("Pack을 제안할 수 없습니다", issues)
+    if not yes:
+        if not sys.stdin.isatty():
+            _fail("확인이 필요합니다", [Issue("--yes", "비대화형에서는 --yes 로 명시하세요")])
+        if not typer.confirm(f"{check['name']} 를 Commons({check['branch']})에 제안할까요?"):
+            raise typer.Exit(1)
+    cfg_owner = load_config(vault).owner
+    author = Author(cfg_owner.name, cfg_owner.email or "myelin@localhost")
+    try:
+        out = propose_pack(vault, pack_dir, confirmed=True, author=author, today=_today(today))
+    except MyelinError as err:
+        _fail(err.message, err.issues)
+    typer.secho(f"✓ {out['target']} @ {out['branch']} ({out['commit'][:7]})", fg=typer.colors.GREEN)
+    typer.echo("조직 원격으로 보내기는 Hub Team Commons의 '조직으로 보내기' 또는 git push 로.")
+
+
 # ── metrics ──────────────────────────────────────────────────────────────
 @app.command("metrics")
 def metrics_cmd(
@@ -337,6 +375,34 @@ def metrics_cmd(
         return
     out.write_text(text, encoding="utf-8")
     typer.secho(f"✓ {out} — 내용을 확인한 뒤 직접 제출하세요.", fg=typer.colors.GREEN)
+
+
+@app.command("metrics-aggregate")
+def metrics_aggregate_cmd(
+    paths: Annotated[list[Path], typer.Argument(help="제출된 지표 JSON 파일 또는 폴더")],
+    as_json: Annotated[bool, typer.Option("--json", help="JSON 출력")] = False,
+) -> None:
+    """조직 운영자: 제출된 익명 지표를 주 단위로 집계한다 (익명 형식이 아니면 거부)."""
+    files: list[Path] = []
+    for p in paths:
+        files += sorted(p.glob("*.json")) if p.is_dir() else [p]
+    data = aggregate(files)
+    if as_json:
+        typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
+    else:
+        typer.echo(
+            f"{'week':<10}{'제출':>5}{'활성':>5}{'비율':>6}{'승격률':>8}{'cross':>7}{'commons':>9}"
+        )
+        for week, r in data["weeks"].items():
+            rate = "-" if r["ai_promotion_rate_median"] is None else r["ai_promotion_rate_median"]
+            typer.echo(
+                f"{week:<10}{r['submissions']:>5}{r['active']:>5}{r['active_ratio']:>6}"
+                f"{rate!s:>8}{r['cross_domain_median']!s:>7}{r['commons_enabled']:>9}"
+            )
+        for bad in data["rejected"]:
+            typer.secho(f"✗ 거부 {bad['file']}: {bad['reason']}", fg=typer.colors.RED)
+    if data["rejected"]:
+        raise typer.Exit(1)
 
 
 def main() -> None:

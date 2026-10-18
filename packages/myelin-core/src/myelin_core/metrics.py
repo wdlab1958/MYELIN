@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -72,3 +73,86 @@ def anonymous_metrics(vault: Path, today: date | None = None) -> dict[str, Any]:
         "commons_enabled": cfg.commons.enabled,
         "mcp_write_drafts": cfg.mcp.write_drafts,
     }
+
+
+# ── 집계 (조직 운영자, 명세 §11.2) ───────────────────────────────────────
+EXPECTED_KEYS = frozenset(
+    {
+        "schema", "week", "level", "packs", "domains", "notes", "verified_notes",
+        "verified_last_7d", "ai_drafts_pending", "ai_promotion_rate", "orphan_ratio",
+        "cross_domain_ratio", "inbox_items", "commons_enabled", "mcp_write_drafts",
+    }
+)  # fmt: skip
+_BUCKET_RE = r"^(0|\d+-\d+|\d+\+)$"
+
+
+def _median(values: list[float]) -> float | None:
+    if not values:
+        return None
+    v = sorted(values)
+    mid = len(v) // 2
+    return round(v[mid] if len(v) % 2 else (v[mid - 1] + v[mid]) / 2, 2)
+
+
+def validate_submission(data: Any) -> list[str]:
+    """제출 파일이 익명 형식 그대로인지 — 키가 하나라도 더 있거나 값 모양이 다르면 거부."""
+    import re
+
+    if not isinstance(data, dict):
+        return ["JSON 객체가 아님"]
+    problems = []
+    keys = set(data)
+    if keys != EXPECTED_KEYS:
+        extra, missing = sorted(keys - EXPECTED_KEYS), sorted(EXPECTED_KEYS - keys)
+        problems.append(f"키 불일치 (추가 {extra}, 누락 {missing})")
+        return problems
+    if data["schema"] != SCHEMA:
+        problems.append(f"schema {data['schema']}")
+    if not isinstance(data["week"], str) or not re.fullmatch(r"\d{4}-W\d{2}", data["week"]):
+        problems.append("week 형식")
+    for k in ("notes", "verified_notes", "verified_last_7d", "ai_drafts_pending", "inbox_items"):
+        if not isinstance(data[k], str) or not re.fullmatch(_BUCKET_RE, data[k]):
+            problems.append(f"{k} 는 구간 문자열이어야 함")
+    packs = data["packs"]
+    if not isinstance(packs, list) or not all(
+        isinstance(p, str) and (p == "myelin.core" or p.startswith("org.")) for p in packs
+    ):
+        problems.append("packs 에는 core·org Pack 이름만")
+    return problems
+
+
+def aggregate(files: list[Path]) -> dict[str, Any]:
+    """주 단위 집계. 익명 형식이 아닌 파일은 세지 않고 거부 목록에 남긴다."""
+    weeks: dict[str, list[dict[str, Any]]] = {}
+    rejected: list[dict[str, str]] = []
+    for f in sorted(files):
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            rejected.append({"file": f.name, "reason": f"읽기 실패: {type(exc).__name__}"})
+            continue
+        problems = validate_submission(data)
+        if problems:
+            rejected.append({"file": f.name, "reason": "; ".join(problems)})
+            continue
+        weeks.setdefault(data["week"], []).append(data)
+    table: dict[str, Any] = {}
+    for week, rows in sorted(weeks.items()):
+        n = len(rows)
+        active = sum(1 for r in rows if r["verified_last_7d"] != "0")
+        rates = [r["ai_promotion_rate"] for r in rows if r["ai_promotion_rate"] is not None]
+        packs: dict[str, int] = {}
+        for r in rows:
+            for p in r["packs"]:
+                packs[p] = packs.get(p, 0) + 1
+        table[week] = {
+            "submissions": n,
+            "active": active,
+            "active_ratio": round(active / n, 2),
+            "ai_promotion_rate_median": _median(rates),
+            "cross_domain_median": _median([r["cross_domain_ratio"] for r in rows]),
+            "orphan_median": _median([r["orphan_ratio"] for r in rows]),
+            "commons_enabled": sum(1 for r in rows if r["commons_enabled"]),
+            "packs": dict(sorted(packs.items())),
+        }
+    return {"weeks": table, "rejected": rejected}
