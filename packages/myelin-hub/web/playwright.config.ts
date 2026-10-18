@@ -25,9 +25,13 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `npx vite --port ${WEB} --strictPort`,
+    // --host 127.0.0.1: on Node ≥ 17 "localhost" may resolve to ::1 only, so the IPv4 health URL
+    // never answers (CI runners). Output is piped so a failing start is visible in the log.
+    command: `npx vite --host 127.0.0.1 --port ${WEB} --strictPort`,
     url: `http://127.0.0.1:${WEB}`,
     reuseExistingServer: false,
-    timeout: 60_000,
+    timeout: 120_000,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });
