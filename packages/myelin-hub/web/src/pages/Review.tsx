@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { get, userPost, type Candidate, type NoteRow, type PatchRow } from "../lib/api";
+import { get, userPost, type Candidate, type NoteRow, type PatchPlan, type PatchRow } from "../lib/api";
 
 export default function Review({ onChanged }: { onChanged: () => void }) {
   const [drafts, setDrafts] = useState<NoteRow[]>([]);
@@ -7,10 +7,15 @@ export default function Review({ onChanged }: { onChanged: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [justPromoted, setJustPromoted] = useState<string | null>(null);
   const [cands, setCands] = useState<Candidate[]>([]);
+  const [plans, setPlans] = useState<Record<string, PatchPlan | { error: string }>>({});
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const load = useCallback(() => get<{ drafts: NoteRow[]; patches: PatchRow[] }>("/api/review").then((r) => { setDrafts(r.drafts); setPatches(r.patches); }), []);
   useEffect(() => { void load(); void get<Candidate[]>("/api/commons/candidates").then(setCands).catch(() => setCands([])); }, [load]);
 
+  const preview = async (file: string) => {
+    try { const p = await get<PatchPlan>(`/api/patches/${encodeURIComponent(file)}/preview`); setPlans({ ...plans, [file]: p }); }
+    catch (e) { setPlans({ ...plans, [file]: { error: String(e) } }); }
+  };
   const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string) => {
     try {
       const r = await fn();
@@ -43,16 +48,27 @@ export default function Review({ onChanged }: { onChanged: () => void }) {
       <h2 className="hub-h2">패치 제안 ({patches.length})</h2>
       <div className="mx-card" style={{ padding: "0 var(--mx-space-4)" }} data-testid="patch-list">
         {patches.length === 0 && <div className="mx-review-row mx-muted">_patches/ 가 비어 있습니다.</div>}
-        {patches.map((p) => (
-          <div className="mx-review-row" key={p.file}>
+        {patches.map((p) => {
+          const plan = plans[p.file];
+          const ready = plan && !("error" in plan) && plan.ok;
+          return (
+          <div className="mx-review-row" key={p.file} data-testid="patch-row">
             {p.error ? <span className="mx-badge--blocked">invalid</span> : <span className={"mx-chip " + (p.status === "proposed" ? "mx-chip--draft" : "mx-chip--unverified")}>{p.status}</span>}
-            <div><div className="mx-review-row__title">{p.file}</div><div className="mx-review-row__meta">{p.error ?? `${p.kind} → ${p.target} · /${p.skill} · ${p.rationale}`}</div>{p.sections && <pre className="hub-pre">{Object.entries(p.sections).map(([k, v]) => `## ${k}\n${v}`).join("\n")}</pre>}</div>
+            <div>
+              <div className="mx-review-row__title">{p.file}</div>
+              <div className="mx-review-row__meta">{p.error ?? `${p.kind}${p.under ? ` (under ${p.under})` : ""} → ${p.target} · /${p.skill} · ${p.rationale}`}</div>
+              {plan && "error" in plan && <div className="mx-review-row__meta">✗ {plan.error}</div>}
+              {plan && !("error" in plan) && plan.issues.map((i) => <div key={i} className="mx-review-row__meta">✗ {i}</div>)}
+              {plan && !("error" in plan) && plan.ok && <pre className="hub-pre" data-testid="patch-diff">{plan.diff || "(변경 없음)"}</pre>}
+            </div>
             <div className="hub-row">
-              <button type="button" className="mx-btn mx-btn-promote" disabled={!!p.error || p.status !== "proposed"} onClick={() => act(() => userPost(`/api/patches/${encodeURIComponent(p.file)}/apply`), `Apply ${p.file}`)}>Apply</button>
+              <button type="button" className="mx-btn" disabled={!!p.error} onClick={() => preview(p.file)} data-testid="patch-preview">미리보기</button>
+              <button type="button" className="mx-btn mx-btn-promote" disabled={!ready} title={ready ? "" : "먼저 미리보기로 검사 결과를 확인한다"} onClick={() => act(() => userPost(`/api/patches/${encodeURIComponent(p.file)}/apply`, { digest: (plan as PatchPlan).digest }), `Apply ${p.file}`)} data-testid="patch-apply">Apply</button>
               <button type="button" className="mx-btn" disabled={!!p.error || p.status !== "proposed"} onClick={() => act(() => userPost(`/api/patches/${encodeURIComponent(p.file)}/reject`), `Reject ${p.file}`)}>Reject</button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       <h2 className="hub-h2">Commons 후보 ({cands.length})</h2>
       <p className="hub-sub">share: true 인 verified 노트. 비식별 검사를 통과하고 사람이 확인한 것만 Commons 브랜치에 제안된다 (ADR-0010).</p>

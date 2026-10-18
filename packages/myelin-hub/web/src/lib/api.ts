@@ -37,7 +37,11 @@ export type NoteRow = {
   created: string; reviewed: string | null; classification: string; doctor_ok?: boolean; error?: string;
 };
 export type PatchRow = {
-  file: string; target?: string; kind?: string; skill?: string; rationale?: string; status: string; sections?: Record<string, string>; error?: string;
+  file: string; target?: string; kind?: string; under?: string | null; skill?: string; rationale?: string; status: string; group?: string;
+  sections?: Record<string, string>; error?: string;
+};
+export type PatchPlan = {
+  name: string; target: string; kind: string; ok: boolean; issues: string[]; diff: string; digest: string; rationale: string;
 };
 export type PackRow = {
   name: string; version: string; kind: string; maintainer: string; description: string; active: boolean; editable: boolean;

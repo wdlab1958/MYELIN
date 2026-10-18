@@ -25,3 +25,10 @@
 
 ## 대안
 - unified diff 만 사용: 사람이 Hub 에서 읽기 어렵고 MOC 같은 리스트 파일에 과하다. `replace` 가 필요할 때만 before/after 를 쓴다.
+
+## 보강 (2026-10-18, Desktop 라인 P9 이식)
+- `append` 에 선택 필드 `under`(제목 텍스트) 추가 — 그 제목 구획 끝에 붙인다. 제목이 없으면 거부.
+- `frontmatter` 의 `## set` 은 허용 키 집합 `tags·source·projects·aliases·confidence` 만. status·origin·id·reviewed·classification·share 는 Review Gate 전용.
+- **적용은 계획(plan) → 검사 → diff 미리보기 → digest 확인 → 적용** 순서. plan 의 fail-closed 규칙: 대상이 Vault 안 유효 노트, `40_IP/` 밖, confidential 아님, verified 노트에 미검증 AI 노트 링크 추가 금지, 결과 frontmatter 유효.
+- Hub 는 미리보기 시 patch 파일의 digest(sha256 앞 16자)를 돌려주고, Apply 요청은 같은 digest 를 보내야 한다(화면과 파일이 달라지면 409).
+- 적용/거부된 patch 는 `_patches/applied/`·`_patches/rejected/` 로 이동(status 갱신)해 제안 이력을 Vault 에 남긴다.

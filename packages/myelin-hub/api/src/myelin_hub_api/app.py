@@ -67,6 +67,10 @@ class RejectBody(BaseModel):
     reason: str = ""
 
 
+class ApplyBody(BaseModel):
+    digest: str | None = None  # from GET /api/patches/{name}/preview; mismatch → 409
+
+
 class PackBody(BaseModel):
     pack_yaml: str = Field(min_length=1)
 
@@ -213,9 +217,17 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     def reject(ref: str, body: RejectBody | None = None) -> dict[str, Any]:
         return svc.reject(ref, (body or RejectBody()).reason)
 
+    @app.get("/api/patches")
+    def patches() -> list[dict[str, Any]]:
+        return s().patches()
+
+    @app.get("/api/patches/{name}/preview")
+    def patch_preview(name: str) -> dict[str, Any]:
+        return s().patch_preview(name)
+
     @app.post("/api/patches/{name}/apply", dependencies=[Depends(require_user_click)])
-    def apply_patch(name: str) -> dict[str, Any]:
-        return svc.apply_patch(name)
+    def apply_patch(name: str, body: ApplyBody | None = None) -> dict[str, Any]:
+        return svc.apply_patch(name, (body or ApplyBody()).digest)
 
     @app.post("/api/patches/{name}/reject", dependencies=[Depends(require_user_click)])
     def reject_patch(name: str) -> dict[str, Any]:

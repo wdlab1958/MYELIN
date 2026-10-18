@@ -32,4 +32,11 @@ status: proposed
 - [[ISR 안에서 로그를 찍지 않는다]]
 - [[WCET 예산은 측정값의 1.5배로 잡는다]]
 ```
-`replace` 는 `## before` / `## after` 두 섹션, `frontmatter` 는 `## set` 섹션(`key: value` 줄).
+`replace` 는 `## before` / `## after` 두 섹션(before 는 대상에 정확히 한 번), `frontmatter` 는 `## set` 섹션(`key: value` 줄, **tags·source·projects·aliases·confidence 만** — status·origin·id·reviewed·classification·share 는 Review Gate 의 몫).
+`append` 에 `under: "## 최근 verified"` 를 주면 그 제목 구획의 끝에 붙는다(제목이 없으면 적용 거부).
+
+## Hub 가 적용 전에 검사하는 것 (plan)
+- 대상이 Vault 안의 유효한 노트이고 `40_IP/`·confidential 이 아님
+- verified 노트에 **미검증 AI 노트(origin: claude, status≠verified)** 로 가는 새 링크를 만들지 않음 — ai-drafts 노트를 링크 후보에서 제외하는 이유
+- 적용 결과의 frontmatter 가 깨지지 않음
+위반이 있으면 Review Gate 에 사유가 표시되고 Apply 가 비활성화된다. 적용된 patch 는 `_patches/applied/`, 거부된 patch 는 `_patches/rejected/` 로 옮겨진다.

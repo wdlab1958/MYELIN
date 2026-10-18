@@ -155,7 +155,9 @@ def test_reject_archives_with_commit(client: TestClient, vault_root: Path) -> No
     )
 
 
-def test_patches_apply_and_reject(client: TestClient, vault_root: Path, repo_root: Path) -> None:
+def test_patches_preview_apply_reject(
+    client: TestClient, vault_root: Path, repo_root: Path
+) -> None:
     import shutil
 
     src = repo_root / "tests/fixtures/skill-outputs/link"
@@ -163,37 +165,60 @@ def test_patches_apply_and_reject(client: TestClient, vault_root: Path, repo_roo
         shutil.copy(p, vault_root / "_patches" / p.name)
     q = client.get("/api/review").json()
     assert {p["file"] for p in q["patches"]} == {p.name for p in src.glob("*.patch.md")}
+    assert all(p["group"] == "proposed" for p in q["patches"])
+    name = "20261018-1700-d2-moc-missing-links.patch.md"
+    # preview is read-only and returns diff + digest + fail-closed verdict
+    before = tree_hash(vault_root)
+    pv = client.get(f"/api/patches/{name}/preview").json()
+    assert (
+        pv["ok"]
+        and pv["target"] == "10_Domains/D2/_MOC.md"
+        and "+- [[ISR 안에서 로그를 찍지 않는다]]" in pv["diff"]
+    )
+    assert len(pv["digest"]) == 16 and tree_hash(vault_root) == before
+    assert client.get("/api/patches/nope.patch.md/preview").status_code == 404
+    # digest mismatch → 409, nothing applied
+    r = client.post(f"/api/patches/{name}/apply", headers=CLICK, json={"digest": "0" * 16})
+    assert r.status_code == 409 and tree_hash(vault_root) == before
     moc_before = (vault_root / "10_Domains/D2/_MOC.md").read_text(encoding="utf-8")
-    r = client.post("/api/patches/20261018-1700-d2-moc-missing-links.patch.md/apply", headers=CLICK)
-    assert r.status_code == 200 and r.json()["status"] == "applied"
+    r = client.post(f"/api/patches/{name}/apply", headers=CLICK, json={"digest": pv["digest"]})
+    assert r.status_code == 200 and r.json()["status"] == "applied", r.text
     moc_after = (vault_root / "10_Domains/D2/_MOC.md").read_text(encoding="utf-8")
     assert (
         moc_after.startswith(moc_before.rstrip("\n"))
         and "[[ISR 안에서 로그를 찍지 않는다]]" in moc_after
     )
-    assert "status: applied" in (
-        vault_root / "_patches/20261018-1700-d2-moc-missing-links.patch.md"
-    ).read_text(encoding="utf-8")
-    assert (
-        _log(vault_root)[0]
-        == "[myelin:link] apply patch 20261018-1700-d2-moc-missing-links.patch.md"
-    )
-    assert (
-        client.post(
-            "/api/patches/20261018-1700-d2-moc-missing-links.patch.md/apply", headers=CLICK
-        ).status_code
-        == 409
-    )
-    # replace patch whose `before` does not occur exactly once → 422, target untouched
+    assert not (vault_root / "_patches" / name).exists()
+    assert "status: applied" in (vault_root / "_patches/applied" / name).read_text(encoding="utf-8")
+    assert _log(vault_root)[0] == f"[myelin:link] apply patch {name} → 10_Domains/D2/_MOC.md"
+    status = client.get("/api/git/status").json()
+    assert all(
+        c.startswith("??") for c in status["changes"]
+    )  # only the other, still-untracked patch
+    assert client.post(f"/api/patches/{name}/apply", headers=CLICK).status_code == 404  # moved away
+    groups = {p["file"]: p["group"] for p in client.get("/api/patches").json()}
+    assert groups[name] == "applied"
+    # replace patch whose `before` is not unique → preview not ok, apply 422, target untouched
+    other = "20261018-1705-wcet-note-related.patch.md"
     tgt = vault_root / "10_Domains/D2/WCET 예산은 측정값의 1.5배로 잡는다.md"
-    before = tgt.read_text(encoding="utf-8")
-    r = client.post("/api/patches/20261018-1705-wcet-note-related.patch.md/apply", headers=CLICK)
-    assert r.status_code in (200, 422)
-    if r.status_code == 422:
-        assert tgt.read_text(encoding="utf-8") == before
-    r = client.post("/api/patches/20261018-1705-wcet-note-related.patch.md/reject", headers=CLICK)
-    assert r.status_code in (200, 409)
+    before_t = tgt.read_text(encoding="utf-8")
+    pv2 = client.get(f"/api/patches/{other}/preview").json()
+    if not pv2["ok"]:
+        assert (
+            client.post(
+                f"/api/patches/{other}/apply", headers=CLICK, json={"digest": pv2["digest"]}
+            ).status_code
+            == 422
+        )
+        assert tgt.read_text(encoding="utf-8") == before_t
+    r = client.post(f"/api/patches/{other}/reject", headers=CLICK)
+    assert r.status_code == 200 and (vault_root / "_patches/rejected" / other).exists()
     assert client.post("/api/patches/nope.patch.md/apply", headers=CLICK).status_code == 404
+    assert client.post("/api/patches/nope.patch.md/reject", headers=CLICK).status_code == 404
+    # apply without digest (CLI/script callers) still works for a fresh proposed patch
+    shutil.copy(src / name, vault_root / "_patches" / name)
+    (vault_root / "10_Domains/D2/_MOC.md").write_text(moc_before, encoding="utf-8")
+    assert client.post(f"/api/patches/{name}/apply", headers=CLICK).status_code == 200
 
 
 def test_settings_roundtrip(client: TestClient, vault_root: Path) -> None:

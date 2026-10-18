@@ -8,9 +8,9 @@ Reads never write (audited by tests).
 from __future__ import annotations
 
 import hashlib
+import hmac
 import io
 import json
-import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -35,7 +35,7 @@ from myelin_core.metrics import (
 )
 from myelin_core.note import NoteParseError, dump_note, read_note
 from myelin_core.packs.loader import PackError, discover_packs, load_pack
-from myelin_core.patches import PatchError, read_patch
+from myelin_core.patches import PatchError, apply_plan, list_patches, plan_patch, reject_patch
 from myelin_core.render import make_note_id, render_claude_md
 from myelin_core.scaffold import ScaffoldError, VaultExistsError, init_vault
 from myelin_core.schema.frontmatter import Origin, Status
@@ -44,7 +44,6 @@ from myelin_core.vault import (
     AI_DRAFTS,
     ARCHIVE,
     DOMAINS,
-    PATCHES,
     RUNTIME,
     Vault,
     default_pack_roots,
@@ -294,15 +293,7 @@ class HubService:
                         "tags": [],
                     }
                 )
-        patches = []
-        for p in sorted((v.root / PATCHES).glob("*.patch.md")):
-            try:
-                patch = read_patch(p)
-                patches.append(
-                    patch.model_dump(mode="json") | {"file": p.name, "sections": patch.sections}
-                )
-            except PatchError as exc:
-                patches.append({"file": p.name, "error": str(exc), "status": "invalid"})
+        patches = [p for p in list_patches(v.root) if p.get("group") == "proposed"]
         return {"drafts": drafts, "patches": patches}
 
     def guard_events(self, days: int = 7) -> list[dict[str, Any]]:
@@ -404,67 +395,46 @@ class HubService:
         self._idx()
         return {"path": self._rel(str(dest)), "commit": commit, "status": "deprecated"}
 
-    def apply_patch(self, name: str) -> dict[str, Any]:
+    def patch_preview(self, name: str) -> dict[str, Any]:
+        """Dry-run plan: diff, fail-closed issues and the digest the Apply call must echo back."""
         v = self._v()
-        p = v.root / PATCHES / name
-        if not p.is_file() or not name.endswith(".patch.md") or "/" in name:
-            raise HubError(f"patch not found: {name}", 404)
         try:
-            patch = read_patch(p)
+            return plan_patch(v.root, name).to_dict()
         except PatchError as exc:
-            raise HubError(str(exc), 422) from None
-        if patch.status in ("applied", "rejected"):
-            raise HubError(f"patch already {patch.status}", 409)
-        target = v.root / self._rel(patch.target)
-        if not target.is_file():
-            raise HubError(f"patch target missing: {patch.target}", 422)
-        text = target.read_text(encoding="utf-8")
-        if patch.kind == "append":
-            new = text.rstrip("\n") + "\n" + patch.sections["append"].rstrip("\n") + "\n"
-        elif patch.kind == "replace":
-            before = patch.sections["before"]
-            if text.count(before) != 1:
-                raise HubError("patch `before` must occur exactly once in the target", 422)
-            new = text.replace(before, patch.sections["after"], 1)
-        else:
-            note = read_note(target)
-            for line in patch.sections["set"].splitlines():
-                if ":" not in line:
-                    raise HubError(f"bad frontmatter line in patch: {line!r}", 422)
-                k, val = line.split(":", 1)
-                note.raw_frontmatter[k.strip()] = YAML(typ="safe").load(io.StringIO(val.strip()))
-            new = dump_note(note)
-        target.write_text(new, encoding="utf-8")
+            raise HubError(str(exc), 404 if "not found" in str(exc) else 422) from None
+
+    def apply_patch(self, name: str, digest: str | None = None) -> dict[str, Any]:
+        v = self._v()
         try:
-            read_note(target)
-        except NoteParseError as exc:
-            target.write_text(text, encoding="utf-8")
+            plan = plan_patch(v.root, name)
+        except PatchError as exc:
+            raise HubError(str(exc), 404 if "not found" in str(exc) else 422) from None
+        if not plan.ok:
+            raise HubError("patch cannot be applied: " + "; ".join(plan.issues), 422)
+        if digest is not None and not hmac.compare_digest(plan.digest, digest):
             raise HubError(
-                f"patch would break the target's frontmatter — reverted: {exc}", 422
-            ) from None
-        self._set_patch_status(p, "applied")
+                "화면의 patch 와 파일이 다릅니다 — 새로고침 후 다시 확인하세요 (digest mismatch)",
+                409,
+            )
+        touched = apply_plan(v.root, plan)
         commit = self._commit(
-            [patch.target, self._rel(str(p))], f"[myelin:{patch.skill}] apply patch {name}"
+            touched, f"[myelin:{plan.patch.skill}] apply patch {name} → {plan.target}"
         )
         self._idx()
-        return {"target": patch.target, "commit": commit, "status": "applied"}
+        return {"target": plan.target, "commit": commit, "status": "applied", "digest": plan.digest}
 
     def reject_patch(self, name: str) -> dict[str, Any]:
         v = self._v()
-        p = v.root / PATCHES / name
-        if not p.is_file() or "/" in name:
-            raise HubError(f"patch not found: {name}", 404)
-        self._set_patch_status(p, "rejected")
-        commit = self._commit([self._rel(str(p))], f"[myelin:review] reject patch {name}")
+        try:
+            touched = reject_patch(v.root, name)
+        except PatchError as exc:
+            raise HubError(str(exc), 404 if "not found" in str(exc) else 422) from None
+        commit = self._commit(touched, f"[myelin:review] reject patch {name}")
         return {"commit": commit, "status": "rejected"}
 
-    @staticmethod
-    def _set_patch_status(p: Path, status: str) -> None:
-        text = p.read_text(encoding="utf-8")
-        new, n = re.subn(r"^status:\s*\w+\s*$", f"status: {status}", text, count=1, flags=re.M)
-        if n == 0:
-            new = text.replace("\n---\n", f"\nstatus: {status}\n---\n", 1)
-        p.write_text(new, encoding="utf-8")
+    def patches(self) -> list[dict[str, Any]]:
+        """Proposed + applied + rejected (history) for the Hub patch list."""
+        return list_patches(self._v().root)
 
     def settings(self) -> dict[str, Any]:
         v = self._v()
