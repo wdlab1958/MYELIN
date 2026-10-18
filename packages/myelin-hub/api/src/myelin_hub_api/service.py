@@ -23,6 +23,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Concatenate
 
+from pydantic import ValidationError
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedSeq
 
@@ -78,6 +79,16 @@ from myelin_core.vault import (
 GUARD_LOG = f"{RUNTIME}/guard.log"
 WELCOME_TITLE = "MYELIN 시작하기"
 PERSONAL_PACK = "me.my-domains"  # personal pack written by the onboarding wizard's custom domains
+
+
+def _explain_validation(exc: ValidationError) -> str:
+    """Pydantic errors → one readable line per field (no type codes, no doc URLs)."""
+    parts = []
+    for e in exc.errors(include_url=False):
+        loc = ".".join(str(x) for x in e["loc"]) or "settings"
+        msg = str(e["msg"]).removeprefix("Value error, ")
+        parts.append(f"{loc}: {msg}" if loc != "settings" else msg)
+    return "; ".join(parts)
 
 
 class HubError(ValueError):
@@ -642,8 +653,10 @@ class HubService:
         v = self._v()
         try:
             cfg = MyelinConfig.model_validate(data)
+        except ValidationError as exc:
+            raise HubError("설정이 유효하지 않다: " + _explain_validation(exc), 422) from None
         except ValueError as exc:
-            raise HubError(f"invalid settings: {exc}", 422) from None
+            raise HubError(f"설정이 유효하지 않다: {exc}", 422) from None
         with self._mutation(["myelin.yaml", "CLAUDE.md"]):
             (v.root / "myelin.yaml").write_text(dump_config(cfg), encoding="utf-8")
             touched = ["myelin.yaml"]

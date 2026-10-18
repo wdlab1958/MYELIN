@@ -492,3 +492,16 @@ def test_onboarding_rejects_bad_custom_domain(empty_client: TestClient) -> None:
     r = c.post("/api/onboarding", headers=CLICK, json=body)
     assert r.status_code == 422 and "custom domain" in r.json()["detail"]
     assert c.get("/api/vault").json()["ready"] is False
+
+
+def test_settings_validation_error_is_readable(client: TestClient) -> None:
+    """Hub shows people the rule, not a Pydantic trace (commons.enabled without remote)."""
+    s = client.get("/api/settings").json()
+    s["commons"] = {**s.get("commons", {}), "enabled": True, "remote": None}
+    r = client.put("/api/settings", headers=CLICK, json=s)
+    assert r.status_code == 422
+    detail = r.json()["detail"]
+    assert "commons.remote" in detail and "원격 저장소" in detail
+    assert "pydantic" not in detail and "input_value" not in detail and "type=" not in detail
+    s["commons"]["remote"] = "git@github.com:org/myelin-commons.git"
+    assert client.put("/api/settings", headers=CLICK, json=s).status_code == 200

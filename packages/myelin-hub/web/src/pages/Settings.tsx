@@ -10,7 +10,9 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
   const [commonsEnabled, setCommonsEnabled] = useState<boolean>(vault.commons?.enabled ?? false);
   const [metricsOptIn, setMetricsOptIn] = useState<boolean>(vault.commons?.metrics_opt_in ?? false);
   const [msg, setMsg] = useState<string>("");
+  const commonsNeedsRemote = commonsEnabled && !commonsRemote.trim();
   const save = async () => {
+    if (commonsNeedsRemote) { setMsg("저장 실패: Commons 연동을 켜려면 원격 저장소(commons.remote)를 먼저 입력한다"); return; }
     try {
       const current = await (await fetch("/api/settings")).json();
       const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
@@ -40,7 +42,7 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
           <strong>MCP</strong>
           <label className="hub-row"><input type="checkbox" checked={writeDraft} onChange={(e) => setWriteDraft(e.target.checked)} /> write_draft 도구 등록 (level ≥ 1)</label>
           <label className="hub-row"><input type="checkbox" checked={expose} onChange={(e) => setExpose(e.target.checked)} /> confidential 노출 (로컬 LLM 세션에서만)</label>
-          <div className="hub-row"><button type="button" className="mx-btn-primary" onClick={save} data-testid="settings-save">저장 (commit)</button>{msg && <span className={msg.startsWith("저장 실패") ? "mx-badge--blocked" : "mx-chip mx-chip--verified"} data-testid="settings-msg">{msg}</span>}</div>
+          <div className="hub-row"><button type="button" className="mx-btn-primary" onClick={save} disabled={commonsNeedsRemote} title={commonsNeedsRemote ? "Commons 원격 저장소를 입력한다" : ""} data-testid="settings-save">저장 (commit)</button>{msg && <span className={msg.startsWith("저장 실패") ? "mx-badge--blocked" : "mx-chip mx-chip--verified"} data-testid="settings-msg">{msg}</span>}</div>
         </article>
         <article className="mx-card hub-stack" data-testid="commons-card">
           <strong>Commons — 공개는 사람이 한다 (ADR-0010)</strong>
@@ -49,6 +51,7 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
           <label className="hub-stack" style={{ gap: "var(--mx-space-1)" }}><span className="mx-muted">원격 저장소 (commons.remote, enabled 일 때 필수)</span>
             <input className="mx-input" value={commonsRemote} onChange={(e) => setCommonsRemote(e.target.value)} placeholder="git@github.com:org/myelin-commons.git" data-testid="commons-remote" /></label>
           <label className="hub-row"><input type="checkbox" checked={commonsEnabled} onChange={(e) => setCommonsEnabled(e.target.checked)} data-testid="commons-enabled" /> Commons 연동 켜기 (push 는 여전히 사람이 확인)</label>
+          {commonsNeedsRemote && <div className="mx-badge--blocked" data-testid="commons-remote-required">원격 저장소를 입력해야 켤 수 있다</div>}
           <label className="hub-row"><input type="checkbox" checked={metricsOptIn} onChange={(e) => setMetricsOptIn(e.target.checked)} data-testid="metrics-opt-in" /> 익명 지표 공유 opt-in (§11.2 · owner 해시와 개수만, 실명·제목·본문 없음 — Commons 노트의 실명 author 와는 별개)</label>
           <div className="mx-muted" data-testid="commons-status">{vault.commons?.configured ? "상태: 제안 가능" : `상태: ${vault.commons?.error ?? "미설정"}`}</div>
         </article>

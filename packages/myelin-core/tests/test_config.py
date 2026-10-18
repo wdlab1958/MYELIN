@@ -59,7 +59,7 @@ def test_minimal_defaults() -> None:
         ({"domains": {"primary": "d1"}}, "pattern"),
         ({"level": 4}, "less than or equal to 3"),
         ({"llm": {"default": "gpt"}}, "Input should be"),
-        ({"commons": {"enabled": True}}, "requires commons.remote"),
+        ({"commons": {"enabled": True}}, "commons.remote"),
         ({"owner": {"name": "x", "email": "nope"}}, "not an address"),
         ({"unknown": 1}, "Extra inputs"),
     ],

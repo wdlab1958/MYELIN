@@ -152,6 +152,12 @@ test.describe.serial("Hub 메뉴 흐름 — Domains · Packs · Patches · Commo
     execSync(`uv run myelin commons init "${commons}"`, { cwd: path.resolve(__dirname, "../../../.."), stdio: "ignore" });
     await page.goto("/settings");
     await expect(page.getByTestId("commons-status")).toContainText("Commons clone");
+    // enabling Commons without a remote is refused in the UI (no half-valid request reaches the API)
+    await page.getByTestId("commons-enabled").check();
+    await expect(page.getByTestId("commons-remote-required")).toBeVisible();
+    await expect(page.getByTestId("settings-save")).toBeDisabled();
+    await page.getByTestId("commons-enabled").uncheck();
+    await expect(page.getByTestId("settings-save")).toBeEnabled();
     await page.getByTestId("commons-local").fill(commons);
     await page.getByTestId("settings-save").click();
     await expect(page.getByTestId("settings-msg")).toContainText("commit");

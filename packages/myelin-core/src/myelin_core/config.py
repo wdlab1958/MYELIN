@@ -111,7 +111,10 @@ class Commons(_Strict):
     @model_validator(mode="after")
     def _remote_when_enabled(self) -> Commons:
         if self.enabled and not self.remote:
-            raise ValueError("commons.enabled: true requires commons.remote")
+            raise ValueError(
+                "Commons 연동을 켜려면 원격 저장소(commons.remote)가 필요하다 — "
+                "예: git@github.com:org/myelin-commons.git"
+            )
         return self
 
 
