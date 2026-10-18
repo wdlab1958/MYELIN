@@ -1,6 +1,6 @@
 [project]
 name = "myelin-core"
-version = "0.0.1"
+version = "1.0.0"
 description = "MYELIN core — frontmatter schema, note parser, Domain Pack loader, doctor, index"
 license = "Apache-2.0"
 requires-python = ">=3.12"

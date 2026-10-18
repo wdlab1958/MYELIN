@@ -1,6 +1,6 @@
 [project]
 name = "myelin-hub-api"
-version = "0.1.0"
+version = "1.0.0"
 description = "MYELIN Hub API (FastAPI) — dashboard, review gate, onboarding. localhost only."
 license = "Apache-2.0"
 requires-python = ">=3.12"

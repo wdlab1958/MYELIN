@@ -1,6 +1,6 @@
 [project]
 name = "myelin-mcp"
-version = "0.0.1"
+version = "1.0.0"
 description = "MYELIN MCP server — read-only Vault search and lookup"
 license = "Apache-2.0"
 requires-python = ">=3.12"

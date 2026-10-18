@@ -761,7 +761,7 @@ wheels = [
 
 [[package]]
 name = "myelin-cli"
-version = "0.0.1"
+version = "1.0.0"
 source = { editable = "packages/myelin-cli" }
 dependencies = [
     { name = "myelin-core" },
@@ -776,7 +776,7 @@ requires-dist = [
 
 [[package]]
 name = "myelin-core"
-version = "0.0.1"
+version = "1.0.0"
 source = { editable = "packages/myelin-core" }
 dependencies = [
     { name = "pydantic" },
@@ -791,7 +791,7 @@ requires-dist = [
 
 [[package]]
 name = "myelin-hub-api"
-version = "0.1.0"
+version = "1.0.0"
 source = { editable = "packages/myelin-hub/api" }
 dependencies = [
     { name = "fastapi" },
@@ -808,7 +808,7 @@ requires-dist = [
 
 [[package]]
 name = "myelin-mcp"
-version = "0.0.1"
+version = "1.0.0"
 source = { editable = "packages/myelin-mcp" }
 dependencies = [
     { name = "mcp" },

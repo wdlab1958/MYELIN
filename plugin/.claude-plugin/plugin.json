@@ -1,7 +1,7 @@
 {
   "name": "myelin",
   "displayName": "MYELIN",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MYELIN Personal Knowledge OS for Obsidian vaults — ingest, distill, interview, link, compose, review and ip-scan skills with a fail-closed write guard.",
   "author": {
     "name": "Brian (WDLAB)",

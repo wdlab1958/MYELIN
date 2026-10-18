@@ -20,8 +20,8 @@ approved: "GO P7 & P8" (Brian, 2026-10-18 10:15) — P7 종료 후 P8 연속 진
 - [x] P8-T3 설치 스크립트 · 설치 가이드 (+ 설치→첫 verified 자동 측정)
 - [x] P8-T4 사용자 · 관리자 가이드
 - [x] P8-T5 상표 · 도메인 확인 (KIPRIS 제9류·제42류, GitHub org명) 결과 기록
-- [ ] P8-T6 릴리스 노트 (알려진 제약) · v1.0.0
-- [ ] P8-T7 회고
+- [x] P8-T6 릴리스 노트 (알려진 제약) · v1.0.0
+- [x] P8-T7 회고
 
 ## Blockers
 - (P7 완료 조건) §9.1 정책 3종 합의 · 파일럿 5명+ 실측 `docs/pilot/results.yaml` · `docs/pilot/feedback.md` (status: final) · Org Pack 2종 챔피언 확정 — 사람

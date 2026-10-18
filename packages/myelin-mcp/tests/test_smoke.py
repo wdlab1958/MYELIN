@@ -22,7 +22,7 @@ READ_TOOLS = {"search_notes", "get_note", "query_frontmatter", "list_domains", "
 
 
 def test_version() -> None:
-    assert __version__ == "0.0.1"
+    assert __version__ == "1.0.0"
 
 
 # ── 프라이버시: 보호 노트는 어떤 경로로도 나오지 않는다 ─────────────────────────
