@@ -22,9 +22,10 @@ def fixture_vaults() -> Path:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    if os.environ.get("MYELIN_E2E") == "1":
-        return
-    skip = pytest.mark.skip(reason="e2e tests run only with MYELIN_E2E=1")
+    skip_e2e = pytest.mark.skip(reason="e2e tests run only with MYELIN_E2E=1")
+    skip_perf = pytest.mark.skip(reason="perf tests run only with MYELIN_PERF=1 (make gate P=4)")
     for item in items:
-        if "e2e" in item.keywords:
-            item.add_marker(skip)
+        if "e2e" in item.keywords and os.environ.get("MYELIN_E2E") != "1":
+            item.add_marker(skip_e2e)
+        if "perf" in item.keywords and os.environ.get("MYELIN_PERF") != "1":
+            item.add_marker(skip_perf)

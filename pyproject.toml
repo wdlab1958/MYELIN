@@ -57,6 +57,7 @@ ignore = ["ANN401"]
 "scripts/split_phases.py" = ["E501"]  # Task 목록 데이터 문자열(한국어)
 "scripts/gen_fixture_vault.py" = ["E501"]  # fixture 데이터 테이블
 "scripts/gen_seeded_vault.py" = ["E501"]  # fixture 데이터 테이블
+"scripts/gen_perf_vault.py" = ["E501"]  # 어휘 테이블
 "packages/myelin-core/src/myelin_core/render.py" = ["E501"]  # 렌더 템플릿 리터럴(한국어)
 
 # ---------------------------------------------------------------- mypy
@@ -89,4 +90,5 @@ addopts = "-ra --strict-markers --import-mode=importlib"
 markers = [
   "e2e: end-to-end tests (Hub/Plugin), skipped unless MYELIN_E2E=1",
   "gate: Phase gate checks",
+  "perf: performance benchmarks, skipped unless MYELIN_PERF=1",
 ]
