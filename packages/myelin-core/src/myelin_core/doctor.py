@@ -4,7 +4,7 @@
 |---|---|---|
 | schema            | error | frontmatter missing / invalid YAML / schema violation (unparseable) |
 | fail-closed       | error | verified note links to an unverified `origin: claude` note;
-|                   |       | or a claude draft lives outside 00_Inbox/ai-drafts |
+|                   |       | or a claude draft lives outside the AI write scopes (§7.1) |
 | orphan            | warning | no inbound and no outbound links (Inbox, Archive, MOC excluded) |
 | confidential-share| error | classification: confidential + share: true |
 | broken-link       | warning | wikilink target that matches no note (non-.md embeds ignored) |
@@ -21,12 +21,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
+from myelin_core.levels import allowed_dirs
 from myelin_core.note import Note
 from myelin_core.packs.loader import PackError
 from myelin_core.schema.frontmatter import Classification, NoteType, Origin, Status
-from myelin_core.vault import AI_DRAFTS, ARCHIVE, INBOX, Vault
+from myelin_core.vault import ARCHIVE, INBOX, PATCHES, Vault
 
 Severity = Literal["error", "warning", "info"]
+# where an `origin: claude` draft may live (§7.1 write scopes; _patches are not notes)
+AI_NOTE_SCOPES: tuple[str, ...] = tuple(d for d in allowed_dirs(3) if d != PATCHES)
 RULES: tuple[str, ...] = (
     "schema",
     "fail-closed",
@@ -173,14 +176,14 @@ def run_doctor(
         if (
             fm.origin is Origin.CLAUDE
             and fm.status is Status.DRAFT
-            and not rel.startswith(AI_DRAFTS + "/")
+            and not any(rel.startswith(d + "/") for d in AI_NOTE_SCOPES)
         ):
             report.findings.append(
                 Finding(
                     "fail-closed",
                     "error",
                     rel,
-                    f"origin: claude 초안은 {AI_DRAFTS}/ 에만 있어야 한다",
+                    f"origin: claude 초안은 AI 쓰기 범위({', '.join(AI_NOTE_SCOPES)}) 에만 있어야 한다",
                 )
             )
         for key in fm.extra_fields:

@@ -7,12 +7,13 @@
 - 정본은 이 Vault의 Markdown + YAML. 모든 변경은 Git commit. AI 커밋은 `[myelin:<skill>]` 접두사.
 - Frontmatter v2 필수: id · type · created (그 외 status/origin/confidence/classification/share/source/reviewed/tags). 스키마: `90_System/`의 템플릿을 따른다.
 
-## Fail-closed — AI 쓰기 허용 경로 (그 외 경로는 Guard가 차단한다)
+## Fail-closed — AI 쓰기 허용 경로 (Level 2 기준; 그 외 경로는 Guard가 차단한다)
 - `00_Inbox/ai-drafts/`
+- `50_Journal/`
 - `_patches/`
 - `80_Outputs/drafts/`
-- `50_Journal/`
-- 그 외(특히 `10_Domains/`, `40_IP/`, `90_System/`, `myelin.yaml`)는 **사람 승인 영역**. 변경이 필요하면 `_patches/`에 제안 파일을 만든다.
+- 그 외(특히 `10_Domains/`, `40_IP/`, `90_System/`, `myelin.yaml`)는 **사람 승인 영역**. 변경이 필요하면 `_patches/`에 제안 파일을 만든다 (Level ≥ 2, 형식: ADR-0006).
+- Bash 로 파일을 쓰는 우회도 Guard 가 차단한다. `.claude/settings.json` 의 deny 규칙이 2차 방어.
 - AI가 만든 노트는 `origin: claude`, `status: draft`로 `00_Inbox/ai-drafts/`에만 생성한다. verified 승격은 사람이 Hub Review Gate에서만 한다.
 
 ## Level 2 — link-patch

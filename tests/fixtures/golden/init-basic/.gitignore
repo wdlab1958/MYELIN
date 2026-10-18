@@ -2,3 +2,5 @@
 .myelin/
 # Obsidian workspace state
 .obsidian/workspace*.json
+# Claude Code local overrides (team policy lives in .claude/settings.json)
+.claude/settings.local.json

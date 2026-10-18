@@ -13,6 +13,7 @@ from myelin_core.config import CONFIG_FILE, MyelinConfig, dump_config
 from myelin_core.packs.loader import LoadedPack, PackRegistry, discover_packs, resolve_packs
 from myelin_core.render import render_claude_md, render_moc, render_taxonomy_md
 from myelin_core.schema.pack import Domain
+from myelin_core.settings_template import render_claude_settings
 from myelin_core.vault import (
     AI_WRITE_ALLOW,
     DOMAINS,
@@ -26,10 +27,13 @@ from myelin_core.vault import (
 )
 
 CLAUDE_MD = "CLAUDE.md"
+CLAUDE_SETTINGS = ".claude/settings.json"
 GITIGNORE = ".gitignore"
 GITIGNORE_BODY = (
     "# MYELIN runtime (index, logs) — never commit\n.myelin/\n"
     "# Obsidian workspace state\n.obsidian/workspace*.json\n"
+    "# Claude Code local overrides (team policy lives in .claude/settings.json)\n"
+    ".claude/settings.local.json\n"
 )
 
 
@@ -118,6 +122,7 @@ def plan_init(cfg: MyelinConfig, packs: list[LoadedPack], now: datetime) -> Scaf
     plan.files.update(_template_files(packs, set(cfg.domains.all_ids)))
     plan.files[TAXONOMY_MD] = render_taxonomy_md(_taxonomy_entries(packs), now)  # type: ignore[arg-type]
     plan.files[CLAUDE_MD] = render_claude_md(cfg, packs, now, None, ai_write_allow=AI_WRITE_ALLOW)
+    plan.files[CLAUDE_SETTINGS] = render_claude_settings()
     return plan
 
 
