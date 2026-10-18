@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://myelin.wdlab/schema/tokens.json",
+  "title": "MYELIN Emboss design tokens",
+  "type": "object",
+  "required": ["name", "version", "color", "shadow", "radius", "semantic", "a11y"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "source": { "type": "string" },
+    "note": { "type": "string" },
+    "modes": { "type": "object", "additionalProperties": { "type": "string" } },
+    "color": { "type": "object", "additionalProperties": { "$ref": "#/$defs/colorToken" } },
+    "shadow": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "radius": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "space": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "font": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "focus": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "motion": { "type": "object", "additionalProperties": { "$ref": "#/$defs/token" } },
+    "semantic": { "type": "object", "additionalProperties": { "type": "object" } },
+    "a11y": {
+      "type": "object",
+      "required": ["min-text-contrast", "neon-as-text", "text-pairs"],
+      "properties": {
+        "min-text-contrast": { "type": "number", "minimum": 3 },
+        "neon-as-text": { "const": false },
+        "state-needs-text-label": { "const": true },
+        "text-pairs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["fg", "bg"],
+            "properties": { "fg": { "type": "string" }, "bg": { "type": "string" }, "use": { "type": "string" } }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "token": {
+      "type": "object",
+      "required": ["value"],
+      "properties": { "value": { "type": "string" }, "role": { "type": "string" }, "offset": { "type": "string" } }
+    },
+    "colorToken": {
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string", "pattern": "^(#[0-9A-Fa-f]{6}|rgba?\\([0-9., ]+\\))$" },
+        "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "spec": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "role": { "type": "string" }
+      }
+    }
+  }
+}
