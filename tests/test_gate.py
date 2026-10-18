@@ -11,7 +11,7 @@ _spec.loader.exec_module(gate)
 
 
 def test_undefined_phase_fails_closed() -> None:
-    assert gate.main(["gate.py", "P9"]) == 1
+    assert gate.main(["gate.py", "P99"]) == 1
 
 
 def test_current_phase_is_parsed() -> None:

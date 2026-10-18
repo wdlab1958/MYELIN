@@ -67,3 +67,6 @@
 - force push 없이 fast-forward로 올라가므로, 이후 Claude Code에서 평소처럼 commit·push 할 수 있다.
 
 Desktop에만 있던 기능(4절)은 필요해지면 그 이력에서 골라 옮긴다 (Backlog).
+
+## 7. 이식 (P9, 2026-10-18)
+4절의 기능은 P9에서 안전 검사를 더해 옮겼다 — [P9 보고서](P9.md). `metrics send` 는 원칙(파일로만)에 따라 옮기지 않았다.
