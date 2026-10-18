@@ -22,7 +22,7 @@
 | 테스트 | 406 passed, 1 skipped (직접 실행) | 481 passed (Playwright e2e 포함) |
 | P7 사람 항목 | 열림 | 열림 (PEND) |
 | P8 상표 | "KIPRIS 직접 조회 필요"라고 적었으나 `v1.0.0` 태그를 주장 | 사람 검토 전까지 Gate PEND, 태그 보류 |
-| 조직 Pack | **`a3.security-consulting`, `a3.incident-response`** (공개 저장소) | `org.*` Example Org만 — 앞서 정한 "중립화 후 공개" 원칙대로 |
+| 조직 Pack | 소속 조직 이름이 들어간 Pack 2종 (공개 저장소) → **2026-10-18 11:xx 중립화 완료** (`org.*`, 7029cec) | `org.*` Example Org만 — 앞서 정한 "중립화 후 공개" 원칙대로 |
 
 ## 3. 보안 — 코드로 확인한 차이
 | 항목 | main (Fable) | opus (이 세션) |
@@ -54,5 +54,5 @@
 | B. main 유지 | Fable 이력을 정본으로. 3절의 보안 수정 6건과 A3 중립화를 main에 PR로 옮긴다 | 수정을 다른 코드 구조에 다시 구현하고 테스트도 다시 써야 함 |
 | C. 보류 | 두 브랜치를 그대로 두고 파일럿·상표 확인부터 | 공개 main에 A3 Pack이 계속 노출된 상태 |
 
-**급한 것:** 어느 안이든 공개 `main` 의 A3 Pack·문서를 빨리 중립화해야 한다.
-- 이미 공개된 이력에는 계속 남는다. 민감하다면 저장소 이력 정리(force push, GitHub 지원 요청)를 따로 검토해야 한다.
+**중립화:** 공개 `main` 과 `fable-v1.0` 의 조직 특정 Pack·문서는 2026-10-18 중립화했다 (7029cec).
+- 이전 commit 이력에는 계속 남는다. 민감하다면 저장소 이력 정리(force push, GitHub 지원 요청)를 따로 검토해야 한다.
