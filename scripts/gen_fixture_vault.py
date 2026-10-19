@@ -699,6 +699,21 @@ def fm_yaml(n: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def qualify_moc_links() -> None:
+    """`_MOC` → `10_Domains/<D>/_MOC` (Level 2 link-patch, Brian 2026-10-19).
+
+    Every Domain folder has its own `_MOC.md`, so a bare `[[_MOC]]` is ambiguous in Obsidian and
+    opens whichever file Obsidian picks first, not the MOC of the note's own Domain. The written
+    link is `[[10_Domains/D1/_MOC|_MOC]]`: path-qualified (unambiguous), alias keeps the display.
+    """
+    for n in N:
+        if "_MOC" not in n["links"]:
+            continue
+        folder = n["path"].rsplit("/", 1)[0]
+        assert folder.startswith("10_Domains/"), n["path"]
+        n["links"] = [f"{folder}/_MOC" if t == "_MOC" else t for t in n["links"]]
+
+
 def body(n: dict[str, Any]) -> str:
     out = [
         f"# {n['title']}",
@@ -708,7 +723,7 @@ def body(n: dict[str, Any]) -> str:
     ]
     if n["links"]:
         out.append("## 연결")
-        out += [f"- [[{t}]]" for t in n["links"]]
+        out += [f"- [[{t}|_MOC]]" if t.endswith("/_MOC") else f"- [[{t}]]" for t in n["links"]]
         out.append("")
     if n["type"] == "moc":
         out += ["## Sub-MOC", "- (fixture)", ""]
@@ -739,6 +754,7 @@ def main() -> int:
     (OUT / "90_System/taxonomy.md").write_text("# Taxonomy (fixture)\n", encoding="utf-8")
     ids = [n["id"] for n in N]
     assert len(ids) == len(set(ids)), "duplicate ids in fixture definition"
+    qualify_moc_links()
     for n in N:
         p = OUT / n["path"]
         p.parent.mkdir(parents=True, exist_ok=True)

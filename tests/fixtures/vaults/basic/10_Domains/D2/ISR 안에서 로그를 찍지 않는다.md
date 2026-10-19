@@ -17,4 +17,4 @@ tags: [lesson, isr]
 > fixture note (lesson, verified, origin human)
 
 ## 연결
-- [[_MOC]]
+- [[10_Domains/D2/_MOC|_MOC]]

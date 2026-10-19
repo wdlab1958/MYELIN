@@ -18,4 +18,4 @@ tags: [rtos, control-loop]
 
 ## 연결
 - [[Lit - ROS2 Executor]]
-- [[_MOC]]
+- [[10_Domains/D2/_MOC|_MOC]]

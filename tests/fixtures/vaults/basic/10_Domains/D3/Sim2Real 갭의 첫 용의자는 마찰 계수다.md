@@ -18,4 +18,4 @@ tags: [sim2real]
 
 ## 연결
 - [[Dogbot 보행 실험 07]]
-- [[_MOC]]
+- [[10_Domains/D3/_MOC|_MOC]]

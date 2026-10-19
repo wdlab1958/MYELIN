@@ -16,4 +16,4 @@ tags: [adr, edge-ai]
 > fixture note (adr, unverified, origin claude)
 
 ## 연결
-- [[_MOC]]
+- [[10_Domains/D2/_MOC|_MOC]]

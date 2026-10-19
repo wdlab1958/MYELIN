@@ -16,4 +16,4 @@ tags: [rag]
 > fixture note (evergreen, unverified, origin human)
 
 ## 연결
-- [[_MOC]]
+- [[10_Domains/D1/_MOC|_MOC]]

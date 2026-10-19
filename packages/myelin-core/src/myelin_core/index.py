@@ -24,12 +24,12 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any
 
-from myelin_core.note import NoteParseError, parse_note
+from myelin_core.note import NoteParseError, link_stem, parse_note
 from myelin_core.schema.frontmatter import Classification
 from myelin_core.stats import NoteRef, Reuse, Stats, compute_reuse, reuse_metrics
 from myelin_core.vault import INBOX, OUTPUTS, RUNTIME, Vault
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: links.target stores the Obsidian basename (link_stem), 2026-10-19
 DB_NAME = "index.db"
 
 _SCHEMA = f"""
@@ -392,7 +392,8 @@ class VaultIndex:
             "INSERT OR IGNORE INTO note_tags VALUES (?,?)", [(rel, t) for t in fm.tags]
         )
         self.conn.executemany(
-            "INSERT OR IGNORE INTO links VALUES (?,?)", [(rel, lk.target) for lk in note.links]
+            "INSERT OR IGNORE INTO links VALUES (?,?)",
+            [(rel, link_stem(lk.target)) for lk in note.links],
         )
         self.conn.execute(
             "INSERT INTO notes_fts(path, title, body, tags) VALUES (?,?,?,?)",

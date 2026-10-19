@@ -18,6 +18,8 @@ node_modules/
 packages/myelin-hub/web/dist/
 # MYELIN runtime
 .myelin/
+# Obsidian workspace state (opening a fixture Vault in Obsidian creates it)
+.obsidian/
 # OS / editors
 .DS_Store
 .~lock.*#

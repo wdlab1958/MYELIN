@@ -115,7 +115,7 @@ class NoteRef:
             status=fm.status.value,
             created=fm.created.isoformat(),
             source=tuple(fm.source),
-            targets=tuple(sorted(note.link_targets)),
+            targets=tuple(sorted(note.link_stems)),
         )
 
     @property
@@ -310,7 +310,7 @@ def compute_stats(
     inbound: Counter[str] = Counter()
     stems = {n.path.stem for n in notes if n.path}
     for n in notes:
-        for t in n.link_targets:
+        for t in n.link_stems:
             if t in stems:
                 inbound[t] += 1
     orphans = sum(1 for n in notes if n.path and not n.links and inbound[n.path.stem] == 0)

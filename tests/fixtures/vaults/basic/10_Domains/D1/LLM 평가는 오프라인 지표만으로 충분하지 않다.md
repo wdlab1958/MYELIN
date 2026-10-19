@@ -18,4 +18,4 @@ tags: [llmops, evaluation]
 
 ## 연결
 - [[Lit - LLM-as-a-Judge 한계]]
-- [[_MOC]]
+- [[10_Domains/D1/_MOC|_MOC]]

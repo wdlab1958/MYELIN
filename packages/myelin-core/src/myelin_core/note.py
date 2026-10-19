@@ -68,6 +68,21 @@ class Note:
     def link_targets(self) -> set[str]:
         return {link.target for link in self.links}
 
+    @property
+    def link_stems(self) -> set[str]:
+        """Targets reduced to the note they name (see `link_stem`); what index/stats match on."""
+        return {link_stem(link.target) for link in self.links}
+
+
+def link_stem(target: str) -> str:
+    """Obsidian basename of a wikilink target: `10_Domains/D1/_MOC` → `_MOC`, `_MOC` → `_MOC`.
+
+    Path-qualified links are how Obsidian disambiguates same-named notes (every Domain has a
+    `_MOC.md`). Index/stats key notes by file stem, so a path-qualified link must count as a link
+    to that stem; the doctor keeps full path resolution (`doctor._resolve_targets`).
+    """
+    return target.strip().rsplit("/", 1)[-1]
+
 
 def _yaml() -> YAML:
     y = YAML(typ="rt")

@@ -125,7 +125,7 @@
    "title": "LLM 평가는 오프라인 지표만으로 충분하지 않다",
    "links": [
     "Lit - LLM-as-a-Judge 한계",
-    "_MOC"
+    "10_Domains/D1/_MOC"
    ]
   },
   {
@@ -148,7 +148,7 @@
    ],
    "title": "RAG 청킹 전략 비교",
    "links": [
-    "_MOC"
+    "10_Domains/D1/_MOC"
    ]
   },
   {
@@ -172,7 +172,7 @@
    ],
    "title": "AX 저항은 통제감 상실에서 온다",
    "links": [
-    "_MOC"
+    "10_Domains/D1/_MOC"
    ]
   },
   {
@@ -270,7 +270,7 @@
    "title": "WCET 예산은 측정값의 1.5배로 잡는다",
    "links": [
     "Lit - ROS2 Executor",
-    "_MOC"
+    "10_Domains/D2/_MOC"
    ]
   },
   {
@@ -294,7 +294,7 @@
    ],
    "title": "ISR 안에서 로그를 찍지 않는다",
    "links": [
-    "_MOC"
+    "10_Domains/D2/_MOC"
    ]
   },
   {
@@ -367,7 +367,7 @@
    ],
    "title": "Edge AI 양자화 결정",
    "links": [
-    "_MOC"
+    "10_Domains/D2/_MOC"
    ]
   },
   {
@@ -391,7 +391,7 @@
    "title": "Sim2Real 갭의 첫 용의자는 마찰 계수다",
    "links": [
     "Dogbot 보행 실험 07",
-    "_MOC"
+    "10_Domains/D3/_MOC"
    ]
   },
   {
@@ -488,7 +488,7 @@
    ],
    "title": "보상 함수 악용 교훈",
    "links": [
-    "_MOC"
+    "10_Domains/D3/_MOC"
    ]
   },
   {
@@ -512,7 +512,7 @@
    "title": "설계 규칙은 실패에서 태어난다",
    "links": [
     "구멍 간 최소 간격 규칙",
-    "_MOC"
+    "10_Domains/D4/_MOC"
    ]
   },
   {
@@ -584,7 +584,7 @@
    ],
    "title": "매크로 재사용 교훈",
    "links": [
-    "_MOC"
+    "10_Domains/D4/_MOC"
    ]
   },
   {

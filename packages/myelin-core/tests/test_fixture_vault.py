@@ -74,9 +74,16 @@ def test_vault_layout_and_ai_draft_placement(fixtures_dir: Path) -> None:
 def test_vault_links_resolve(fixtures_dir: Path) -> None:
     _, files = _notes(fixtures_dir)
     notes = [read_note(p) for p in files]
-    titles = {n.path.stem for n in notes if n.path}
+    # Obsidian-style: file stem or vault-relative path without .md (doctor._resolve_targets)
+    vault = fixtures_dir / "vaults/basic"
+    rel = {n.path: n.path.relative_to(vault).as_posix()[:-3] for n in notes if n.path}
+    titles = {n.path.stem for n in notes if n.path} | set(rel.values())
     for n in notes:
         for t in n.link_targets:
-            assert t == "_MOC" or t in titles, (n.path, t)
+            assert t in titles, (n.path, t)
+            # Level 2 link-patch (2026-10-19): a MOC link names its own Domain folder, so Obsidian
+            # opens that Domain's _MOC rather than an arbitrary one of the four same-named files.
+            if t.endswith("_MOC"):
+                assert n.path and t == rel[n.path].rsplit("/", 1)[0] + "/_MOC", (n.path, t)
     c = Counter(len(n.links) for n in notes)
     assert c[0] >= 1  # at least one orphan-ish note (no outgoing links) for later doctor fixtures

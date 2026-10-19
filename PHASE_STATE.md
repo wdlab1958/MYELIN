@@ -109,6 +109,7 @@ last_updated: 2026-10-19
 - [x] P9-T4 install: `--claude` opt-in(plugin/MCP 등록은 플래그를 줄 때만), `--vault` 테마 복사는 기존대로(.bak 백업)
 - [x] 검증: 417 tests · Playwright e2e · web build · ruff/mypy
 - [x] P9-T5 (2026-10-19, v1.3.0) Hub 도움말 챗봇 — 우측 하단 말풍선 → 모달, `GET /api/assistant/status` · `POST /api/assistant/chat`, 내장 지식 `assistant_kb.md` + Vault FTS 발췌 + 상태 요약 → 로컬 Ollama, 비-loopback 이면 기밀 제외, kb 폴백, 입력 가드 (ADR-0013) · `test_assistant.py` 23 · e2e 12번째 시나리오 · 위협 모델 T22
+- [x] P9-T6 (2026-10-19) Level 2 link-patch(Brian): fixture Vault `basic` 의 `[[_MOC]]` 10건을 `[[10_Domains/<D>/_MOC|_MOC]]` 로 — Domain 마다 `_MOC.md` 가 있어 Obsidian 이 임의의 MOC 를 열던 문제. `gen_fixture_vault.py` 가 생성 시 한정, 색인은 `link_stem()` 으로 경로형 링크도 stem 링크로 집계(index SCHEMA_VERSION 2 → 기존 index.db 자동 재생성), `.obsidian/` gitignore, Hub·MCP 테스트의 fixture 복사는 `.myelin`·`.obsidian` 제외(개발자가 fixture 를 Obsidian/Hub 로 직접 열어도 테스트 불변). **잔여(Backlog)**: 색인 backlinks 는 stem 기준이라 네 MOC 가 서로의 backlink 를 공유 — 경로 기준 해석은 doctor 만 수행
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`

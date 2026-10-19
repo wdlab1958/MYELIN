@@ -29,7 +29,14 @@ def local_session(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture
 def vault_root(tmp_path: Path) -> Path:
     dst = tmp_path / "basic"
-    shutil.copytree(REPO_ROOT / "tests/fixtures/vaults/basic", dst)
+    # Runtime/editor state (Hub index, Obsidian workspace) may exist in the checked-out fixture
+    # when a developer opens it directly; never copy it into the test Vault (it would be
+    # committed by `git add -A` and show up as dirty after the index rebuilds).
+    shutil.copytree(
+        REPO_ROOT / "tests/fixtures/vaults/basic",
+        dst,
+        ignore=shutil.ignore_patterns(".myelin", ".obsidian"),
+    )
     return dst
 
 

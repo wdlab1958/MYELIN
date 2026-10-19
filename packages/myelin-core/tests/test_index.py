@@ -177,3 +177,25 @@ def test_locked_connection_is_safe_under_threads(tmp_path: Path) -> None:
     for t in threads:
         t.join()
     assert errors == [], errors
+
+
+def test_path_qualified_links_count_as_backlinks(vault_copy: Vault) -> None:
+    """Level 2 link-patch (2026-10-19): `[[10_Domains/D1/_MOC|_MOC]]` is a link to `_MOC`.
+
+    Every Domain has a `_MOC.md`, so the fixture disambiguates for Obsidian with a path-qualified
+    link; index/stats must keep counting it as a link to that note (not as a dangling target).
+    """
+    from myelin_core.note import link_stem
+
+    assert link_stem("10_Domains/D1/_MOC") == "_MOC"
+    assert link_stem("_MOC") == "_MOC"
+    assert link_stem(" 30_Resources/Lit - ROS2 Executor ") == "Lit - ROS2 Executor"
+    with open_index(vault_copy) as idx:
+        back = idx.backlinks("_MOC")
+        assert "10_Domains/D1/AX 저항은 통제감 상실에서 온다.md" in back
+        assert "10_Domains/D4/매크로 재사용 교훈.md" in back
+        assert idx.backlinks("10_Domains/D1/_MOC") == []  # stored as stem, never as raw path
+        assert (
+            idx.stats(date(2026, 10, 19)).orphan_ratio
+            == compute_stats(vault_copy, today=date(2026, 10, 19)).orphan_ratio
+        )
