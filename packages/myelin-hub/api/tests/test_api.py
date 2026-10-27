@@ -26,6 +26,7 @@ READ_ENDPOINTS = [
     "/api/packs",
     "/api/packs/brian.physical-ai",
     "/api/settings",
+    "/api/obsidian",
 ]
 
 
@@ -84,6 +85,7 @@ def test_writes_require_user_click(client: TestClient, vault_root: Path) -> None
     assert client.post(f"/api/review/promote/{draft}").status_code == 403
     assert client.post(f"/api/review/reject/{draft}").status_code == 403
     assert client.put("/api/settings", json={}).status_code == 403
+    assert client.post("/api/obsidian/setup").status_code == 403
     assert client.put("/api/packs/me.x", json={"pack_yaml": "x"}).status_code == 403
     assert client.post("/api/patches/x.patch.md/apply").status_code == 403
     assert client.post("/api/patches/x.patch.md/reject").status_code == 403
@@ -505,3 +507,30 @@ def test_settings_validation_error_is_readable(client: TestClient) -> None:
     assert "pydantic" not in detail and "input_value" not in detail and "type=" not in detail
     s["commons"]["remote"] = "git@github.com:org/myelin-commons.git"
     assert client.put("/api/settings", headers=CLICK, json=s).status_code == 200
+
+
+def test_obsidian_setup_writes_graph_config_once(client: TestClient, vault_root: Path) -> None:
+    """P9-T8: GET shows Graph View off for the fixture; one click writes + commits the config;
+    a second click changes nothing. Domain colour groups match the configured Domains."""
+    st = client.get("/api/obsidian").json()
+    assert st["graph_enabled"] is False and st["ready"] is False
+    assert st["open_url"].startswith("obsidian://open?path=") and st["vault_name"] == "basic"
+    r = client.post("/api/obsidian/setup", headers=CLICK)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert set(body["touched"]) == {
+        ".obsidian/core-plugins.json",
+        ".obsidian/graph.json",
+        ".obsidian/app.json",
+    }
+    assert body["status"]["ready"] is True and body["status"]["domains_without_group"] == []
+    assert _log(vault_root)[0] == "[myelin:settings] obsidian graph view"
+    import json
+
+    graph = json.loads((vault_root / ".obsidian/graph.json").read_text(encoding="utf-8"))
+    domains = client.get("/api/vault").json()["domains"]
+    assert {f"path:10_Domains/{d}/" for d in domains} <= {g["query"] for g in graph["colorGroups"]}
+    before = tree_hash(vault_root)
+    r2 = client.post("/api/obsidian/setup", headers=CLICK)
+    assert r2.status_code == 200 and r2.json()["touched"] == [] and r2.json()["commit"] is None
+    assert tree_hash(vault_root) == before

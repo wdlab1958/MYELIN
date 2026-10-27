@@ -239,6 +239,14 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     def settings() -> dict[str, Any]:
         return svc.settings()
 
+    @app.get("/api/obsidian")
+    def obsidian() -> dict[str, Any]:
+        return s().obsidian()
+
+    @app.post("/api/obsidian/setup", dependencies=[Depends(require_user_click)])
+    def obsidian_setup() -> dict[str, Any]:
+        return s().obsidian_setup()
+
     @app.get("/api/commons/candidates")
     def commons_candidates() -> list[dict[str, Any]]:
         return s().commons_candidates()

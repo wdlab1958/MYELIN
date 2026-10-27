@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { get, type Stats, type VaultSummary } from "../lib/api";
+import { get, userPost, type ObsidianStatus, type Stats, type VaultSummary } from "../lib/api";
 
 const LABEL: Record<string, string> = {
   inbox_dwell_days: "Inbox 체류 (일)", verified_per_week: "주간 verified", ai_promotion_rate: "AI 초안 승격률",
@@ -23,10 +23,20 @@ function reused(stats: Stats | null): number {
 export default function Dashboard({ vault }: { vault: VaultSummary }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [log, setLog] = useState<{ hash: string; date: string; subject: string }[]>([]);
+  const [obs, setObs] = useState<ObsidianStatus | null>(null);
+  const [obsMsg, setObsMsg] = useState<string | null>(null);
   useEffect(() => {
     void get<Stats>("/api/stats").then(setStats);
     void get<{ hash: string; date: string; subject: string }[]>("/api/git/log?limit=8").then(setLog);
+    void get<ObsidianStatus>("/api/obsidian").then(setObs).catch(() => setObs(null));
   }, []);
+  /** Only from the button's onClick (ADR-0009): writes .obsidian/*.json and commits. */
+  const setupObsidian = () => {
+    setObsMsg(null);
+    userPost<{ touched: string[]; commit: string | null; status: ObsidianStatus }>("/api/obsidian/setup")
+      .then((r) => { setObs(r.status); setObsMsg(r.touched.length ? `설정 ${r.touched.length}개 기록 · commit ${r.commit?.slice(0, 7) ?? "-"}` : "이미 준비됨 — 변경 없음"); })
+      .catch((e: Error) => setObsMsg(e.message));
+  };
   return (
     <>
       <h1 className="hub-h1">Dashboard</h1>
@@ -64,6 +74,28 @@ export default function Dashboard({ vault }: { vault: VaultSummary }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <h2 className="hub-h2">Obsidian Graph View <span className="mx-muted" style={{ fontWeight: 400, fontSize: "var(--mx-font-size-sm)" }}>— 같은 Vault, 같은 색: Domain 폴더가 Emboss accent 로 묶인다</span></h2>
+      <div className="mx-card hub-stack" data-testid="obsidian-card">
+        {obs === null && <span className="mx-muted">Obsidian 상태를 읽는 중…</span>}
+        {obs && (
+          <>
+            <div className="hub-row">
+              <span className={"mx-chip " + (obs.graph_enabled ? "mx-chip--verified" : "mx-chip--unverified")} data-testid="obsidian-graph">{obs.graph_enabled ? "Graph View on" : "Graph View off"}</span>
+              <span className={"mx-chip " + (obs.domains_without_group.length === 0 ? "mx-chip--verified" : "mx-chip--unverified")}>색 그룹 {obs.color_groups}{obs.domains_without_group.length > 0 && ` · 없음: ${obs.domains_without_group.join(", ")}`}</span>
+              <span className="mx-chip">{obs.theme ?? "테마 미설정"}</span>
+              <span className={"mx-chip " + (obs.registered === false ? "mx-chip--unverified" : "")} data-testid="obsidian-registered">{obs.registered === true ? "Obsidian 에 등록됨" : obs.registered === false ? "Obsidian 미등록" : "등록 여부 확인 불가"}</span>
+            </div>
+            <div className="hub-row">
+              <a className="mx-btn mx-btn-promote" href={obs.graph_url} data-testid="obsidian-graph-link" title={obs.advanced_uri ? "Advanced URI 로 Graph View 를 바로 연다" : "Vault 를 연 뒤 Ctrl/Cmd+G 가 Graph View"}>{obs.advanced_uri ? "Graph View 열기" : "Obsidian 에서 Vault 열기 (Graph View: Ctrl+G)"}</a>
+              {!obs.ready && <button type="button" className="mx-btn" onClick={setupObsidian} data-testid="obsidian-setup">Graph View 설정 쓰기</button>}
+              <span className="mx-muted mx-mono">{obs.root}</span>
+            </div>
+            {obs.registered === false && <span className="mx-muted">처음 한 번은 위 링크로 Vault 를 열어야 Obsidian 이 이 Vault 를 기억한다 (`obsidian://open?path=`).</span>}
+            {obs.error && <span className="mx-badge--blocked">{obs.error}</span>}
+            {obsMsg && <span className="mx-muted" data-testid="obsidian-msg">{obsMsg}</span>}
+          </>
+        )}
       </div>
       <h2 className="hub-h2">최근 커밋</h2>
       <div className="mx-card hub-stack" data-testid="git-log">

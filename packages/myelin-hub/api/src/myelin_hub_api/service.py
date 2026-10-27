@@ -49,6 +49,7 @@ from myelin_core.metrics import (
     record_event,
 )
 from myelin_core.note import NoteParseError, dump_note, read_note
+from myelin_core.obsidian import ensure_obsidian_config, obsidian_status
 from myelin_core.packs.loader import PackError, discover_packs, load_pack
 from myelin_core.patches import (
     APPLIED_DIR,
@@ -673,6 +674,40 @@ class HubService:
             commit = self._commit(touched, "[myelin:settings] update myelin.yaml")
         self.reload()
         return {"commit": commit, "settings": cfg.model_dump(mode="json")}
+
+    # ------------------------------------------------------------------ obsidian
+    def _domain_accents(self) -> list[tuple[str, str]]:
+        v = self._v()
+        try:
+            accents = {d.id: d.accent for lp in v.packs() for d in lp.pack.domains}
+        except PackError:
+            accents = {}
+        return [(did, accents.get(did, "violet")) for did in v.config.domains.all_ids]
+
+    def obsidian(self) -> dict[str, Any]:
+        """Graph View readiness of `.obsidian/` + the URIs the UI links to (read-only)."""
+        v = self._v()
+        return obsidian_status(v.root, self._domain_accents())
+
+    @_serialised
+    def obsidian_setup(self) -> dict[str, Any]:
+        """User click: write/merge the Graph View config (core-plugins · graph colour groups · app)
+        and commit it. Existing settings are kept; unreadable JSON → 422, nothing written."""
+        v = self._v()
+        rels = [
+            ".obsidian/core-plugins.json",
+            ".obsidian/graph.json",
+            ".obsidian/app.json",
+        ]
+        with self._mutation(rels):
+            try:
+                touched = ensure_obsidian_config(v.root, self._domain_accents())
+            except ValueError as exc:
+                raise HubError(f".obsidian 설정을 읽을 수 없어 쓰지 않았다: {exc}", 422) from None
+            commit = (
+                self._commit(touched, "[myelin:settings] obsidian graph view") if touched else None
+            )
+        return {"touched": touched, "commit": commit, "status": self.obsidian()}
 
     # ------------------------------------------------------------------ packs
     def pack_roots(self) -> list[Path]:

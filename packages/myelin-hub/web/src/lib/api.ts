@@ -45,6 +45,12 @@ export type SearchHit = NoteRow & { snippet: string; rank: number };
 /** Obsidian URI helpers (path-based, no vault name needed). */
 export const obsidianOpen = (abs: string) => `obsidian://open?path=${encodeURIComponent(abs)}`;
 export const obsidianNew = (abs: string) => `obsidian://new?path=${encodeURIComponent(abs)}`;
+/** GET /api/obsidian — Graph View readiness of <Vault>/.obsidian and the URIs to open it. */
+export type ObsidianStatus = {
+  root: string; vault_name: string; config_dir: boolean; graph_enabled: boolean; color_groups: number;
+  domains_without_group: string[]; theme: string | null; ready: boolean; registered: boolean | null; advanced_uri: boolean;
+  open_url: string; graph_url: string; error: string | null;
+};
 export type NoteRow = {
   path: string; id: string; title: string; type: string; status: string; origin: string; domains: string[]; tags: string[];
   created: string; reviewed: string | null; classification: string; doctor_ok?: boolean; error?: string;

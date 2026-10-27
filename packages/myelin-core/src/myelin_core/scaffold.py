@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from myelin_core.config import CONFIG_FILE, MyelinConfig, dump_config
+from myelin_core.obsidian import ensure_obsidian_config, obsidian_config_files
 from myelin_core.packs.loader import LoadedPack, PackRegistry, discover_packs, resolve_packs
 from myelin_core.render import render_claude_md, render_moc, render_taxonomy_md
 from myelin_core.schema.pack import Domain
@@ -184,6 +185,10 @@ def plan_init(cfg: MyelinConfig, packs: list[LoadedPack], now: datetime) -> Scaf
     plan.files[CLAUDE_SETTINGS] = render_claude_settings()
     plan.files[PRE_COMMIT] = PRE_COMMIT_BODY
     plan.files.update(obsidian_files())
+    # Graph View on + one colour group per Domain (myelin_core.obsidian) — no theme needed
+    plan.files.update(
+        obsidian_config_files([(did, lookup[did][0].accent) for did in cfg.domains.all_ids])
+    )
     return plan
 
 
@@ -346,5 +351,10 @@ def add_domain(
     touched.append(CLAUDE_MD)
     (vault.root / CONFIG_FILE).write_text(dump_config(new_cfg), encoding="utf-8")
     touched.append(CONFIG_FILE)
+    # Obsidian Graph View: colour group for the new Domain (existing settings are kept)
+    accents = _domain_lookup(packs)
+    touched += ensure_obsidian_config(
+        vault.root, [(did, accents[did][0].accent) for did in new_cfg.domains.all_ids]
+    )
     vault.config = new_cfg
     return touched

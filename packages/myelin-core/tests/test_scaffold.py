@@ -196,6 +196,13 @@ def test_init_preinstalls_obsidian_theme(tmp_path: Path, packs_dir: Path) -> Non
     assert app["cssTheme"] == "MYELIN Emboss" and app["theme"] == "moonstone"
     # theme.css is the generated one (single source: design/tokens.json)
     assert "GENERATED from design/tokens.json" in (theme / "theme.css").read_text(encoding="utf-8")
+    # Graph View is on and every configured Domain has a colour group (P9-T8)
+    plugins = json.loads((root / ".obsidian/core-plugins.json").read_text(encoding="utf-8"))
+    assert plugins["graph"] and plugins["backlink"]
+    graph = json.loads((root / ".obsidian/graph.json").read_text(encoding="utf-8"))
+    assert {g["query"] for g in graph["colorGroups"]} >= {
+        f"path:10_Domains/{d}/" for d in _cfg().domains.all_ids
+    }
 
 
 def test_init_without_theme_source_still_works(
@@ -206,4 +213,7 @@ def test_init_without_theme_source_still_works(
     monkeypatch.setattr(sc, "default_theme_dir", lambda: None)
     root = tmp_path / "vault"
     init_vault(root, _cfg(), NOW, pack_roots=[packs_dir])
-    assert not (root / ".obsidian").exists() and (root / "myelin.yaml").exists()
+    # no theme files, but the Graph View config does not depend on the theme
+    assert not (root / ".obsidian/themes").exists() and (root / "myelin.yaml").exists()
+    assert (root / ".obsidian/graph.json").is_file()
+    assert (root / ".obsidian/core-plugins.json").is_file()

@@ -47,6 +47,7 @@ MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 **테마 + 파일 �
 - **상태 표시**: frontmatter `cssclasses: [mx-status-verified]`(라임 링 + verified 칩) / `[mx-status-ai-draft]`(시안 glow) / `[mx-status-blocked]`(마젠타 외곽선). 미지 필드이지만 허용·보존된다(ADR-0003).
 - **색 변경**: `theme.css` 가 아니라 `design/tokens.json` → `make emboss` → 복사.
 - Obsidian 자체가 없으면 `scripts/install_obsidian.sh --vault <Vault>` (Debian/Ubuntu).
+- **Graph View**: Vault 에 `.obsidian/graph.json` 이 함께 생성돼 Domain 폴더가 Emboss 색으로 묶인 링크 그래프가 바로 보인다(`Ctrl/Cmd+G`). 기존 Vault 는 Hub Dashboard 의 *Obsidian Graph View › 설정 쓰기* 또는 `myelin obsidian setup --vault <Vault> --open` (가이드 6절).
 
 ## 6. 공유 (Commons)
 - 공개하고 싶은 verified 노트에 `share: true`. Hub › Review Gate › **Commons 후보** 에서 비식별 검사 → 확인 체크 → "Commons 제안" → 브랜치/PR → 챔피언 merge.

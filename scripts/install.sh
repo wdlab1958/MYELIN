@@ -102,5 +102,9 @@ if [[ -n "$VAULT" ]]; then
     run cp "$src" "$dst"
   done
   say "Obsidian theme → $theme_dir (Settings › Appearance › Themes › MYELIN Emboss)"
+  # Graph View: core-plugins/graph colour groups/app.json — merged, never overwritten (myelin obsidian setup)
+  if [[ -f "$VAULT/myelin.yaml" ]]; then
+    run uv --directory "$REPO" run myelin obsidian setup --vault "$VAULT" || say "obsidian setup skipped (see message above)"
+  fi
 fi
 say "done. next: $BIN/myelin-hub --vault <vault>  →  http://127.0.0.1:8787"

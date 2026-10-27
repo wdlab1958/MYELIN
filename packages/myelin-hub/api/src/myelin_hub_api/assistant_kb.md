@@ -130,6 +130,7 @@ MYELIN 과 Obsidian 의 연동은 플러그인이 아니라 테마 + 파일 규�
 `.obsidian/themes/MYELIN Emboss/` 테마가 미리 들어 있다(Appearance › Light › MYELIN Emboss). 상태 표시는 frontmatter
 `cssclasses: [mx-status-verified]`(라임 링) · `[mx-status-ai-draft]`(시안 glow) · `[mx-status-blocked]`. Hub 의 노트
 링크는 `obsidian://open?path=` 로 Obsidian 에서 바로 열린다. 색은 `design/tokens.json` → `make emboss` 로만 바꾼다.
+Graph View: Vault 의 `.obsidian/graph.json` 이 Domain 폴더(`10_Domains/<ID>/`)마다 Emboss accent 색 그룹을 갖고, core-plugins 에서 graph·backlink·outgoing-link 가 켜져 있다. Obsidian 에서 Ctrl/Cmd+G. 기존 Vault 는 Dashboard 의 "Obsidian Graph View" 카드에서 "Graph View 설정 쓰기"(클릭 1회, commit) 또는 `myelin obsidian setup --vault <Vault> --open`(Vault 등록까지). 상태는 `myelin obsidian status`.
 
 ## CLI 명령
 keywords: cli, 명령, 커맨드, init, 터미널, 설치, install, 실행, 시작, 포트, port, uv

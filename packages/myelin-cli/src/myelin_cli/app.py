@@ -43,6 +43,7 @@ from myelin_core.metrics import (
     record_event,
     write_metrics_to_commons,
 )
+from myelin_core.obsidian import ensure_obsidian_config, obsidian_status, open_uri
 from myelin_core.packs.loader import PackError, discover_packs
 from myelin_core.scaffold import (
     ScaffoldError,
@@ -692,6 +693,88 @@ def pack_propose(
 
 metrics_app = typer.Typer(help="opt-in 익명 지표 (정본 §11.2, ADR-0010)", no_args_is_help=True)
 app.add_typer(metrics_app, name="metrics")
+
+
+# ---------------------------------------------------------------------------------- obsidian
+obsidian_app = typer.Typer(
+    help="Obsidian 연동 — Graph View 켜기 · Domain 색 그룹 · Vault 등록 (테마 + 파일 규약)",
+    no_args_is_help=True,
+)
+app.add_typer(obsidian_app, name="obsidian")
+
+
+def _domain_accents(v: Vault, packs_dir: list[Path] | None) -> list[tuple[str, str]]:
+    accents = {d.id: d.accent for lp in v.packs(_roots(v.root, packs_dir)) for d in lp.pack.domains}
+    return [(did, accents.get(did, "violet")) for did in v.config.domains.all_ids]
+
+
+@obsidian_app.command("setup")
+def obsidian_setup(
+    vault: VaultOpt = Path(),
+    open_vault: Annotated[
+        bool,
+        typer.Option("--open", help="끝나면 obsidian://open?path= 로 Vault 를 연다 (등록)"),
+    ] = False,
+    packs_dir: PacksOpt = None,
+) -> None:
+    """`.obsidian/` 에 Graph View 설정을 쓴다 — core-plugins(graph·backlink·outgoing-link 켜기),
+    graph.json(Domain 별 Emboss 색 그룹), app.json(새 노트 → 00_Inbox, [[stem]] 링크).
+    있는 파일은 덮어쓰지 않고 빠진 항목만 보탠다."""
+    v = _open_vault(vault)
+    try:
+        touched = ensure_obsidian_config(v.root, _domain_accents(v, packs_dir))
+    except (ValueError, PackError) as exc:
+        _die(f".obsidian 설정을 읽을 수 없어 쓰지 않았다 (fail-closed): {exc}")
+    if touched:
+        typer.echo("✔ Obsidian 설정: " + ", ".join(touched))
+        if (v.root / ".git").exists():
+            commit = _git_commit_vault(v.root, "[myelin:settings] obsidian graph view")
+            if commit:
+                typer.echo(f"  git: {commit} ([myelin:settings])")
+    else:
+        typer.echo("✔ Obsidian 설정은 이미 Graph View 준비 상태 (변경 없음)")
+    st = obsidian_status(v.root, _domain_accents(v, packs_dir))
+    reg = {True: "등록됨", False: "미등록", None: "확인 불가"}[st["registered"]]
+    on = "on" if st["graph_enabled"] else "off"
+    typer.echo(f"  Graph View: {on} · 색 그룹 {st['color_groups']} · Obsidian 등록: {reg}")
+    if open_vault:
+        uri = open_uri(v.root)
+        try:
+            subprocess.Popen(
+                ["obsidian", uri],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            typer.echo(f"  열기: {uri}  (Graph View: Ctrl/Cmd+G)")
+        except OSError:
+            typer.echo(f"  `obsidian` 실행 파일이 없다 — 브라우저/런처에서 직접 열기: {uri}")
+
+
+@obsidian_app.command("status")
+def obsidian_status_cmd(
+    vault: VaultOpt = Path(), as_json: JsonOpt = False, packs_dir: PacksOpt = None
+) -> None:
+    """Graph View 설정·Domain 색 그룹·Obsidian 등록 여부."""
+    v = _open_vault(vault)
+    st = obsidian_status(v.root, _domain_accents(v, packs_dir))
+    if as_json:
+        typer.echo(json.dumps(st, ensure_ascii=False, indent=2))
+        return
+    reg = {True: "등록됨", False: "미등록 — myelin obsidian setup --open", None: "확인 불가"}[
+        st["registered"]
+    ]
+    on = "on" if st["graph_enabled"] else "off"
+    missing = st["domains_without_group"]
+    tail = f" · 그룹 없는 Domain: {', '.join(missing)}" if missing else ""
+    typer.echo(f"vault        {st['root']}")
+    typer.echo(f"graph view   {on} · 색 그룹 {st['color_groups']}{tail}")
+    typer.echo(f"theme        {st['theme'] or '(미설정)'}")
+    typer.echo(f"obsidian     {reg}")
+    typer.echo(f"graph url    {st['graph_url']}")
+    if st["error"]:
+        typer.echo(f"error        {st['error']}")
+    raise typer.Exit(EXIT_OK if st["ready"] else EXIT_FINDINGS)
 
 
 @metrics_app.command("show")

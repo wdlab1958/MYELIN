@@ -20,6 +20,8 @@ packages/myelin-hub/web/dist/
 .myelin/
 # Obsidian workspace state (opening a fixture Vault in Obsidian creates it)
 .obsidian/
+# … except the golden scaffold's own Obsidian config (it is part of `myelin init` output)
+!tests/fixtures/golden/init-basic/.obsidian/
 # OS / editors
 .DS_Store
 .~lock.*#

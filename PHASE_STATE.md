@@ -112,6 +112,7 @@ last_updated: 2026-10-27
 - [x] P9-T6 (2026-10-19) Level 2 link-patch(Brian): fixture Vault `basic` 의 `[[_MOC]]` 10건을 `[[10_Domains/<D>/_MOC|_MOC]]` 로 — Domain 마다 `_MOC.md` 가 있어 Obsidian 이 임의의 MOC 를 열던 문제. `gen_fixture_vault.py` 가 생성 시 한정, 색인은 `link_stem()` 으로 경로형 링크도 stem 링크로 집계(index SCHEMA_VERSION 2 → 기존 index.db 자동 재생성), `.obsidian/` gitignore, Hub·MCP 테스트의 fixture 복사는 `.myelin`·`.obsidian` 제외(개발자가 fixture 를 Obsidian/Hub 로 직접 열어도 테스트 불변). **잔여(Backlog)**: 색인 backlinks 는 stem 기준이라 네 MOC 가 서로의 backlink 를 공유 — 경로 기준 해석은 doctor 만 수행
 
 - [x] P9-T7 (2026-10-27) 운영: Vault `me` 에 개인 Pack `me.my-domains`(D1~D3 = reference 복사, **D4 AI_Project**) → `myelin add-domain D4`. `~/ai_project` 전수 조사(프로젝트 21 + 루트 문서, *.md 1,000+건) → D4 프로젝트 카드 21 + 루트 문서 1 + Sub-MOC 7 = 29 초안을 `00_Inbox/ai-drafts/` 에 생성(origin claude, Review Gate 승격 대기). `myelin commons init ~/ai_project/MYELIN/Local_Commons`. **ADR-0014** 공개 저장소·개인 Vault 분리(pre-push 거부 훅, `.gitignore`). 코드 변경 없음.
+- [x] P9-T8 (2026-10-27, v1.3.1) **Obsidian Graph View 연동** — `myelin_core.obsidian`: init/add-domain 이 `.obsidian/{core-plugins,graph,app}.json` 을 쓰고 Domain 폴더마다 Emboss accent 색 그룹(tokens.json 단일 원천), 병합·보존·fail-closed. CLI `myelin obsidian setup|status`, Hub `GET /api/obsidian`·`POST /api/obsidian/setup` + Dashboard 카드, install.sh 연계, 골든 갱신, 테스트 9건. 운영: Vault `me` 설정 commit `415f736`, Obsidian 1.14.5 에 `~/Vaults/me` 등록·열림(이전엔 샘플 `~/ai_project/Myelin` 만 등록돼 Hub 의 `obsidian://` 링크가 닿지 않았음)
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`

@@ -1,0 +1,65 @@
+{
+  "collapse-filter": false,
+  "search": "",
+  "showTags": true,
+  "showAttachments": false,
+  "hideUnresolved": true,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    {
+      "query": "path:10_Domains/D1/",
+      "color": {
+        "a": 1,
+        "rgb": 8141549
+      }
+    },
+    {
+      "query": "path:10_Domains/D3/",
+      "color": {
+        "a": 1,
+        "rgb": 11992891
+      }
+    },
+    {
+      "query": "path:10_Domains/D4/",
+      "color": {
+        "a": 1,
+        "rgb": 16727499
+      }
+    },
+    {
+      "query": "path:00_Inbox/",
+      "color": {
+        "a": 1,
+        "rgb": 6251384
+      }
+    },
+    {
+      "query": "path:40_IP/",
+      "color": {
+        "a": 1,
+        "rgb": 12458124
+      }
+    },
+    {
+      "query": "path:99_Archive/",
+      "color": {
+        "a": 1,
+        "rgb": 14343913
+      }
+    }
+  ],
+  "collapse-display": false,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 10,
+  "linkStrength": 1,
+  "linkDistance": 250,
+  "scale": 1,
+  "close": true
+}

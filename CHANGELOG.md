@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.1 — 2026-10-27 (Obsidian Graph View 연동)
+- core: `myelin_core.obsidian` — Vault `.obsidian/` 에 **Graph View 설정**을 쓴다: `core-plugins.json`(graph·backlink·outgoing-link·tag-pane·properties 켜기, daily-notes·sync·publish 끄기), `graph.json`(**Domain 폴더마다 Emboss accent 색 그룹** — `design/tokens.json` 단일 원천, + Inbox/40_IP/Archive), `app.json`(새 노트 → 00_Inbox, `[[stem]]` 링크). `myelin init` 이 함께 만들고 `add-domain` 이 새 Domain 의 색 그룹을 보탠다. 있는 파일은 덮어쓰지 않고 병합, 읽을 수 없는 JSON 이면 아무것도 쓰지 않는다(fail-closed)
+- cli: `myelin obsidian setup [--open]` · `myelin obsidian status` — 기존 Vault 적용 + `obsidian://open?path=` 로 Vault 를 열어 Obsidian 에 등록
+- hub: `GET /api/obsidian`(Graph View on/색 그룹/테마/Obsidian 등록 여부/열기 URI) · `POST /api/obsidian/setup`(클릭 헤더, 1 commit `[myelin:settings] obsidian graph view`). Dashboard **Obsidian Graph View** 카드 — 상태 칩, "Obsidian 에서 Vault 열기(Ctrl+G)" (Advanced URI 플러그인이 있으면 Graph View 직접 열기), "Graph View 설정 쓰기"
+- install: `scripts/install.sh --vault` 가 테마 복사 뒤 `myelin obsidian setup` 을 실행 · 가이드 `obsidian-setup.md` 6절 · 도우미 지식
+- tests: `test_obsidian.py` 8건(토큰 → 색, 병합·보존, fail-closed, 상태·URI·등록, init/add-domain 동기화) · Hub API 1건 · 골든 scaffold 에 `.obsidian/{core-plugins,graph,app}.json` 추가 — 1,283 passed
+
 ## v1.3.0 — 2026-10-19 (Hub 도움말 챗봇)
 - hub: 우측 하단 말풍선 → 모달 **도움말 챗봇**(ADR-0013). `GET /api/assistant/status`, `POST /api/assistant/chat`. 내장 지식 `assistant_kb.md`(17절) + Vault FTS 발췌(근거 노트를 Obsidian 링크로) + Vault 상태(Level·Domain·KPI 이탈·검토 대기)를 로컬 Ollama(`MYELIN_ASSISTANT_URL`·`MYELIN_ASSISTANT_MODEL`, 기본 exaone3.5 → qwen2.5 …)에 주입. 읽기 전용(클릭 헤더 불필요, Vault 불변), 엔드포인트가 loopback 이 아니면 confidential·`40_IP/**` 제외(ADR-0011 기준), Ollama 없으면 **지식 기반 모드**로 200 응답, 인젝션·비밀값 요청 거부, 한자 드리프트 제거, 한글 IME 중 Enter/ESC 무시. Review 토스트는 말풍선 위로
 - tests: `test_assistant.py` 23건 · e2e "도움말 챗봇" 시나리오(12번째) — kb 모드 고정 · 위협 모델 T22
