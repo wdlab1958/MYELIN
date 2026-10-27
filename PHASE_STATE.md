@@ -133,3 +133,4 @@ last_updated: 2026-10-27
 - 도우미(ADR-0013): 대화 저장·👍/👎 피드백 집계 · 스트리밍 응답 · `llm.default: claude` 연계 외부 어댑터(기밀 제외 판정 유지)
 - `myelin init`/`doctor --install-hook` 가 Vault pre-push 거부 훅도 설치(ADR-0014 제품화, 테스트 포함)
 - Team 모드 인증(Hub 비-loopback) · 다크 모드 토큰 · CI 에 Node 22/Chrome(e2e) 단계 · Commons CI 비식별 재스캔 · Hub 에서 Registry Pack 설치 · 20k+ Vault 색인 가속(safe 로더) · 정본 Rev 2.1 제안서(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단, 이름 결합형) · 로컬 임베딩 검색(선택)
+- `myelin add-domain` 가 자기 변경분만이 아니라 작업 트리 전체를 커밋한다(`git add -A` 동작, 2026-10-23 myelin-demo 에서 `.obsidian/`·미완성 노트까지 `[myelin:add-domain]` 커밋에 포함됨) → touched 경로만 stage 하도록 수정 · Hub 가 `myelin.yaml` 변경(add-domain)을 재시작 없이 반영하지 못함(설정 캐시) → 설정 파일 변경 감지 또는 요청마다 재로드 · 일괄 /ingest(폴더 단위 가져오기) 와 Review Gate 다중 선택 승격
