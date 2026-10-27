@@ -113,6 +113,7 @@ last_updated: 2026-10-27
 
 - [x] P9-T7 (2026-10-27) 운영: Vault `me` 에 개인 Pack `me.my-domains`(D1~D3 = reference 복사, **D4 AI_Project**) → `myelin add-domain D4`. `~/ai_project` 전수 조사(프로젝트 21 + 루트 문서, *.md 1,000+건) → D4 프로젝트 카드 21 + 루트 문서 1 + Sub-MOC 7 = 29 초안을 `00_Inbox/ai-drafts/` 에 생성(origin claude, Review Gate 승격 대기). `myelin commons init ~/ai_project/MYELIN/Local_Commons`. **ADR-0014** 공개 저장소·개인 Vault 분리(pre-push 거부 훅, `.gitignore`). 코드 변경 없음.
 - [x] P9-T8 (2026-10-27, v1.3.1) **Obsidian Graph View 연동** — `myelin_core.obsidian`: init/add-domain 이 `.obsidian/{core-plugins,graph,app}.json` 을 쓰고 Domain 폴더마다 Emboss accent 색 그룹(tokens.json 단일 원천), 병합·보존·fail-closed. CLI `myelin obsidian setup|status`, Hub `GET /api/obsidian`·`POST /api/obsidian/setup` + Dashboard 카드, install.sh 연계, 골든 갱신, 테스트 9건. 운영: Vault `me` 설정 commit `415f736`, Obsidian 1.14.5 에 `~/Vaults/me` 등록·열림(이전엔 샘플 `~/ai_project/Myelin` 만 등록돼 Hub 의 `obsidian://` 링크가 닿지 않았음)
+- [x] P9-T9 (2026-10-27) **사용자 가이드 v2.0.0** — `docs/guides/user-guide-v2.0/`(docx · pdf · xlsx 표 18개 · img 12장). 제품 v1.3.1 기준으로 v1.0 가이드를 갱신: 변경 요약 표(v1.0→v2.0), 읽음 확인 승격, 지표 9종·미엘린 강도·환류, 패치 미리보기/digest, 기밀 라우팅 장치(MYELIN_LLM=local · guard_read · pre-commit 훅), Commons push/PR·두 정체성, 도우미 챗봇, Obsidian Graph View, `--claude` opt-in 설치. Hub 스크린샷은 `make e2e` 로 재생성(`docs/reports/P6/`, 12 passed). 생성기 `gen_guide.py` 동봉(python-docx·openpyxl·Pillow, PDF 는 soffice)
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
