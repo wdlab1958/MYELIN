@@ -27,3 +27,6 @@ packages/myelin-hub/web/dist/
 # Local tooling
 .claude/settings.local.json
 .local/
+# Local Commons clone (myelin commons init) and any personal Vault under the repo tree — never commit (ADR-0014)
+Local_Commons/
+Vaults/

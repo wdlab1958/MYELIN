@@ -21,6 +21,7 @@
 - Python 3.12 · uv workspace · Pydantic v2 · Typer · ruamel.yaml · pytest · ruff · mypy(strict). 단일 `myelin-core` 를 CLI·MCP·Hub가 공유한다.
 - Hook 스크립트(`plugin/hooks/*.py`)는 표준 라이브러리만 사용한다.
 - 비밀·고객 데이터·개인 Vault 내용을 저장소에 커밋하지 않는다. fixtures는 합성 데이터만.
+- 개인 Vault(`~/Vaults/*`)·로컬 Commons(`Local_Commons/`)는 원격 없이 로컬 커밋만 하고 **절대 push 하지 않는다**. 집·회사에서 고친 **코드**만 GitHub `main` 으로 재배포한다 (ADR-0014).
 
 ## Commands
 - `make test` — 전체 테스트 · `make lint` — ruff · `make typecheck` — mypy · `make gate P=<n>` — Phase Gate · `make phases` — 정본에서 docs/phases 재생성

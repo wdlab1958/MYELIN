@@ -2,7 +2,7 @@
 
 current_phase: P9
 status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-19
+last_updated: 2026-10-27
 
 > **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음).
 > **P9 (Desktop 라인 기능 이식, Brian "1항으로 처리" 승인 2026-10-18)**: GitHub `main` 을 이 라인(`fable-main`)으로 확정하고, Desktop 구현에만 있던 기능을 이식했다 — 아래 P9 섹션. 이후 Desktop·Code 병행은 하지 않기로 함. **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
@@ -111,6 +111,8 @@ last_updated: 2026-10-19
 - [x] P9-T5 (2026-10-19, v1.3.0) Hub 도움말 챗봇 — 우측 하단 말풍선 → 모달, `GET /api/assistant/status` · `POST /api/assistant/chat`, 내장 지식 `assistant_kb.md` + Vault FTS 발췌 + 상태 요약 → 로컬 Ollama, 비-loopback 이면 기밀 제외, kb 폴백, 입력 가드 (ADR-0013) · `test_assistant.py` 23 · e2e 12번째 시나리오 · 위협 모델 T22
 - [x] P9-T6 (2026-10-19) Level 2 link-patch(Brian): fixture Vault `basic` 의 `[[_MOC]]` 10건을 `[[10_Domains/<D>/_MOC|_MOC]]` 로 — Domain 마다 `_MOC.md` 가 있어 Obsidian 이 임의의 MOC 를 열던 문제. `gen_fixture_vault.py` 가 생성 시 한정, 색인은 `link_stem()` 으로 경로형 링크도 stem 링크로 집계(index SCHEMA_VERSION 2 → 기존 index.db 자동 재생성), `.obsidian/` gitignore, Hub·MCP 테스트의 fixture 복사는 `.myelin`·`.obsidian` 제외(개발자가 fixture 를 Obsidian/Hub 로 직접 열어도 테스트 불변). **잔여(Backlog)**: 색인 backlinks 는 stem 기준이라 네 MOC 가 서로의 backlink 를 공유 — 경로 기준 해석은 doctor 만 수행
 
+- [x] P9-T7 (2026-10-27) 운영: Vault `me` 에 개인 Pack `me.my-domains`(D1~D3 = reference 복사, **D4 AI_Project**) → `myelin add-domain D4`. `~/ai_project` 전수 조사(프로젝트 21 + 루트 문서, *.md 1,000+건) → D4 프로젝트 카드 21 + 루트 문서 1 + Sub-MOC 7 = 29 초안을 `00_Inbox/ai-drafts/` 에 생성(origin claude, Review Gate 승격 대기). `myelin commons init ~/ai_project/MYELIN/Local_Commons`. **ADR-0014** 공개 저장소·개인 Vault 분리(pre-push 거부 훅, `.gitignore`). 코드 변경 없음.
+
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
 - [ ] P8(사람): KIPRIS 직접 조회 결과 기입(제9류·제42류), 필요 시 결합형 명칭(MYELIN KOS) 결정
@@ -121,10 +123,11 @@ last_updated: 2026-10-19
 - CI: **green** — github.com/wdlab1958/MYELIN `main` run 39087153818 (check + gate P=8, 2026-10-18). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
-- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19)
+- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27)
 - P8 결정(기록): 위협 모델 High 2건(T08 Hub Host/Origin 검증, T09 정적 서빙 경로 이탈) 조치 + 회귀 테스트. 스크립트 인터프리터 실행은 Vault settings.json 에서 ask(T02 완화). 설치는 `scripts/install.sh`(런처 = `uv --directory <repo> run …`, 기존 파일 보존, 테마 .bak). 로컬 plugin marketplace(`.claude-plugin/marketplace.json`, 이름 `myelin-local`), plugin 버전 1.0.0. 이름 확인: 미국 "MYELIN" 소프트웨어 상표 선출원(심사 중)·주요 도메인 점유·GitHub `myelin` 개인 계정 사용 중 → 사내 사용은 MYELIN 유지, 대외 공개 시 결합형. "설치→첫 verified" 자동 측정 1초 미만(캐시된 uv 기준; 신규 환경은 네트워크 의존).
 
 ## Backlog (v1.1+)
 - QA 2026-10-18 Gap 보고서 이월 중 **v1.2.0 에서 해결**: LLM 라우팅 장치화(ADR-0011) · 재사용 지표·Commons 인용 집계(ADR-0012) · Hub push/PR · `commons.remote` origin. **남은 것**: Bash Guard 범위 밖(네트워크 송신 `curl -T`/`scp`, Vault 밖 스크립트) · 40_IP 밖 confidential 노트의 제목 노출(Grep)·`.myelin/index.db` 본문 캐시(ADR-0011 잔여) · Obsidian `cssclasses` 강도 표시(`mx-strength-N`, 골든 영향) · Pack `sub_mocs` 이름 제약(`/`, `..`) · Team 모드 시 "조직은 Vault 를 열람하지 않는다" 재설계 · P7 파일럿·KIPRIS 사람 작업
 - 도우미(ADR-0013): 대화 저장·👍/👎 피드백 집계 · 스트리밍 응답 · `llm.default: claude` 연계 외부 어댑터(기밀 제외 판정 유지)
+- `myelin init`/`doctor --install-hook` 가 Vault pre-push 거부 훅도 설치(ADR-0014 제품화, 테스트 포함)
 - Team 모드 인증(Hub 비-loopback) · 다크 모드 토큰 · CI 에 Node 22/Chrome(e2e) 단계 · Commons CI 비식별 재스캔 · Hub 에서 Registry Pack 설치 · 20k+ Vault 색인 가속(safe 로더) · 정본 Rev 2.1 제안서(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단, 이름 결합형) · 로컬 임베딩 검색(선택)
