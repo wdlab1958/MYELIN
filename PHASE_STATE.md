@@ -2,7 +2,7 @@
 
 current_phase: P9
 status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-27
+last_updated: 2026-10-28
 
 > **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음).
 > **P9 (Desktop 라인 기능 이식, Brian "1항으로 처리" 승인 2026-10-18)**: GitHub `main` 을 이 라인(`fable-main`)으로 확정하고, Desktop 구현에만 있던 기능을 이식했다 — 아래 P9 섹션. 이후 Desktop·Code 병행은 하지 않기로 함. **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
@@ -113,7 +113,7 @@ last_updated: 2026-10-27
 
 - [x] P9-T7 (2026-10-27) 운영: Vault `me` 에 개인 Pack `me.my-domains`(D1~D3 = reference 복사, **D4 AI_Project**) → `myelin add-domain D4`. `~/ai_project` 전수 조사(프로젝트 21 + 루트 문서, *.md 1,000+건) → D4 프로젝트 카드 21 + 루트 문서 1 + Sub-MOC 7 = 29 초안을 `00_Inbox/ai-drafts/` 에 생성(origin claude, Review Gate 승격 대기). `myelin commons init ~/ai_project/MYELIN/Local_Commons`. **ADR-0014** 공개 저장소·개인 Vault 분리(pre-push 거부 훅, `.gitignore`). 코드 변경 없음.
 - [x] P9-T8 (2026-10-27, v1.3.1) **Obsidian Graph View 연동** — `myelin_core.obsidian`: init/add-domain 이 `.obsidian/{core-plugins,graph,app}.json` 을 쓰고 Domain 폴더마다 Emboss accent 색 그룹(tokens.json 단일 원천), 병합·보존·fail-closed. CLI `myelin obsidian setup|status`, Hub `GET /api/obsidian`·`POST /api/obsidian/setup` + Dashboard 카드, install.sh 연계, 골든 갱신, 테스트 9건. 운영: Vault `me` 설정 commit `415f736`, Obsidian 1.14.5 에 `~/Vaults/me` 등록·열림(이전엔 샘플 `~/ai_project/Myelin` 만 등록돼 Hub 의 `obsidian://` 링크가 닿지 않았음)
-- [x] P9-T9 (2026-10-27) **사용자 가이드 v2.0.0** — `docs/guides/user-guide-v2.0/`(docx · pdf · xlsx 표 18개 · img 12장). 제품 v1.3.1 기준으로 v1.0 가이드를 갱신: 변경 요약 표(v1.0→v2.0), 읽음 확인 승격, 지표 9종·미엘린 강도·환류, 패치 미리보기/digest, 기밀 라우팅 장치(MYELIN_LLM=local · guard_read · pre-commit 훅), Commons push/PR·두 정체성, 도우미 챗봇, Obsidian Graph View, `--claude` opt-in 설치. Hub 스크린샷은 `make e2e` 로 재생성(`docs/reports/P6/`, 12 passed). 생성기 `gen_guide.py` 동봉(python-docx·openpyxl·Pillow, PDF 는 soffice)
+- [x] P9-T9 (2026-10-27) **사용자 가이드 v2.0.0** — `docs/guides/user-guide-v2.0/`(docx · pdf · xlsx 표 18개 · img 12장). 제품 v1.3.1 기준으로 v1.0 가이드를 갱신: 변경 요약 표(v1.0→v2.0), 읽음 확인 승격, 지표 9종·미엘린 강도·환류, 패치 미리보기/digest, 기밀 라우팅 장치(MYELIN_LLM=local · guard_read · pre-commit 훅), Commons push/PR·두 정체성, 도우미 챗봇, Obsidian Graph View, `--claude` opt-in 설치. Hub 스크린샷은 `make e2e` 로 재생성(`docs/reports/P6/`, 12 passed). 생성기 `gen_guide.py` 동봉(python-docx·openpyxl·Pillow, PDF 는 soffice). Brian 보강(3.4 Obsidian Graph View · 3.5 AiCarelink 그래프 그림) 반영 후 GitHub `main` 에 push(`c568e35`) — CI run 40468827503 **green**(check: ruff·mypy·pytest / gate: `make gate P=9` + Playwright e2e, 약 8분)
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
@@ -122,7 +122,7 @@ last_updated: 2026-10-27
 
 ## Blockers
 - 사람 참여: 파일럿 운영(3주), 챔피언 지정, KIPRIS 조회. 코드 측 블로커 없음.
-- CI: **green** — github.com/wdlab1958/MYELIN `main` run 39087153818 (check + gate P=8, 2026-10-18). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
+- CI: **green** — github.com/wdlab1958/MYELIN `main` run 40468827503 (check + gate P=9 + e2e, c568e35, 2026-10-27). 이전 run 39171277206(fc5ae4c)·39087153818(P=8) 도 green. 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
 - ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27)
