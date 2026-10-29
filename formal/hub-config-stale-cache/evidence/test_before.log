@@ -1,0 +1,50 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____________ test_f1_hub_sees_domain_added_by_cli_without_restart _____________
+
+client = <starlette.testclient.TestClient object at 0x7549329b03e0>
+vault_root = PosixPath('/tmp/pytest-of-ubuntu-02/pytest-43/test_f1_hub_sees_domain_added_0/basic')
+
+    def test_f1_hub_sees_domain_added_by_cli_without_restart(
+        client: TestClient, vault_root: Path
+    ) -> None:
+        """Trace trace_bug_P1.md: CliAddDomain(d1) -> HubPromote(d1) rejected although d1 is in the file."""
+        assert NEW_DOMAIN not in {d["id"] for d in client.get("/api/domains").json()}  # Hub loaded
+        _cli_add_domain(vault_root, NEW_DOMAIN)
+        on_disk = set(load_config(vault_root).domains.all_ids)
+        # P1: every Hub decision reflects the Domain list currently in myelin.yaml
+        r = client.post(f"/api/review/promote/{DRAFT}", headers=CLICK, json={"domain": NEW_DOMAIN})
+>       assert r.status_code == 200, f"P1 violated (stale reject): {r.status_code} {r.text}"
+E       AssertionError: P1 violated (stale reject): 422 {"detail":"domain 'SEC-CONSULT' is not configured"}
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Content]>.status_code
+
+packages/myelin-hub/api/tests/test_config_reload.py:55: AssertionError
+_______________ test_f1_settings_save_keeps_domain_added_by_cli ________________
+
+client = <starlette.testclient.TestClient object at 0x7549328252e0>
+vault_root = PosixPath('/tmp/pytest-of-ubuntu-02/pytest-43/test_f1_settings_save_keeps_do0/basic')
+
+    def test_f1_settings_save_keeps_domain_added_by_cli(client: TestClient, vault_root: Path) -> None:
+        """Trace trace_bug_P2.md: CliAddDomain(d1) -> BrowserGet (stale) -> BrowserPut drops d1."""
+        assert client.get("/api/settings").status_code == 200  # Hub has its cache
+        _cli_add_domain(vault_root, NEW_DOMAIN)
+        current = client.get("/api/settings").json()  # Settings.tsx:17 — what the page spreads into the PUT
+        current["level"] = 3
+        r = client.put("/api/settings", headers=CLICK, json=current)
+        assert r.status_code == 200, r.text
+        # P2: a Settings save never removes a Domain from myelin.yaml
+>       assert NEW_DOMAIN in load_config(vault_root).domains.all_ids, (
+            "P2 violated (lost update): Settings save wrote the stale Domain list back"
+        )
+E       AssertionError: P2 violated (lost update): Settings save wrote the stale Domain list back
+E       assert 'SEC-CONSULT' in ['D1', 'D3', 'D4', 'D2']
+E        +  where ['D1', 'D3', 'D4', 'D2'] = Domains(primary='D1', research='D3', growth='D4', extra=['D2']).all_ids
+E        +    where Domains(primary='D1', research='D3', growth='D4', extra=['D2']) = MyelinConfig(owner=Owner(name='Brian', team='A3-AI WG', email='brian@example.org'), language='ko', packs=['myelin.core...s(enabled=False, remote=None, local=None, metrics_opt_in=False), mcp=MCP(write_draft=False, expose_confidential=False)).domains
+E        +      where MyelinConfig(owner=Owner(name='Brian', team='A3-AI WG', email='brian@example.org'), language='ko', packs=['myelin.core...s(enabled=False, remote=None, local=None, metrics_opt_in=False), mcp=MCP(write_draft=False, expose_confidential=False)) = load_config(PosixPath('/tmp/pytest-of-ubuntu-02/pytest-43/test_f1_settings_save_keeps_do0/basic'))
+
+packages/myelin-hub/api/tests/test_config_reload.py:73: AssertionError
+=========================== short test summary info ============================
+FAILED packages/myelin-hub/api/tests/test_config_reload.py::test_f1_hub_sees_domain_added_by_cli_without_restart
+FAILED packages/myelin-hub/api/tests/test_config_reload.py::test_f1_settings_save_keeps_domain_added_by_cli
+2 failed in 0.70s

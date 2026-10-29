@@ -1,0 +1,77 @@
+TLC2 Version 2026.10.28.014557 (rev: 56d37a9)
+Running breadth-first search Model-Checking with fp 31 and seed 3886214579534512190 with 4 workers on 28 cores with 27305MB heap and 64MB offheap memory [pid: 975875] (Linux 6.14.0-37-generic amd64, Ubuntu 21.0.12.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Properties.tla
+Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Spec.tla
+Parsing file /tmp/tlc-17875409832535280766/_TLCTrace.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-17875409832535280766/Naturals.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-17875409832535280766/FiniteSets.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-17875409832535280766/Sequences.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-17875409832535280766/TLC.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-17875409832535280766/TLCExt.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-17875409832535280766/Integers.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module Spec
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-10-29 15:02:21)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-10-29 15:02:22.
+Error: Invariant P2_NoLostDomain is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ formBase = {}
+/\ badAccept = FALSE
+/\ cache = {}
+/\ accepted = {}
+/\ file = {}
+/\ formLoaded = FALSE
+/\ form = {}
+/\ badReject = FALSE
+/\ lost = {}
+
+State 2: <BrowserGet line 84, col 5 to line 86, col 63 of module Spec>
+/\ formBase = {}
+/\ badAccept = FALSE
+/\ cache = {}
+/\ accepted = {}
+/\ file = {}
+/\ formLoaded = TRUE
+/\ form = {}
+/\ badReject = FALSE
+/\ lost = {}
+
+State 3: <CliAddDomain(d1) line 60, col 5 to line 62, col 92 of module Spec>
+/\ formBase = {}
+/\ badAccept = FALSE
+/\ cache = {}
+/\ accepted = {}
+/\ file = {d1}
+/\ formLoaded = TRUE
+/\ form = {}
+/\ badReject = FALSE
+/\ lost = {}
+
+State 4: <BrowserPut line 91, col 5 to line 98, col 67 of module Spec>
+/\ formBase = {}
+/\ badAccept = FALSE
+/\ cache = {}
+/\ accepted = {}
+/\ file = {}
+/\ formLoaded = FALSE
+/\ form = {}
+/\ badReject = FALSE
+/\ lost = {d1}
+
+131 states generated, 48 distinct states found, 18 states left on queue.
+The depth of the complete state graph search is 6.
+Finished in 00s at (2026-10-29 15:02:22)
+Trace exploration spec path: ./Properties_TTrace_1793253741.tla

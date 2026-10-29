@@ -6,6 +6,18 @@
 정본 명세: [`docs/spec/MYELIN_Rev2.0.md`](docs/spec/MYELIN_Rev2.0.md) (WDLAB-MYELIN-SPEC Rev 2.0, 2026-10-18) · 원본 [`docs/spec/MYELIN_Rev2.0.docx`](docs/spec/MYELIN_Rev2.0.docx)
 상태: **v1.1.0** — 정본의 구현 Phase P0~P8 완료 + P9(Desktop 라인 기능 이식) (`phase-P0`~`phase-P8`, `v1.0.0` 태그). 남은 것은 사람 참여 항목과 운영(아래 "남은 일").
 
+## 🔬 형식 검증 (Formal Verification) — Oct.29, 2026
+
+WDLAB Unified Proof-Skills Standard v1.0(WDLAB-STD-VERIFY-001, proof-skills 0.1.1 · TLA+/TLC)을 적용했다. 산출물은 [`formal/`](formal/README.md), 보고서는 `~/ai_project/Proof-Skills/MYELIN_ProofSkills_Report_2026-10-29.docx`(사본 [`formal/reports/`](formal/reports/2026-10-29-hub-config-stale-cache.md)).
+
+| 항목 | 내용 |
+|---|---|
+| Concern | [`hub-config-stale-cache`](formal/hub-config-stale-cache/SCOPE.md) — Hub 가 캐시한 `myelin.yaml` vs CLI `myelin add-domain` vs Settings 저장 (Backlog 항목) |
+| Verdict | **F1 FIXED** · F2 CONFIRMED(HITL) · F3 CONFIRMED(기록) — 모델 **BOUNDED-PASS (L2)**, 경계 `Doms={d1,d2}` 72 states/depth 7 · `{d1,d2,d3}` 432/depth 9, 신뢰 기반 TLC 2026.10.28 + 추상화 A1~A8(SCOPE.md). 경계 밖·추상화 안의 버그는 배제하지 않는다 |
+| F1 (수정) | Hub 가 기동 시 1회 읽은 `myelin.yaml` 로만 결정해 CLI 가 추가한 Domain 으로의 승격이 422 로 거부되고, Settings 저장이 옛 Domain 목록을 되써서 추가가 사라졌다 → `HubService._reload_if_changed`: 파일 바이트가 바뀌면 요청마다 재로드 (`service.py`, 재현 테스트 `packages/myelin-hub/api/tests/test_config_reload.py`) |
+| F2 / F3 (미수정) | `PUT /api/settings` 버전 검사 부재(GET→PUT 창, If-Match 제안) · CLI `add-domain` 의 `git add -A` 커밋 범위(ADR-0009 §4 위반) — `formal/hub-config-stale-cache/repro/` 스크립트로 재현, 수정안은 보고서 §3.2/§3.3 |
+| 실행 | `TLC_WORKERS=4 formal/run_all.sh` (3-config 게이트) · `.venv/bin/python -m pytest packages/myelin-hub/api/tests/test_config_reload.py -v` |
+
 ---
 
 ## 1. 무엇인가

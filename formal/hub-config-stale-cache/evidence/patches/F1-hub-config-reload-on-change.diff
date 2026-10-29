@@ -1,0 +1,85 @@
+diff --git a/packages/myelin-hub/api/src/myelin_hub_api/service.py b/packages/myelin-hub/api/src/myelin_hub_api/service.py
+index 8f00278..adadb32 100644
+--- a/packages/myelin-hub/api/src/myelin_hub_api/service.py
++++ b/packages/myelin-hub/api/src/myelin_hub_api/service.py
+@@ -37,7 +37,7 @@ from myelin_core.commons import (
+     owner_hash,
+     publish_note,
+ )
+-from myelin_core.config import ConfigError, MyelinConfig, dump_config
++from myelin_core.config import CONFIG_FILE, ConfigError, MyelinConfig, dump_config
+ from myelin_core.doctor import run_doctor
+ from myelin_core.index import VaultIndex, open_index
+ from myelin_core.levels import skill_table
+@@ -119,6 +119,7 @@ class HubService:
+     index: VaultIndex | None = None
+     config_error: str | None = None  # myelin.yaml present but unreadable (reported, not fatal)
+     _write_lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
++    _config_bytes: bytes | None = field(default=None, repr=False)  # myelin.yaml as last loaded
+ 
+     # ------------------------------------------------------------------ lifecycle
+     @classmethod
+@@ -129,6 +130,7 @@ class HubService:
+ 
+     def reload(self) -> None:
+         self.config_error = None
++        self._config_bytes = self._read_config_bytes()
+         if not Vault.is_vault(self.root):
+             self.vault = None
+             self._drop_index()
+@@ -154,8 +156,29 @@ class HubService:
+             self.index.close()
+             self.index = None
+ 
++    def _read_config_bytes(self) -> bytes | None:
++        try:
++            return (self.root / CONFIG_FILE).read_bytes()
++        except FileNotFoundError:
++            return None
++
++    def _reload_if_changed(self) -> None:
++        """Re-read myelin.yaml before any decision when it changed on disk.
++
++        The file is shared with other processes — `myelin add-domain`, a hand edit in the editor —
++        so a view loaded at start-up goes stale: promotions into a Domain that *is* configured were
++        refused (422) and a Settings save wrote the old Domain list back (lost update).
++        See formal/hub-config-stale-cache (F1). Bytes are compared, not mtime (same-tick edits).
++        """
++        if self._read_config_bytes() == self._config_bytes:
++            return
++        with self._write_lock:  # one reload at a time; writers already hold this lock
++            if self._read_config_bytes() != self._config_bytes:
++                self.reload()
++
+     @property
+     def ready(self) -> bool:
++        self._reload_if_changed()
+         return self.vault is not None
+ 
+     def _not_ready(self) -> HubError:
+@@ -164,6 +187,7 @@ class HubService:
+         return HubError("Vault not initialised — complete onboarding first", 409)
+ 
+     def _v(self) -> Vault:
++        self._reload_if_changed()
+         if self.vault is None:
+             raise self._not_ready()
+         return self.vault
+@@ -721,7 +745,7 @@ class HubService:
+ 
+     def packs(self) -> list[dict[str, Any]]:
+         reg = self._registry()
+-        active = set(self.vault.config.pack_names) if self.vault else set()
++        active = set(self._v().config.pack_names) if self.ready else set()
+         out = []
+         for name, lp in sorted(reg.items()):
+             editable = lp.root.is_relative_to(self.root / "packs")
+@@ -804,7 +828,7 @@ class HubService:
+             raise HubError(f"pack rejected by loader: {exc}", 422) from None
+         commit = (
+             self._commit([f"packs/{name}"], f"[myelin:packs] save {name}")  # yaml + sidecars
+-            if self.vault
++            if self.ready
+             else ""
+         )
+         return {"name": name, "commit": commit}

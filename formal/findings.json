@@ -1,0 +1,199 @@
+{
+  "concern": "hub-config-stale-cache",
+  "workflow": "W1",
+  "generated_at": "2026-10-29T15:10:00+09:00",
+  "repo_commit": "70509a59a93e39103565731885e8763b51bbfa49",
+  "summary": "FIXED (F1) + CONFIRMED (F2, F3): within Doms={d1,d2} (72 distinct states, depth 7) and Doms={d1,d2,d3} (432 states, depth 9) the Hub, after the F1 patch, never decides on a stale myelin.yaml (P1); the GET->PUT lost-update window of Settings save (P2) remains until the proposed If-Match check (F2, HITL).",
+  "scope": {
+    "modeled": [
+      "CLI process `myelin add-domain` rewriting <Vault>/myelin.yaml (scaffold.add_domain)",
+      "HubService in-memory config (self.vault.config) and its reads: promote, domains, settings",
+      "Hub Settings page save = fetch('/api/settings') then userPut('/api/settings', {...current})",
+      "Hub restart (operator workaround)"
+    ],
+    "abstracted": [
+      "myelin.yaml reduced to the set of extra Domain IDs (A1)",
+      "CLI write is atomic (real: truncate+write; a read in the gap is a fail-closed 409) (A2)",
+      "reload = read bytes, compare, reparse as one step (A3)",
+      "only Domain additions; no removals (A4)",
+      "one browser tab; the form does not edit domains (A5)",
+      "git commit, CLAUDE.md re-render, .obsidian writes omitted (A6)"
+    ],
+    "out_of_scope": [
+      "MCP server config cache (myelin_mcp.service)",
+      "Hub _mutation rollback vs external writes; index refresh races; Obsidian JSON merge",
+      "CLI add-domain commit scope (recorded as F3, not modeled)"
+    ],
+    "assumptions": ["A1..A8 in hub-config-stale-cache/CORRESPONDENCE.md"]
+  },
+  "properties": [
+    {
+      "name": "P1_NoStaleDecision",
+      "kind": "invariant",
+      "statement": "~badReject /\\ ~badAccept",
+      "meaning": "Every Hub decision (promote target check, domain list, settings) uses the Domain list currently in myelin.yaml",
+      "source": "PHASE_STATE.md:136; docs/adr/0009-hub-write-policy.md:10 (§3); README.md:17; service.py:554-555",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.10.28 (tla2tools v1.8.0)",
+      "bounds": "Doms={d1,d2}, ReloadOnRequest=TRUE, IfMatch=TRUE: 72 distinct states, depth 7; Doms={d1,d2,d3}: 432 states, depth 9",
+      "evidence": "hub-config-stale-cache/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "P2_NoLostDomain",
+      "kind": "invariant",
+      "statement": "lost = {}",
+      "meaning": "A Settings save never removes a Domain from myelin.yaml (the page cannot edit Domains; add-domain is the only writer of domains.extra)",
+      "source": "docs/adr/0004-myelin-yaml-schema.md:9 (§2); README.md:69; CLAUDE.md Engineering Rules; Settings.tsx:17-19; service.py:676-700",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.10.28 (tla2tools v1.8.0)",
+      "bounds": "MC.cfg (F1 implemented + F2 proposed): 72 distinct states, depth 7. NOTE: with the code as committed (MC_partial.cfg: ReloadOnRequest=TRUE, IfMatch=FALSE) P2 is VIOLATED — see finding F2",
+      "evidence": "hub-config-stale-cache/evidence/tlc_fixed.log; hub-config-stale-cache/evidence/tlc_partial.log"
+    },
+    {
+      "name": "C1_TypeOK",
+      "kind": "invariant",
+      "statement": "TypeOK",
+      "meaning": "variables stay in their domains",
+      "source": "tla/Spec.tla",
+      "frozen": false,
+      "result": "holds",
+      "tool": "TLC 2026.10.28",
+      "bounds": "all configs",
+      "evidence": "hub-config-stale-cache/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "S_NeverAcceptedAdded (sanity, must fail)",
+      "kind": "bounded-check",
+      "statement": "accepted = {}",
+      "meaning": "reachability: a Domain added by the CLI is accepted by a Hub promote",
+      "source": "WDLAB-STD-VERIFY-001 §6.1",
+      "frozen": false,
+      "result": "violated",
+      "tool": "TLC 2026.10.28",
+      "bounds": "Doms={d1,d2}: 14 distinct states, depth 4",
+      "evidence": "hub-config-stale-cache/evidence/tlc_sanity.log"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "title": "Hub decides on a start-up copy of myelin.yaml: promote into a Domain added by `myelin add-domain` is refused (422) and a Settings save writes the stale Domain list back",
+      "severity": "high",
+      "status": "fixed",
+      "property": "P1_NoStaleDecision (and P2_NoLostDomain via the stale cache)",
+      "story": "The Hub loads myelin.yaml once in HubService.open()/reload(). Brian runs `myelin add-domain D4` in a terminal; the file now lists D4 and 10_Domains/D4/_MOC.md exists. In the running Hub, GET /api/domains still omits D4, promoting a draft into D4 fails with 422 \"domain 'D4' is not configured\", and clicking Save on the Settings page sends back the stale `current` so D4 disappears from myelin.yaml while its folder stays (doctor: unregistered domain). Only a restart synchronised the Hub.",
+      "trace": [
+        {"step": 1, "actor": "—", "action": "Init", "code": "service.py:126-130 open()->reload()", "changed": {"file": "{}", "cache": "{}"}},
+        {"step": 2, "actor": "CLI", "action": "CliAddDomain(d1)", "code": "scaffold.py:307-316,352; app.py:362-385", "changed": {"file": "{d1}"}},
+        {"step": 3, "actor": "Hub", "action": "HubPromote(d1) — View = cache = {} -> 422", "code": "service.py:554-555 (pre-fix _v(): 166-169)", "changed": {"badReject": "TRUE"}, "violation": true}
+      ],
+      "reproduction": {
+        "test": "packages/myelin-hub/api/tests/test_config_reload.py::test_f1_hub_sees_domain_added_by_cli_without_restart; ::test_f1_settings_save_keeps_domain_added_by_cli",
+        "result_before_fix": "fails",
+        "result_after_fix": "passes"
+      },
+      "fix": {
+        "summary": "HubService keeps the bytes of myelin.yaml it loaded (_config_bytes) and, before any decision (`_v()`, `ready`), re-reads the file and calls reload() when the bytes differ (`_reload_if_changed`, double-checked under _write_lock). packs()/save_pack use ready/_v() instead of the raw cache. No API change; reload only when the file changed.",
+        "diff": "hub-config-stale-cache/evidence/patches/F1-hub-config-reload-on-change.diff",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": [
+        "hub-config-stale-cache/evidence/tlc_bug.log", "hub-config-stale-cache/evidence/trace_bug_P1.md",
+        "hub-config-stale-cache/evidence/tlc_bug_p2.log", "hub-config-stale-cache/evidence/trace_bug_P2.md",
+        "hub-config-stale-cache/evidence/test_before.log", "hub-config-stale-cache/evidence/test_after.log",
+        "hub-config-stale-cache/evidence/tlc_fixed.log", "hub-config-stale-cache/evidence/mutation.log",
+        "hub-config-stale-cache/evidence/regression_hub_api.log", "hub-config-stale-cache/evidence/tlc_coverage.log"
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "PUT /api/settings has no version check: a Domain added between the Settings page's GET and PUT is dropped (window = one round trip after F1; before F1 the whole Hub lifetime)",
+      "severity": "medium",
+      "status": "confirmed",
+      "property": "P2_NoLostDomain",
+      "story": "Settings.tsx save() fetches `current` then PUTs `{...current, level, mcp, commons}`. If `myelin add-domain` writes the file between these two requests, save_settings validates and writes the old Domain list: the new Domain's folder exists but the Domain is gone from myelin.yaml.",
+      "trace": [
+        {"step": 1, "actor": "—", "action": "Init", "changed": {"file": "{}"}},
+        {"step": 2, "actor": "Browser", "action": "BrowserGet — form = {}", "code": "Settings.tsx:17 -> service.py:672-674"},
+        {"step": 3, "actor": "CLI", "action": "CliAddDomain(d1)", "code": "scaffold.py:352", "changed": {"file": "{d1}"}},
+        {"step": 4, "actor": "Browser", "action": "BrowserPut — file := form", "code": "Settings.tsx:18-20 -> service.py:676-700", "changed": {"file": "{}", "lost": "{d1}"}, "violation": true}
+      ],
+      "reproduction": {
+        "test": "formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py (script, outside the suite; exit 1 on current code)",
+        "result_before_fix": "fails",
+        "result_after_fix": "not-run"
+      },
+      "fix": {
+        "summary": "PROPOSED (HITL — public API): GET /api/settings returns `version` (sha256 of myelin.yaml bytes / ETag); PUT carries `If-Match`/`base_version`; mismatch -> 412 and Settings.tsx re-fetches and retries. Alternative server-only guard: refuse a PUT that drops a Domain whose 10_Domains/<D>/ exists. Modelled as the `IfMatch` toggle: MC.cfg passes with it, MC_partial.cfg fails without it.",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": ["hub-config-stale-cache/evidence/tlc_partial.log", "hub-config-stale-cache/evidence/trace_partial_P2_F2.md", "hub-config-stale-cache/evidence/repro_F2_settings_put_window.log"]
+    },
+    {
+      "id": "F3",
+      "title": "CLI `myelin add-domain` (and `myelin obsidian setup`) commits the whole working tree with `git add -A`: unrelated user files land in the `[myelin:add-domain]` commit, and an unfinished user note makes the Vault pre-commit device refuse add-domain's own commit",
+      "severity": "medium",
+      "status": "confirmed",
+      "property": "ADR-0009 §4 (docs/adr/0009-hub-write-policy.md:11): staging is limited to touched paths; unrelated user changes never mix into a commit",
+      "story": "packages/myelin-cli/src/myelin_cli/app.py:105 `_git_commit_vault` stages with `git add -A` for every caller. Case A: a user's scratch file 30_Resources/wip-notes.txt is recorded under `[myelin:add-domain] D2`. Case B: a frontmatter-less WIP note is staged too, `myelin doctor --staged` (pre-commit hook) rejects it, and add-domain prints `(git commit 생략 …)` leaving its own 7 changes uncommitted. The Hub's `_stage()` (service.py:292-301) already does this correctly.",
+      "reproduction": {
+        "test": "formal/hub-config-stale-cache/repro/repro_F3_add_domain_commit_scope.py (script; exit 1 on current code)",
+        "result_before_fix": "fails",
+        "result_after_fix": "not-run"
+      },
+      "fix": {
+        "summary": "PROPOSED (not applied — design choice: `init` intentionally stages the whole scaffold): give `_git_commit_vault(root, message, paths=None)` a `paths` parameter; `add-domain` and `obsidian setup` pass their `touched` lists and the helper runs `git add -- <paths>` (mirroring HubService._stage); `init` keeps `-A`. Add a CLI test asserting `git show --name-only HEAD` == touched.",
+        "model_recheck": "not-run",
+        "mutation_check": "not-run"
+      },
+      "evidence": ["hub-config-stale-cache/evidence/repro_F3_add_domain_commit_scope.log"]
+    }
+  ],
+  "trust_base": {
+    "tla": {
+      "tool_version": "TLC 2026.10.28 (tla2tools v1.8.0), OpenJDK 21.0.12.1",
+      "states_generated": 349,
+      "distinct_states": 72,
+      "depth": 7,
+      "sanity_checks": [
+        "MC_sanity.cfg: S_NeverAcceptedAdded violated (exit 12) — CLI add -> Hub accept reachable",
+        "MC_bug.cfg / MC_bug_p2.cfg: fix toggles off -> P1 / P2 violated (exit 12)",
+        "MC_partial.cfg: F1 on, F2 off -> P2 violated (exit 12) = code as committed",
+        "-coverage 1: every action (CliAddDomain, HubRestart, HubPromote, BrowserGet, BrowserPut) enabled with >0 distinct states",
+        "MC_3.cfg: Doms={d1,d2,d3} PASS (432 states, depth 9)"
+      ]
+    }
+  },
+  "rerun": [
+    "cd ~/ai_project/MYELIN && TLC_WORKERS=4 formal/run_all.sh",
+    "cd ~/ai_project/MYELIN && .venv/bin/python -m pytest packages/myelin-hub/api/tests/test_config_reload.py -v",
+    "cd ~/ai_project/MYELIN && .venv/bin/python -m pytest packages/myelin-hub/api/tests -q",
+    "cd ~/ai_project/MYELIN && .venv/bin/python formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py   # exit 1 until F2 is fixed",
+    "cd ~/ai_project/MYELIN && .venv/bin/python formal/hub-config-stale-cache/repro/repro_F3_add_domain_commit_scope.py  # exit 1 until F3 is fixed"
+  ],
+  "next_steps": [
+    "G7(F2) HITL: decide If-Match (ETag) on PUT /api/settings vs. server-side 'never drop a Domain with a folder' guard; then flip MC_partial expectation to PASS",
+    "G7(F3) HITL: `_git_commit_vault(..., paths=touched)` for add-domain / obsidian setup (ADR-0009 §4 parity with the Hub)",
+    "W5: run formal/run_all.sh in CI (make gate) — < 5 s",
+    "W6: CORRESPONDENCE.md drift check on service.py / scaffold.py / Settings.tsx changes",
+    "W4: with F2 fixed, `HubRestart` as a workaround becomes unnecessary — document removal of the 'restart the Hub after add-domain' guidance",
+    "Candidate: same stale-cache pattern in myelin_mcp.service (MCP server) — new concern",
+    "W7 (optional): Lean promotion not needed — property is finite-state; skip unless Team mode adds multi-user settings"
+  ],
+  "wdlab": {
+    "project": "MYELIN",
+    "level_achieved": "L2",
+    "verdict": "FIXED (F1) · CONFIRMED (F2, F3) · model BOUNDED-PASS with F1+F2 toggles",
+    "hitl_approvals": [
+      "G2: pending Brian review (P1, P2 frozen 2026-10-29)",
+      "G7(F2): pending — public API change (If-Match on PUT /api/settings)",
+      "G7(F3): pending — CLI commit scope vs init semantics"
+    ],
+    "risk_domain": "personal-knowledge-os / config-integrity",
+    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a"
+  }
+}

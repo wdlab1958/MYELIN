@@ -1,0 +1,8 @@
+formal/run_all.sh — TLC Version 2026.10.28.014557 · workers=4
+  ok    hub-config-stale-cache     MC           exit 0   expected 0   72 distinct states
+  ok    hub-config-stale-cache     MC_3         exit 0   expected 0   432 distinct states
+  ok    hub-config-stale-cache     MC_bug       exit 12  expected 12  11 distinct states
+  ok    hub-config-stale-cache     MC_bug_p2    exit 12  expected 12  42 distinct states
+  ok    hub-config-stale-cache     MC_partial   exit 12  expected 12  48 distinct states
+  ok    hub-config-stale-cache     MC_sanity    exit 12  expected 12  14 distinct states
+GATE: all configs behaved as expected

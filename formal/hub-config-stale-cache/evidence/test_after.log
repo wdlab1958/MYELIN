@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.7.0 -- /home/ubuntu-02/ai_project/MYELIN/.venv/bin/python
+rootdir: /home/ubuntu-02/ai_project/MYELIN
+configfile: pyproject.toml
+plugins: cov-7.1.0, anyio-4.15.1
+collecting ... collected 2 items
+
+packages/myelin-hub/api/tests/test_config_reload.py::test_f1_hub_sees_domain_added_by_cli_without_restart PASSED [ 50%]
+packages/myelin-hub/api/tests/test_config_reload.py::test_f1_settings_save_keeps_domain_added_by_cli PASSED [100%]
+
+============================== 2 passed in 0.73s ===============================

@@ -1,0 +1,15 @@
+# mutation check (post-fix, 2026-10-29T15:02:25+09:00): model fix toggles OFF -> frozen properties must FAIL again
+## MC_bug.cfg
+    ReloadOnRequest = FALSE    IfMatch = FALSE
+Error: Invariant P1_NoStaleDecision is violated.
+20 states generated, 11 distinct states found, 1 states left on queue.
+The depth of the complete state graph search is 4.
+## MC_bug_p2.cfg
+    ReloadOnRequest = FALSE    IfMatch = FALSE
+Error: Invariant P2_NoLostDomain is violated.
+89 states generated, 42 distinct states found, 21 states left on queue.
+The depth of the complete state graph search is 5.
+## MC.cfg
+    ReloadOnRequest = TRUE    IfMatch = TRUE
+349 states generated, 72 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 7.

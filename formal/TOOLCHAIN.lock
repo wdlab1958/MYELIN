@@ -1,0 +1,7 @@
+# formal/TOOLCHAIN.lock — WDLAB-STD-VERIFY-001 §4.3 (pinned 2026-10-29)
+proof-skills = 0.1.1
+tla2tools    = v1.8.0 (TLC 2026.10.28)
+java         = OpenJDK 21.0.12.1
+lean         = not installed (L3 not claimed; W7 promotion is a follow-up proposal)
+python       = 3.12 (.venv) · pytest 9.1.1 · ruff 0.17.1 · mypy 2.4.0
+model        = claude-fable-5-1

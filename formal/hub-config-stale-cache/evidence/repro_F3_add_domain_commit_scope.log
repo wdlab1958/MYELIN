@@ -1,0 +1,13 @@
+✔ Domain D2 추가 (extra). 변경: 10_Domains/D2/_MOC.md, 90_System/taxonomy.md, CLAUDE.md, myelin.yaml, .obsidian/graph.json
+  git: 7bc35c0 ([myelin:add-domain])
+HEAD               : [myelin:add-domain] D2
+add-domain touched : 10_Domains/D2/_MOC.md, 90_System/taxonomy.md, CLAUDE.md, myelin.yaml, .obsidian/graph.json
+commit contains    : ['.obsidian/graph.json', '10_Domains/D2/_MOC.md', '30_Resources/wip-notes.txt', 'CLAUDE.md', 'myelin.yaml']
+F3-A VIOLATED — unrelated user file committed under [myelin:add-domain]
+✔ Domain SEC-CONSULT 추가 (extra). 변경: 10_Domains/SEC-CONSULT/_MOC.md, 90_System/templates/SEC-CONSULT-assessment-checklist.md, 90_System/templates/SEC-CONSULT-lesson-customer-type.md, 90_System/taxonomy.md, CLAUDE.md, myelin.yaml, .obsidian/graph.json
+  (git commit 생략: Command '['git', 'commit', '-q', '-m', '[myelin:add-domain] SEC-CONSULT', '--allow-empty']' returned non-zero exit status 1. — ERROR   schema             20_Projects/wip-not-ready.md: frontmatter block (`---`) not found at start of file
+doctor (staged): 2 notes · 1 errors · 0 warnings · schema=1
+MYELIN pre-commit: 위 ERROR 를 고친 뒤 다시 커밋하세요 (사람이 의도적으로 건너뛸 때만 git commit --no-verify) — 직접 `git add -A && git commit` 하세요) 
+HEAD after 2nd add : [myelin:add-domain] D2
+git status         : M  .obsidian/graph.json | A  10_Domains/SEC-CONSULT/_MOC.md | A  20_Projects/wip-not-ready.md | M  90_System/taxonomy.md | A  90_System/templates/SEC-CONSULT-assessment-checklist.md | A  90_System/templates/SEC-CONSULT-lesson-customer-type.md | M  CLAUDE.md | M  myelin.yaml
+F3-B VIOLATED — add-domain's own commit was refused because `git add -A` staged the user's WIP note

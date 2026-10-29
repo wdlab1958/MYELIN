@@ -1,0 +1,99 @@
+TLC2 Version 2026.10.28.014557 (rev: 56d37a9)
+Running breadth-first search Model-Checking with fp 88 and seed 4076222479118531062 with 4 workers on 28 cores with 27305MB heap and 64MB offheap memory [pid: 976827] (Linux 6.14.0-37-generic amd64, Ubuntu 21.0.12.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Properties.tla
+Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Spec.tla
+Parsing file /tmp/tlc-9105297428398796025/_TLCTrace.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-9105297428398796025/Naturals.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-9105297428398796025/FiniteSets.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-9105297428398796025/Sequences.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-9105297428398796025/TLC.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-9105297428398796025/TLCExt.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-9105297428398796025/Integers.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module Spec
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-10-29 15:02:25)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-10-29 15:02:25.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.1E-15
+The coverage statistics at 2026-10-29 15:02:25 (see https://explain.tlapl.us/module-coverage-statistics for how to interpret the following statistics).
+<formBase line 30, col 5 to line 30, col 12 of module Spec>: 4
+<badAccept line 34, col 5 to line 34, col 13 of module Spec>: 1
+<cache line 28, col 5 to line 28, col 9 of module Spec>: 4
+<accepted line 32, col 5 to line 32, col 12 of module Spec>: 4
+<file line 27, col 5 to line 27, col 8 of module Spec>: 4
+<formLoaded line 31, col 5 to line 31, col 14 of module Spec>: 2
+<form line 29, col 5 to line 29, col 8 of module Spec>: 4
+<badReject line 33, col 5 to line 33, col 13 of module Spec>: 1
+<lost line 35, col 5 to line 35, col 8 of module Spec>: 1
+<Init line 46, col 1 to line 46, col 4 of module Spec>: 1:1
+  line 47, col 8 to line 47, col 16 of module Spec: 1:38
+  line 47, col 21 to line 47, col 30 of module Spec: 1:4
+  line 48, col 8 to line 48, col 33 of module Spec: 1:16
+  line 48, col 38 to line 48, col 55 of module Spec: 1
+  line 49, col 8 to line 49, col 20 of module Spec: 1:32
+  line 49, col 25 to line 49, col 41 of module Spec: 1
+  line 49, col 46 to line 49, col 62 of module Spec: 1
+  line 49, col 67 to line 49, col 75 of module Spec: 1
+  |line 49, col 74 to line 49, col 75 of module Spec: 1:64
+<CliAddDomain line 59, col 1 to line 59, col 15 of module Spec>: 18:24
+  line 60, col 8 to line 60, col 20 of module Spec: 168
+  |line 60, col 8 to line 60, col 8 of module Spec: 144
+  |line 60, col 17 to line 60, col 20 of module Spec: 144
+  line 61, col 8 to line 61, col 28 of module Spec: 24
+  |line 61, col 16 to line 61, col 28 of module Spec: 24
+  ||line 61, col 16 to line 61, col 19 of module Spec: 24
+  ||line 61, col 26 to line 61, col 28 of module Spec: 24:276
+  |||line 61, col 27 to line 61, col 27 of module Spec: 24
+  line 62, col 8 to line 62, col 92 of module Spec: 24
+<HubRestart line 65, col 1 to line 65, col 10 of module Spec>: 4:72
+  line 66, col 8 to line 66, col 20 of module Spec: 72
+  line 67, col 8 to line 67, col 91 of module Spec: 72
+<HubPromote line 71, col 1 to line 71, col 13 of module Spec>: 20:144
+  line 72, col 8 to line 72, col 20 of module Spec: 144
+  line 73, col 12 to line 73, col 21 of module Spec: 144
+  line 74, col 19 to line 74, col 47 of module Spec: 120
+  |line 74, col 31 to line 74, col 47 of module Spec: 120
+  ||line 74, col 31 to line 74, col 38 of module Spec: 120
+  ||line 74, col 45 to line 74, col 47 of module Spec: 120:204
+  |||line 74, col 46 to line 74, col 46 of module Spec: 120
+  line 75, col 19 to line 75, col 59 of module Spec: 120
+  line 76, col 19 to line 76, col 37 of module Spec: 120
+  line 77, col 19 to line 77, col 56 of module Spec: 24
+  line 78, col 19 to line 78, col 51 of module Spec: 24
+  line 79, col 8 to line 79, col 59 of module Spec: 144
+<BrowserGet line 83, col 1 to line 83, col 10 of module Spec>: 9:72
+  line 84, col 8 to line 84, col 20 of module Spec: 72
+  line 85, col 8 to line 85, col 61 of module Spec: 72
+  line 86, col 8 to line 86, col 63 of module Spec: 72
+<BrowserPut line 90, col 1 to line 90, col 10 of module Spec>: 20:36
+  line 91, col 8 to line 91, col 17 of module Spec: 36
+  line 92, col 8 to line 92, col 26 of module Spec: 36
+  line 93, col 12 to line 93, col 37 of module Spec: 36
+  line 94, col 16 to line 94, col 46 of module Spec: 27
+  line 95, col 16 to line 97, col 31 of module Spec: 9
+  line 98, col 8 to line 98, col 67 of module Spec: 36
+<C1_TypeOK line 23, col 1 to line 23, col 9 of module Properties>
+  line 23, col 14 to line 23, col 19 of module Properties: 72
+<P1_NoStaleDecision line 12, col 1 to line 12, col 18 of module Properties>
+  line 12, col 23 to line 12, col 46 of module Properties: 72
+<P2_NoLostDomain line 20, col 1 to line 20, col 15 of module Properties>
+  line 20, col 20 to line 20, col 28 of module Properties: 72
+End of statistics.
+349 states generated, 72 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 7.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 4 and the 95th percentile is 3).
+Finished in 00s at (2026-10-29 15:02:25)
