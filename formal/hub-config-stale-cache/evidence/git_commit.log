@@ -1,0 +1,65 @@
+commit 434425f069f4e2ce1a813d9bba78877dfa2c017b
+Author: wdlab1958 <wdlab1958@gmail.com>
+Date:   Thu Oct 29 15:10:19 2026 +0900
+
+    P9: formal(hub): WDLAB proof-skills 검증 (hub-config-stale-cache) — F1 FIXED · F2/F3 CONFIRMED · BOUNDED-PASS L2 2026-10-29
+    
+    formal: WDLAB proof-skills 검증 (hub-config-stale-cache) — FIXED/CONFIRMED 2026-10-29
+    
+    - TLA+ 모델(formal/hub-config-stale-cache/tla): CLI `add-domain` × Hub 설정 캐시 × Settings 페이지 GET→PUT.
+      속성 동결 P1(결정은 현재 myelin.yaml 기준) · P2(Settings 저장이 Domain 을 지우지 않음).
+      6 config: MC/MC_3 PASS, MC_bug/MC_bug_p2/MC_partial/MC_sanity FAIL(12). Doms={d1,d2} 72 states/depth 7, {d1,d2,d3} 432/depth 9.
+    - F1 FIXED (high): Hub 가 기동 시 1회 읽은 myelin.yaml 로만 결정 → CLI 가 추가한 Domain 으로의 promote 422,
+      Settings 저장이 옛 Domain 목록을 되써서 추가가 사라짐. HubService._reload_if_changed(): 파일 바이트가 바뀌면
+      _v()/ready 에서 reload(). 재현 테스트 packages/myelin-hub/api/tests/test_config_reload.py (수정 전 2 failed → 2 passed),
+      Hub API 141 passed, ruff/mypy OK, mutation(토글 OFF) 재실패 확인.
+    - F2 CONFIRMED (medium, HITL): PUT /api/settings 버전 검사 부재 — GET→PUT 사이 add-domain 이 끼면 Domain 유실
+      (repro/repro_F2_settings_put_window.py). If-Match/ETag 제안.
+    - F3 CONFIRMED (medium, 기록): CLI add-domain/obsidian setup 의 `git add -A` 가 무관한 사용자 파일을 커밋에 포함,
+      미완성 노트가 섞이면 pre-commit 장치가 add-domain 커밋 거부 (repro/repro_F3_add_domain_commit_scope.py). ADR-0009 §4.
+    - README: "형식 검증 — Oct.29, 2026" 섹션. 보고서: ~/ai_project/Proof-Skills/MYELIN_ProofSkills_Report_2026-10-29.docx
+    
+    Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+
+ README.md                                          |  12 ++
+ formal/.gitignore                                  |   1 +
+ formal/CANDIDATES.md                               |  17 ++
+ formal/README.md                                   |  23 ++
+ formal/TOOLCHAIN.lock                              |   7 +
+ formal/findings.json                               | 199 +++++++++++++++++
+ formal/hub-config-stale-cache/CORRESPONDENCE.md    |  39 ++++
+ formal/hub-config-stale-cache/SCOPE.md             |  47 +++++
+ .../hub-config-stale-cache/evidence/mutation.log   |  15 ++
+ .../patches/F1-hub-config-reload-on-change.diff    |  85 ++++++++
+ .../evidence/regression_hub_api.log                |   3 +
+ .../evidence/repro_F2_settings_put_window.log      |   3 +
+ .../evidence/repro_F3_add_domain_commit_scope.log  |  13 ++
+ formal/hub-config-stale-cache/evidence/run_all.log |   8 +
+ .../hub-config-stale-cache/evidence/test_after.log |  11 +
+ .../evidence/test_before.log                       |  50 +++++
+ formal/hub-config-stale-cache/evidence/tlc_bug.log |  66 ++++++
+ .../hub-config-stale-cache/evidence/tlc_bug_p2.log |  77 +++++++
+ .../evidence/tlc_coverage.log                      |  99 +++++++++
+ .../hub-config-stale-cache/evidence/tlc_fixed.log  |  35 +++
+ .../evidence/tlc_fixed_doms3.log                   |  35 +++
+ .../evidence/tlc_partial.log                       |  77 +++++++
+ .../hub-config-stale-cache/evidence/tlc_sanity.log |  66 ++++++
+ .../evidence/trace_bug_P1.md                       |   5 +
+ .../evidence/trace_bug_P2.md                       |   6 +
+ .../evidence/trace_partial_P2_F2.md                |   6 +
+ .../evidence/trace_sanity.md                       |   5 +
+ .../repro/repro_F2_settings_put_window.py          |  61 ++++++
+ .../repro/repro_F3_add_domain_commit_scope.py      |  82 +++++++
+ formal/hub-config-stale-cache/tla/MC.cfg           |  10 +
+ formal/hub-config-stale-cache/tla/MC_3.cfg         |  10 +
+ formal/hub-config-stale-cache/tla/MC_bug.cfg       |   9 +
+ formal/hub-config-stale-cache/tla/MC_bug_p2.cfg    |   9 +
+ formal/hub-config-stale-cache/tla/MC_partial.cfg   |  11 +
+ formal/hub-config-stale-cache/tla/MC_sanity.cfg    |   8 +
+ formal/hub-config-stale-cache/tla/Properties.tla   |  31 +++
+ formal/hub-config-stale-cache/tla/Spec.tla         | 108 ++++++++++
+ .../reports/2026-10-29-hub-config-stale-cache.md   | 235 +++++++++++++++++++++
+ formal/run_all.sh                                  |  45 ++++
+ .../myelin-hub/api/src/myelin_hub_api/service.py   |  30 ++-
+ .../myelin-hub/api/tests/test_config_reload.py     |  76 +++++++
+ 41 files changed, 1732 insertions(+), 3 deletions(-)

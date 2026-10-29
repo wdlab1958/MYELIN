@@ -231,5 +231,5 @@ java -cp ~/.cache/proof-skills/tla2tools.jar tlc2.TLC -workers 4 -config MC_bug.
 | `formal/reports/2026-10-29-hub-config-stale-cache.md` | 이 보고서 사본 |
 | `README.md` | "형식 검증 — Oct.29, 2026" 섹션 추가 |
 
-- 커밋: `__COMMIT_SHA__` (`main`, push 결과: `__PUSH_RESULT__`). `git log -1 --stat` 은 `formal/hub-config-stale-cache/evidence/git_commit.log`.
+- 커밋: `434425f069f4e2ce1a813d9bba78877dfa2c017b` (`main`, push 결과: `pushed to origin/main (after merging remote cfb24cc; merge commit c54a459)`). `git log -1 --stat` 은 `formal/hub-config-stale-cache/evidence/git_commit.log`.
 - 사용자의 다른 dirty 파일은 없었다(작업 전 `git status --porcelain` 빈 상태).
