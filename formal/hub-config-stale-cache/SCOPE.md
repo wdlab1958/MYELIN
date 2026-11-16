@@ -37,8 +37,8 @@
 ## Properties (§10.3 수확 기록)
 | ID | Property | Level | Source | Frozen |
 |---|---|---|---|---|
-| P1 | `P1_NoStaleDecision == ~badReject /\ ~badAccept` — Hub 의 결정(promote 대상 Domain 검증 등)은 현재 `myelin.yaml` 의 Domain 목록에 근거한다 | protocol | `PHASE_STATE.md:136`; ADR-0009 §3 `docs/adr/0009-hub-write-policy.md:10` ("Domain 이 설정된 것"); `README.md:17`; `service.py:554-555` | ✅ (HITL: G2 pending Brian review) |
-| P2 | `P2_NoLostDomain == lost = {}` — Settings 저장은 `myelin.yaml` 에서 Domain 을 제거하지 않는다(Settings 페이지는 Domain 을 편집하지 않으며 `domains.extra` 의 유일한 쓰기 주체는 add-domain) | protocol | ADR-0004 §2 `docs/adr/0004-myelin-yaml-schema.md:9`; `README.md:69`; `CLAUDE.md` Engineering Rules "사용자 데이터 덮어쓰기 금지"; `Settings.tsx:17-19`; `service.py:676-700` | ✅ (HITL: G2 pending Brian review) |
+| P1 | `P1_NoStaleDecision == ~badReject /\ ~badAccept` — Hub 의 결정(promote 대상 Domain 검증 등)은 현재 `myelin.yaml` 의 Domain 목록에 근거한다 | protocol | `PHASE_STATE.md:136`; ADR-0009 §3 `docs/adr/0009-hub-write-policy.md:10` ("Domain 이 설정된 것"); `README.md:32`; `service.py:554-555` | ✅ (HITL: G2 pending Brian review) |
+| P2 | `P2_NoLostDomain == lost = {}` — Settings 저장은 `myelin.yaml` 에서 Domain 을 제거하지 않는다(Settings 페이지는 Domain 을 편집하지 않으며 `domains.extra` 의 유일한 쓰기 주체는 add-domain) | protocol | ADR-0004 §2 `docs/adr/0004-myelin-yaml-schema.md:9`; `README.md:84`; `CLAUDE.md` Engineering Rules "사용자 데이터 덮어쓰기 금지"; `Settings.tsx:17-19`; `service.py:676-700` | ✅ (HITL: G2 pending Brian review) |
 | C1 | `C1_TypeOK` — 변수 치역 | code | `tla/Spec.tla` | — |
 | S1 | `S_NeverAcceptedAdded == accepted = {}` — **반드시 FAIL**(CLI 추가 → Hub 수락 경로 도달성) | sanity | — | — |
 | S2 | `S_NeverAllAdded == file # Doms` — 반드시 FAIL | sanity | — | — |

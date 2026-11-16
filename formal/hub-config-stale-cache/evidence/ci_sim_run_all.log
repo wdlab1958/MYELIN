@@ -1,0 +1,13 @@
+# W5 CI simulation — 2026-11-16 — export PROOF_SKILLS_TOOLS=$(mktemp -d) && bash formal/ci/setup_tla.sh && TLC_WORKERS=2 FORMAL_SKIP_TESTS=1 bash formal/run_all.sh  (final tree, after pointer fixes)
+	TLC - provides model checking and simulation of TLA+ specifications - Version 2026.11.15.002146
+tla2tools.jar sha256: 7e53aa636dac8a3c…  (note: the v1.8.0 GitHub release is a rolling pre-release; the CI log records the actual TLC build)
+TLA+ tools ready in /tmp/claude-1000/-home-ubuntu-02-ai-project/d54b4db9-ed5a-497c-b42f-a7f7341cffb5/scratchpad/cisim.NRHI
+formal/run_all.sh — TLC Version 2026.11.15.002146 · workers=2
+  ok    hub-config-stale-cache     MC           exit 0   expected 0   72 distinct states
+  ok    hub-config-stale-cache     MC_3         exit 0   expected 0   432 distinct states
+  ok    hub-config-stale-cache     MC_bug       exit 12  expected 12  7 distinct states
+  ok    hub-config-stale-cache     MC_bug_p2    exit 12  expected 12  30 distinct states
+  ok    hub-config-stale-cache     MC_partial   exit 12  expected 12  38 distinct states
+  ok    hub-config-stale-cache     MC_sanity    exit 12  expected 12  8 distinct states
+GATE: all configs behaved as expected
+exit=0

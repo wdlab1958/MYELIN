@@ -1,0 +1,64 @@
+# W5 regression guard — WDLAB-STD-VERIFY-001 §13 (fail-closed)
+# Generated 2026-11-16. Three-config TLC gate (+ Lean trust audit where formal/lean_audit.sh exists) + W6 drift check.
+name: formal-verification
+on:
+  pull_request:
+    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
+  push:
+    branches: ["main"]
+    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
+  schedule:
+    - cron: "17 18 * * *"   # nightly 03:17 KST
+  workflow_dispatch:
+concurrency:
+  group: formal-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  three-config-gate:
+    name: TLC three-config gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      TLC_WORKERS: "2"
+      PROOF_SKILLS_TOOLS: ${{ github.workspace }}/.proof-skills-tools
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Cache TLA+ tools
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.proof-skills-tools
+          key: tla2tools-v1.8.0-${{ runner.os }}
+      - name: Fetch pinned TLA+ tools
+        run: bash formal/ci/setup_tla.sh
+      - name: Three-config gate (MC PASS / MC_bug FAIL / MC_sanity FAIL)
+        run: bash formal/run_all.sh
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-evidence-${{ github.run_id }}
+          path: |
+            formal/**/.tlc-out/**/tlc.log
+            formal/**/evidence/*.log
+          if-no-files-found: ignore
+          retention-days: 14
+  drift-check:
+    name: W6 correspondence drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Model → code pointers still resolve
+        run: python3 formal/tools/correspondence_check.py formal/ --root .
+      - name: Mapped source files changed in this PR (review required)
+        if: github.event_name == 'pull_request'
+        run: python3 formal/tools/correspondence_check.py formal/ --root . --since "origin/${{ github.base_ref }}"

@@ -18,6 +18,9 @@ WDLAB Unified Proof-Skills Standard v1.0(WDLAB-STD-VERIFY-001, proof-skills 0.1.
 | F2 / F3 (미수정) | `PUT /api/settings` 버전 검사 부재(GET→PUT 창, If-Match 제안) · CLI `add-domain` 의 `git add -A` 커밋 범위(ADR-0009 §4 위반) — `formal/hub-config-stale-cache/repro/` 스크립트로 재현, 수정안은 보고서 §3.2/§3.3 |
 | 실행 | `TLC_WORKERS=4 formal/run_all.sh` (3-config 게이트) · `.venv/bin/python -m pytest packages/myelin-hub/api/tests/test_config_reload.py -v` |
 
+### W5 CI 회귀 가드 — Nov.16, 2026
+[`.github/workflows/formal.yml`](.github/workflows/formal.yml)(`formal-verification`, fail-closed)이 PR·`main` push·nightly 에서 `formal/run_all.sh` 3-config 게이트(MC PASS / MC_bug·MC_partial·MC_sanity FAIL 기대값)와 W6 드리프트 검사(`formal/tools/correspondence_check.py`, 모델→코드 `file:line` 포인터 0 broken)를 실행한다. 스펙을 약화시키거나 fix 토글 기대값을 바꾸는 변경, 그리고 매핑된 소스가 움직여 대응표가 깨진 PR 을 막는다 — 상세 [`formal/README.md`](formal/README.md#ci-w5w6--2026-11-16).
+
 ---
 
 ## 1. 무엇인가

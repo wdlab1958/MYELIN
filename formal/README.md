@@ -15,8 +15,16 @@ TLC_WORKERS=4 formal/run_all.sh          # 3-config 게이트: MC PASS · MC_bug
 ```
 TLC 는 `~/.cache/proof-skills/tla2tools.jar`(`$TLA2TOOLS` 로 지정 가능) + Java 21 을 쓴다. 루트 모듈은 `Properties.tla`(`EXTENDS Spec`).
 
+## CI (W5/W6) — 2026-11-16
+- 워크플로 [`.github/workflows/formal.yml`](../.github/workflows/formal.yml) (`name: formal-verification`, 기존 `ci.yml` 과 별개) — PR·`main` push(`formal/**` 와 CORRESPONDENCE.md 가 가리키는 소스 경로 변경 시), nightly 03:17 KST, 수동 dispatch. **fail-closed**: 어느 job 이든 실패하면 red.
+- job `three-config-gate`: `formal/ci/setup_tla.sh` 로 고정 tla2tools v1.8.0 을 받아 `formal/run_all.sh` 실행 — MC·MC_3 PASS(0), MC_bug·MC_bug_p2·MC_partial·MC_sanity FAIL(12) 이 기대값. 기대값이 하나라도 어긋나면 게이트 실패(모델 약화·fix 토글 변경·사소한 스펙 훼손 감지). 로그는 `formal-evidence-<run_id>` 아티팩트(14일).
+- job `drift-check` (W6): `formal/tools/correspondence_check.py formal/ --root .` — `src:` 태그와 CORRESPONDENCE.md 의 `path:line` 포인터가 저장소 루트 기준으로 모두 존재하고 줄 범위가 파일 안에 있는지 확인(**0 broken** 이어야 통과). PR 에서는 base 브랜치 이후 변경된 매핑 소스 파일 목록을 추가로 출력한다(정보용). 포인터는 **삭제가 아니라 갱신**으로 고친다.
+- 재실행(로컬 = CI 와 동일): `export PROOF_SKILLS_TOOLS=$(mktemp -d) && bash formal/ci/setup_tla.sh && TLC_WORKERS=2 bash formal/run_all.sh` · `/usr/bin/python3 formal/tools/correspondence_check.py formal/ --root .` — 증거 `hub-config-stale-cache/evidence/ci_sim_run_all.log`, `ci_drift_check.log`.
+- 리뷰 규칙: CORRESPONDENCE.md 대상 파일(`service.py`·`app.py`·`scaffold.py`·`config.py`·`Settings.tsx`·ADR·README)을 바꾸는 PR 은 스펙/대응표 갱신 여부를 확인한다(PR 템플릿 없음 — 이 줄이 체크리스트).
+- `formal/ci/`·`formal/tools/` 는 proof-skills v0.1.1 (MIT) 의 CI 키트 사본이다. `tlc.sh`(단일 cfg 실행+트레이스 요약), `parse_tlc_trace.py`, `correspondence_check.py`.
+
 ## 파일
-- `CANDIDATES.md` G0 후보표 · `findings.json` 기계 판독 결과(proof-skills 스키마 + `wdlab` 블록) · `TOOLCHAIN.lock` · `run_all.sh`
+- `CANDIDATES.md` G0 후보표 · `findings.json` 기계 판독 결과(proof-skills 스키마 + `wdlab` 블록) · `TOOLCHAIN.lock` · `run_all.sh` · `ci/setup_tla.sh` · `tools/`(CI 키트)
 - `<concern>/SCOPE.md` · `CORRESPONDENCE.md`(모델 ↔ `file:line`) · `tla/` · `evidence/`(TLC 로그·트레이스·테스트 전/후·mutation·패치 diff) · `repro/`(스위트 밖 재현 스크립트)
 - `reports/2026-10-29-hub-config-stale-cache.md` 보고서 사본 (docx: `~/ai_project/Proof-Skills/MYELIN_ProofSkills_Report_2026-10-29.docx`)
 

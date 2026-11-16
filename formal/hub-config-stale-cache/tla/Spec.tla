@@ -61,12 +61,12 @@ CliAddDomain(d) ==
     /\ file' = file \cup {d}
     /\ UNCHANGED <<cache, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: service.py:126-154 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:126-154 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
 HubRestart ==
     /\ cache' = file
     /\ UNCHANGED <<file, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: service.py:534-555 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:534-555 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
 \*      (also domains() 419-439 and every other read of v.config.domains)
 HubPromote(d) ==
     /\ cache' = View
@@ -85,7 +85,7 @@ BrowserGet ==
     /\ form' = View /\ formBase' = View /\ formLoaded' = TRUE
     /\ UNCHANGED <<file, accepted, badReject, badAccept, lost>>
 
-\* src: Settings.tsx:18-20 `next = {...current, level, mcp, commons}; userPut("/api/settings", next)`
+\* src: packages/myelin-hub/web/src/pages/Settings.tsx:18-20 `next = {...current, level, mcp, commons}; userPut("/api/settings", next)`
 \*      -> app.py:298 PUT /api/settings -> service.py:676-700 save_settings(): write myelin.yaml, commit, reload()
 BrowserPut ==
     /\ formLoaded

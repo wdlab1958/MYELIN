@@ -32,7 +32,7 @@
       "kind": "invariant",
       "statement": "~badReject /\\ ~badAccept",
       "meaning": "Every Hub decision (promote target check, domain list, settings) uses the Domain list currently in myelin.yaml",
-      "source": "PHASE_STATE.md:136; docs/adr/0009-hub-write-policy.md:10 (§3); README.md:17; service.py:554-555",
+      "source": "PHASE_STATE.md:136; docs/adr/0009-hub-write-policy.md:10 (§3); README.md:32; service.py:554-555",
       "frozen": true,
       "result": "holds",
       "tool": "TLC 2026.10.28 (tla2tools v1.8.0)",
@@ -44,7 +44,7 @@
       "kind": "invariant",
       "statement": "lost = {}",
       "meaning": "A Settings save never removes a Domain from myelin.yaml (the page cannot edit Domains; add-domain is the only writer of domains.extra)",
-      "source": "docs/adr/0004-myelin-yaml-schema.md:9 (§2); README.md:69; CLAUDE.md Engineering Rules; Settings.tsx:17-19; service.py:676-700",
+      "source": "docs/adr/0004-myelin-yaml-schema.md:9 (§2); README.md:84; CLAUDE.md Engineering Rules; Settings.tsx:17-19; service.py:676-700",
       "frozen": true,
       "result": "holds",
       "tool": "TLC 2026.10.28 (tla2tools v1.8.0)",
@@ -194,6 +194,7 @@
       "G7(F3): pending — CLI commit scope vs init semantics"
     ],
     "risk_domain": "personal-knowledge-os / config-integrity",
-    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a"
+    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a",
+    "w5_ci": {"workflow": ".github/workflows/formal.yml", "registered": "2026-11-16", "jobs": ["three-config-gate", "drift-check"], "policy": "fail-closed"}
   }
 }
