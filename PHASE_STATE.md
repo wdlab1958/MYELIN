@@ -122,7 +122,7 @@ last_updated: 2026-10-28
 
 ## Blockers
 - 사람 참여: 파일럿 운영(3주), 챔피언 지정, KIPRIS 조회. 코드 측 블로커 없음.
-- CI: **green** — github.com/wdlab1958/MYELIN `main` run 40468827503 (check + gate P=9 + e2e, c568e35, 2026-10-27). 이전 run 39171277206(fc5ae4c)·39087153818(P=8) 도 green. 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
+- CI: **green** — github.com/wdlab1958/MYELIN `main` run 44285599369 (check + gate P=9 + e2e, 40c1d69, 2026-11-18) · `formal-verification` run 44285599066 (Lean trust audit · TLC three-config gate · W6 drift) 도 green. 직전 CI run 44282484680(f24742e)·43844042332(c29d83f) 는 `check` 실패 — f24742e 는 `formal/` 스크립트 ruff 오류 32건, 40c1d69 에서 정리. 이전 green: run 40468827503(c568e35, 2026-10-27)·39171277206(fc5ae4c)·39087153818(P=8). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
 - ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27)
