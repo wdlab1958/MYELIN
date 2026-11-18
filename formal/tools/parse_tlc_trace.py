@@ -17,6 +17,7 @@ Usage:
 
 The JSON output matches the `trace` array of formal-verify/assets/findings.schema.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,14 +28,16 @@ from pathlib import Path
 
 SRC_TAG = re.compile(r"\\\*\s*src:\s*(\S+)")
 TEXT_STATE = re.compile(r"^State (\d+): <(.+?)>\s*$")
-TEXT_ACTION = re.compile(r"^(\w+)(?:\((.*?)\))?\s+line (\d+), col \d+ to line (\d+), col \d+ of module (\w+)")
+TEXT_ACTION = re.compile(
+    r"^(\w+)(?:\((.*?)\))?\s+line (\d+), col \d+ to line (\d+), col \d+ of module (\w+)"
+)
 
 
 class Raw(str):
     """A value already in TLA+ text form (from TLC's text output)."""
 
 
-def tla_value(v) -> str:
+def tla_value(v: object) -> str:
     """Render a JSON-decoded TLC value compactly, close to TLA+ syntax."""
     if isinstance(v, Raw):
         return str(v)
@@ -57,7 +60,10 @@ def changed(prev: dict | None, cur: dict) -> dict:
         if prev.get(k) != v:
             if isinstance(v, dict) and isinstance(prev.get(k), dict):
                 sub = {kk: vv for kk, vv in v.items() if prev[k].get(kk) != vv}
-                out[k] = ", ".join(f"{kk} |-> {tla_value(vv)}" for kk, vv in sub.items()) + " (changed keys)"
+                out[k] = (
+                    ", ".join(f"{kk} |-> {tla_value(vv)}" for kk, vv in sub.items())
+                    + " (changed keys)"
+                )
             else:
                 out[k] = tla_value(v)
     return out
@@ -71,18 +77,19 @@ def _index_file(path: Path) -> dict[str, str]:
     """Map operator name -> src tag for one module. A tag belongs to a definition if it is
     in the contiguous comment block directly above it, or on/inside its body."""
     lines = path.read_text(errors="replace").splitlines()
-    defs = [(i, m.group(1)) for i, l in enumerate(lines) if (m := DEF_RE.match(l))]
+    defs = [(i, m.group(1)) for i, ln in enumerate(lines) if (m := DEF_RE.match(ln))]
     idx: dict[str, str] = {}
     for n, (i, name) in enumerate(defs):
         above = []
         j = i - 1
         while j >= 0 and COMMENT_RE.match(lines[j]):
-            above.append(lines[j]); j -= 1
+            above.append(lines[j])
+            j -= 1
         end = defs[n + 1][0] if n + 1 < len(defs) else len(lines)
         while end - 1 > i and COMMENT_RE.match(lines[end - 1]):
-            end -= 1                      # trailing comment block belongs to the next definition
-        for l in above + lines[i:end]:
-            if m := SRC_TAG.search(l):
+            end -= 1  # trailing comment block belongs to the next definition
+        for ln in above + lines[i:end]:
+            if m := SRC_TAG.search(ln):
                 idx[name] = m.group(1)
                 break
     return idx
@@ -123,16 +130,23 @@ def from_json(doc: dict) -> tuple[list[dict], str | None]:
             module = module or meta.get("location", {}).get("module")
             ctx = meta.get("context") or {}
             params = ", ".join(tla_value(ctx[p]) for p in meta.get("parameters", []) if p in ctx)
-            steps.append({"step": num, "action": meta.get("name", "?"), "params": params,
-                          "actor": params or None, "state": st,
-                          "module": meta.get("location", {}).get("module")})
+            steps.append(
+                {
+                    "step": num,
+                    "action": meta.get("name", "?"),
+                    "params": params,
+                    "actor": params or None,
+                    "state": st,
+                    "module": meta.get("location", {}).get("module"),
+                }
+            )
     else:
         for num, st in states:
             steps.append({"step": num, "action": "?" if num > 1 else "Init", "state": st})
     return steps, module
 
 
-def parse_text_value(s: str):
+def parse_text_value(s: str) -> Raw:
     return Raw(s.strip())  # keep TLA+ text as-is; diffing works on strings
 
 
@@ -151,8 +165,14 @@ def from_text(text: str) -> tuple[list[dict], str | None]:
                 action = "Init"
             else:
                 action = label.split()[0]
-            cur = {"step": num, "action": action, "params": params, "actor": params or None, "state": {},
-                   "module": am.group(5) if am else None}
+            cur = {
+                "step": num,
+                "action": action,
+                "params": params,
+                "actor": params or None,
+                "state": {},
+                "module": am.group(5) if am else None,
+            }
             steps.append(cur)
             last_var = None
             continue
@@ -162,7 +182,7 @@ def from_text(text: str) -> tuple[list[dict], str | None]:
             k, v = line[3:].split(" = ", 1)
             cur["state"][k.strip()] = parse_text_value(v)
             last_var = k.strip()
-        elif line.startswith("   ") and last_var:          # multi-line value continuation
+        elif line.startswith("   ") and last_var:  # multi-line value continuation
             cur["state"][last_var] = Raw(cur["state"][last_var] + " " + line.strip())
         elif not line.strip():
             cur = None if cur and cur["state"] else cur
@@ -170,7 +190,9 @@ def from_text(text: str) -> tuple[list[dict], str | None]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("trace", type=Path)
     ap.add_argument("--spec", type=Path)
     ap.add_argument("--format", choices=["md", "json"], default="md")
@@ -193,8 +215,11 @@ def main() -> int:
     out, prev = [], None
     for s in steps:
         st = {k: v for k, v in s["state"].items() if k not in hide}
-        item = {"step": s["step"], "action": s["action"] + (f"({s['params']})" if s.get("params") else ""),
-                "changed": changed(prev, st)}
+        item = {
+            "step": s["step"],
+            "action": s["action"] + (f"({s['params']})" if s.get("params") else ""),
+            "changed": changed(prev, st),
+        }
         if s.get("actor"):
             item["actor"] = s["actor"]
         if tag := lookup(srcs, s.get("module"), s["action"]):
@@ -202,7 +227,7 @@ def main() -> int:
         out.append(item)
         prev = st
     if out:
-        out[-1]["violation"] = True   # TLC reports the violating state last (safety)
+        out[-1]["violation"] = True  # TLC reports the violating state last (safety)
 
     if args.format == "json":
         print(json.dumps(out, indent=2))

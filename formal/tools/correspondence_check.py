@@ -12,6 +12,7 @@ Usage:
 Exit codes: 0 all pointers resolve; 1 broken pointers; 2 usage error.
 With --since, also lists mapped source files changed since <git-ref> (informational).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -19,14 +20,16 @@ import json
 import re
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 TAG = re.compile(r"src:\s*`?([\w./@+-]+\.[A-Za-z0-9]+)(?::(\d+)(?:-(\d+))?)?`?")
 CELL = re.compile(r"`([\w./@+-]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?`")
 MODEL_EXT = {".tla", ".qnt", ".lean", ".md", ".cfg"}
 
 
-def scan(formal: Path):
+def scan(formal: Path) -> Iterator[dict[str, Any]]:
     for f in sorted(formal.rglob("*")):
         if f.suffix not in MODEL_EXT or not f.is_file() or ".lake" in f.parts:
             continue
@@ -46,9 +49,13 @@ def scan(formal: Path):
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("formal", type=Path)
-    ap.add_argument("--root", type=Path, default=Path("."), help="repo root that src: paths are relative to")
+    ap.add_argument(
+        "--root", type=Path, default=Path(), help="repo root that src: paths are relative to"
+    )
     ap.add_argument("--since", help="git ref; list mapped files changed since then")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
@@ -79,19 +86,37 @@ def main() -> int:
     if args.since:
         try:
             out = subprocess.run(
-                ["git", "-C", str(args.root), "diff", "--name-only", f"{args.since}..HEAD", "--", *sorted(targets)],
-                capture_output=True, text=True, check=True,
+                [
+                    "git",
+                    "-C",
+                    str(args.root),
+                    "diff",
+                    "--name-only",
+                    f"{args.since}..HEAD",
+                    "--",
+                    *sorted(targets),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
             ).stdout
-            changed = [l for l in out.splitlines() if l]
+            changed = [ln for ln in out.splitlines() if ln]
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             print(f"warning: git diff failed: {e}", file=sys.stderr)
 
     if args.json:
-        print(json.dumps({"pointers": len(seen), "broken": broken, "changed_since": changed}, indent=2))
+        print(
+            json.dumps(
+                {"pointers": len(seen), "broken": broken, "changed_since": changed}, indent=2
+            )
+        )
     else:
         print(f"{len(seen)} pointers, {len(targets)} source files, {len(broken)} broken")
         for b in broken:
-            print(f"  BROKEN {b['model_file']}:{b['model_line']} -> {b['target']}:{b['start']}-{b['end']} ({b['problem']})")
+            print(
+                f"  BROKEN {b['model_file']}:{b['model_line']} -> "
+                f"{b['target']}:{b['start']}-{b['end']} ({b['problem']})"
+            )
         if args.since:
             print(f"{len(changed)} mapped files changed since {args.since}")
             for c in changed:

@@ -30,22 +30,50 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         vault = Path(tmp) / "v"
         init = run(
-            PY, "-m", "myelin_cli", "init", "--non-interactive", "--vault", str(vault),
-            "--packs-dir", str(REPO / "packs"), "--name", "Brian", "--primary", "D1",
-            "--research", "D3", "--growth", "D4", "--level", "2", cwd=REPO,
+            PY,
+            "-m",
+            "myelin_cli",
+            "init",
+            "--non-interactive",
+            "--vault",
+            str(vault),
+            "--packs-dir",
+            str(REPO / "packs"),
+            "--name",
+            "Brian",
+            "--primary",
+            "D1",
+            "--research",
+            "D3",
+            "--growth",
+            "D4",
+            "--level",
+            "2",
+            cwd=REPO,
         )
         assert init.returncode == 0, init.stdout + init.stderr
-        # Case A — the user's unrelated, uncommitted but *valid* file (not a note: doctor ignores .txt)
+        # Case A — the user's unrelated, uncommitted but *valid* file
+        # (not a note: doctor ignores .txt)
         scratch = vault / "30_Resources" / "wip-notes.txt"
         scratch.parent.mkdir(exist_ok=True)
-        scratch.write_text("private scratch — not meant for the add-domain commit\n", encoding="utf-8")
+        scratch.write_text(
+            "private scratch — not meant for the add-domain commit\n", encoding="utf-8"
+        )
         add = run(
-            PY, "-m", "myelin_cli", "add-domain", "D2", "--vault", str(vault),
-            "--packs-dir", str(REPO / "packs"), cwd=REPO,
+            PY,
+            "-m",
+            "myelin_cli",
+            "add-domain",
+            "D2",
+            "--vault",
+            str(vault),
+            "--packs-dir",
+            str(REPO / "packs"),
+            cwd=REPO,
         )
         assert add.returncode == 0, add.stdout + add.stderr
         print(add.stdout.rstrip())
-        touched = [ln.split("변경: ", 1)[1] for ln in add.stdout.splitlines() if "변경: " in ln][0]
+        touched = next(ln.split("변경: ", 1)[1] for ln in add.stdout.splitlines() if "변경: " in ln)
         head = run("git", "log", "-1", "--format=%s", cwd=vault).stdout.strip()
         committed = run("git", "show", "--pretty=format:", "--name-only", "HEAD", cwd=vault)
         files = sorted(f for f in committed.stdout.splitlines() if f)
@@ -61,8 +89,16 @@ def main() -> int:
         wip = vault / "20_Projects" / "wip-not-ready.md"
         wip.write_text("# WIP — not ready\n", encoding="utf-8")
         add2 = run(
-            PY, "-m", "myelin_cli", "add-domain", "SEC-CONSULT", "--vault", str(vault),
-            "--packs-dir", str(REPO / "packs"), cwd=REPO,
+            PY,
+            "-m",
+            "myelin_cli",
+            "add-domain",
+            "SEC-CONSULT",
+            "--vault",
+            str(vault),
+            "--packs-dir",
+            str(REPO / "packs"),
+            cwd=REPO,
         )
         print(add2.stdout.rstrip(), add2.stderr.rstrip())
         head2 = run("git", "log", "-1", "--format=%s", cwd=vault).stdout.strip()
@@ -70,7 +106,10 @@ def main() -> int:
         print("HEAD after 2nd add :", head2)
         print("git status         :", status.replace("\n", " | "))
         if add2.returncode == 0 and head2 != "[myelin:add-domain] SEC-CONSULT":
-            print("F3-B VIOLATED — add-domain's own commit was refused because `git add -A` staged the user's WIP note")
+            print(
+                "F3-B VIOLATED — add-domain's own commit was refused "
+                "because `git add -A` staged the user's WIP note"
+            )
             violated = True
         if violated:
             return 1

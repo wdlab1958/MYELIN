@@ -7,10 +7,12 @@ The PUT body is `{...current, level, mcp, commons}`, so a Domain added between t
 is written away. After F1 the window is one browser round-trip (was: the whole Hub lifetime).
 
 Property P2 (frozen): a Settings save never removes a Domain from myelin.yaml.
-Run:  .venv/bin/python formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py [--no-if-match]
+Run:  .venv/bin/python formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py \
+          [--no-if-match]
 Exit 1 = P2 violated, 0 = holds.
   default        the Hub UI path: the PUT carries the version of its GET (If-Match) -> 412, exit 0
-  --no-if-match  a client that sends no If-Match (script, old UI build): not checked -> still exit 1.
+  --no-if-match  a client that sends no If-Match (script, old UI build): not checked -> still
+                 exit 1.
                  This is the documented residual of F2 (the header is optional; making it
                  mandatory is a public-API decision left to HITL).
 The same trace runs in the suite: packages/myelin-hub/api/tests/test_formal_hub.py::test_f2_…
@@ -40,28 +42,54 @@ def main() -> int:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp) / "basic"
         shutil.copytree(
-            REPO / "tests/fixtures/vaults/basic", root, ignore=shutil.ignore_patterns(".myelin", ".obsidian")
+            REPO / "tests/fixtures/vaults/basic",
+            root,
+            ignore=shutil.ignore_patterns(".myelin", ".obsidian"),
         )
-        for args in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-q", "-m", "fixture"]):
-            subprocess.run(["git", *args], cwd=root, check=True,
-                           env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x"})
+        for args in (
+            ["init", "-q", "-b", "main"],
+            ["add", "-A"],
+            ["commit", "-q", "-m", "fixture"],
+        ):
+            subprocess.run(
+                ["git", *args],
+                cwd=root,
+                check=True,
+                env={
+                    **os.environ,
+                    "GIT_AUTHOR_NAME": "t",
+                    "GIT_AUTHOR_EMAIL": "t@x",
+                    "GIT_COMMITTER_NAME": "t",
+                    "GIT_COMMITTER_EMAIL": "t@x",
+                },
+            )
         svc = HubService.open(root)
-        current, version = svc.settings_versioned()                # BrowserGet  (Settings.tsx:21-23, ETag)
+        current, version = svc.settings_versioned()  # BrowserGet  (Settings.tsx:21-23, ETag)
         if "--no-if-match" in sys.argv:
             version = None
-        add_domain(Vault.open(root), "SEC-CONSULT", datetime(2026, 10, 29, 9, 0))  # CliAddDomain (other process)
+        add_domain(
+            Vault.open(root), "SEC-CONSULT", datetime(2026, 10, 29, 9, 0)
+        )  # CliAddDomain (other process)
         assert "SEC-CONSULT" in load_config(root).domains.all_ids
         current["level"] = 3
         try:
-            svc.save_settings(current, base_version=version)       # BrowserPut  (Settings.tsx:24-26, If-Match)
+            svc.save_settings(
+                current, base_version=version
+            )  # BrowserPut  (Settings.tsx:24-26, If-Match)
         except HubError as exc:
             print(f"PUT refused: {exc.status} {exc}")
         after = load_config(root).domains.all_ids
         print("myelin.yaml domains after save:", after)
         if "SEC-CONSULT" not in after:
-            print("F2 VIOLATED (P2) — the save between GET and PUT dropped the Domain added by the CLI")
-            print("  10_Domains/SEC-CONSULT/_MOC.md exists:", (root / "10_Domains/SEC-CONSULT/_MOC.md").is_file(),
-                  "-> doctor: unregistered domain")
+            print(
+                "F2 VIOLATED (P2) — "
+                "the save between GET and PUT dropped the Domain added by the CLI"
+            )
+            print(
+                "  10_Domains/SEC-CONSULT/_MOC.md exists:",
+                (root / "10_Domains/SEC-CONSULT/_MOC.md").is_file(),
+                "-> doctor: unregistered domain",
+            )
             return 1
         print("F2 holds")
         return 0
