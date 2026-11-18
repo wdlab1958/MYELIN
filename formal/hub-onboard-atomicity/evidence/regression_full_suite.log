@@ -1,0 +1,4 @@
+=========================== short test summary info ============================
+SKIPPED [1] packages/myelin-hub/api/tests/test_chaos_api.py:612: root ignores file modes
+SKIPPED [1] tests/test_perf_index.py:38: perf tests run only with MYELIN_PERF=1 (make gate P=4)
+1291 passed, 2 skipped in 174.11s (0:02:54)

@@ -1,15 +1,25 @@
-# mutation check (post-fix, 2026-10-29T15:02:25+09:00): model fix toggles OFF -> frozen properties must FAIL again
-## MC_bug.cfg
-    ReloadOnRequest = FALSE    IfMatch = FALSE
-Error: Invariant P1_NoStaleDecision is violated.
-20 states generated, 11 distinct states found, 1 states left on queue.
-The depth of the complete state graph search is 4.
-## MC_bug_p2.cfg
-    ReloadOnRequest = FALSE    IfMatch = FALSE
-Error: Invariant P2_NoLostDomain is violated.
-89 states generated, 42 distinct states found, 21 states left on queue.
-The depth of the complete state graph search is 5.
+# mutation check (2026-11-18T17:18:16+09:00): fix toggles OFF -> frozen properties must FAIL again; fix ON -> PASS
 ## MC.cfg
-    ReloadOnRequest = TRUE    IfMatch = TRUE
+    ReloadOnRequest = TRUE     IfMatch = TRUE 
+exit=0
+Model checking completed. No error has been found.
 349 states generated, 72 distinct states found, 0 states left on queue.
 The depth of the complete state graph search is 7.
+## MC_bug.cfg
+    ReloadOnRequest = FALSE     IfMatch = FALSE 
+exit=12
+Error: Invariant P1_NoStaleDecision is violated.
+8 states generated, 5 distinct states found, 2 states left on queue.
+The depth of the complete state graph search is 3.
+## MC_bug_p2.cfg
+    ReloadOnRequest = FALSE     IfMatch = FALSE 
+exit=12
+Error: Invariant P2_NoLostDomain is violated.
+44 states generated, 21 distinct states found, 12 states left on queue.
+The depth of the complete state graph search is 4.
+## MC_partial.cfg
+    ReloadOnRequest = TRUE     IfMatch = FALSE 
+exit=12
+Error: Invariant P2_NoLostDomain is violated.
+66 states generated, 31 distinct states found, 18 states left on queue.
+The depth of the complete state graph search is 4.

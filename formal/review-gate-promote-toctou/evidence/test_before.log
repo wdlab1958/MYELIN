@@ -1,0 +1,211 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+____________ test_f2_settings_put_between_get_and_put_keeps_domain _____________
+
+client = <starlette.testclient.TestClient object at 0x7faeabe9a0c0>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f2_settings_put_between_g0/basic')
+
+    def test_f2_settings_put_between_get_and_put_keeps_domain(
+        client: TestClient, vault_root: Path
+    ) -> None:
+        """trace_partial_P2_F2.md: BrowserGet -> CliAddDomain(d1) -> BrowserPut must not drop d1."""
+        got = client.get("/api/settings")  # Settings.tsx save(): current = GET /api/settings
+        current = got.json()
+        _cli_add_domain(vault_root, NEW_DOMAIN)  # another process writes myelin.yaml in the window
+        current["level"] = 3
+        headers = {**CLICK, "If-Match": got.headers.get("etag", "")}
+        r = client.put("/api/settings", headers=headers, json=current)
+        # P2: whatever the Hub answers, the Domain added by the CLI is still configured
+>       assert NEW_DOMAIN in load_config(vault_root).domains.all_ids, (
+            f"P2 violated (lost update): PUT /api/settings -> {r.status_code} dropped {NEW_DOMAIN}"
+        )
+E       AssertionError: P2 violated (lost update): PUT /api/settings -> 200 dropped SEC-CONSULT
+E       assert 'SEC-CONSULT' in ['D1', 'D3', 'D4', 'D2']
+E        +  where ['D1', 'D3', 'D4', 'D2'] = Domains(primary='D1', research='D3', growth='D4', extra=['D2']).all_ids
+E        +    where Domains(primary='D1', research='D3', growth='D4', extra=['D2']) = MyelinConfig(owner=Owner(name='Brian', team='A3-AI WG', email='brian@example.org'), language='ko', packs=['myelin.core...s(enabled=False, remote=None, local=None, metrics_opt_in=False), mcp=MCP(write_draft=False, expose_confidential=False)).domains
+E        +      where MyelinConfig(owner=Owner(name='Brian', team='A3-AI WG', email='brian@example.org'), language='ko', packs=['myelin.core...s(enabled=False, remote=None, local=None, metrics_opt_in=False), mcp=MCP(write_draft=False, expose_confidential=False)) = load_config(PosixPath('/tmp/pytest-of-root/pytest-1/test_f2_settings_put_between_g0/basic'))
+
+packages/myelin-hub/api/tests/test_formal_hub.py:83: AssertionError
+____________ test_f8_vault_summary_is_not_built_from_a_stale_config ____________
+
+client = <starlette.testclient.TestClient object at 0x7faeabee6960>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f8_vault_summary_is_not_b0/basic')
+
+    def test_f8_vault_summary_is_not_built_from_a_stale_config(
+        client: TestClient, vault_root: Path
+    ) -> None:
+        """trace_bug_P1.md with the decision = GET /api/vault (the Settings / Dashboard header)."""
+        assert NEW_DOMAIN not in client.get("/api/vault").json()["domains"]  # Hub has loaded
+        _cli_add_domain(vault_root, NEW_DOMAIN)
+        on_disk = set(load_config(vault_root).domains.all_ids)
+        first = client.get("/api/vault").json()  # the very next answer
+>       assert set(first["domains"]) == on_disk, (
+            f"P1 violated (stale answer): /api/vault lists {sorted(first['domains'])}, "
+            f"myelin.yaml has {sorted(on_disk)}"
+        )
+E       AssertionError: P1 violated (stale answer): /api/vault lists ['D1', 'D2', 'D3', 'D4'], myelin.yaml has ['D1', 'D2', 'D3', 'D4', 'SEC-CONSULT']
+E       assert {'D1', 'D2', 'D3', 'D4'} == {'D1', 'D2', ...'SEC-CONSULT'}
+E         
+E         Extra items in the right set:
+E         'SEC-CONSULT'
+E         Use -v to get more diff
+
+packages/myelin-hub/api/tests/test_formal_hub.py:108: AssertionError
+__________ test_f4_promote_never_verifies_text_the_human_did_not_read __________
+
+client = <starlette.testclient.TestClient object at 0x7faeabedb950>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f4_promote_never_verifies0/basic')
+
+    def test_f4_promote_never_verifies_text_the_human_did_not_read(
+        client: TestClient, vault_root: Path
+    ) -> None:
+        """MC_bug trace: BrowserRead(n1) -> WriterRewrite(n1) -> HumanClick(n1) -> HubPromote(n1)."""
+        p = vault_root / DRAFT
+        p.write_text(p.read_text(encoding="utf-8") + f"\n{MARK_READ}\n", encoding="utf-8")
+        read = client.get(f"/api/notes/{DRAFT}").json()  # "내용 읽기"
+        assert MARK_READ in read["body"]
+        _rewrite_draft(vault_root)  # after the human read it, before the click arrives
+        r = client.post(
+            f"/api/review/promote/{DRAFT}", headers=CLICK, json={"digest": read.get("digest")}
+        )
+        verified = sorted((vault_root / "10_Domains").rglob(Path(DRAFT).name))
+        for v in verified:  # P3: verified content == the content that was read
+>           assert read_note(v).frontmatter.status.value != "verified" or (
+                MARK_REWRITTEN not in v.read_text(encoding="utf-8")
+            ), f"P3 violated: {v.relative_to(vault_root)} is verified with text nobody read"
+E           AssertionError: P3 violated: 10_Domains/D2/Lit - 양자화 서베이.md is verified with text nobody read
+E           assert ('verified' != 'verified' or '읽은 뒤에 AI 가 바꿔 쓴 문장' not in '---\nid: 20... 가 바꿔 쓴 문장\n'
+E            +  where 'verified' = <Status.VERIFIED: 'verified'>.value
+E            +    where <Status.VERIFIED: 'verified'> = Frontmatter(id='20261016-0900-ai-lit-quant', type=<NoteType.LITERATURE: 'literature'>, domain=['D2'], status=<Status.V...xample.org/quant-survey'], created=datetime.date(2026, 10, 16), reviewed=datetime.date(2026, 11, 18), tags=['edge-ai']).status
+E            +      where Frontmatter(id='20261016-0900-ai-lit-quant', type=<NoteType.LITERATURE: 'literature'>, domain=['D2'], status=<Status.V...xample.org/quant-survey'], created=datetime.date(2026, 10, 16), reviewed=datetime.date(2026, 11, 18), tags=['edge-ai']) = Note(frontmatter=Frontmatter(id='20261016-0900-ai-lit-quant', type=<NoteType.LITERATURE: 'literature'>, domain=['D2'],...sixPath('/tmp/pytest-of-root/pytest-1/test_f4_promote_never_verifies0/basic/10_Domains/D2/Lit - 양자화 서베이.md'), links=()).frontmatter
+E            +        where Note(frontmatter=Frontmatter(id='20261016-0900-ai-lit-quant', type=<NoteType.LITERATURE: 'literature'>, domain=['D2'],...sixPath('/tmp/pytest-of-root/pytest-1/test_f4_promote_never_verifies0/basic/10_Domains/D2/Lit - 양자화 서베이.md'), links=()) = read_note(PosixPath('/tmp/pytest-of-root/pytest-1/test_f4_promote_never_verifies0/basic/10_Domains/D2/Lit - 양자화 서베이.md'))
+E             
+E             '읽은 뒤에 AI 가 바꿔 쓴 문장' is contained here:
+E               람이 읽은 문장
+E               
+E               읽은 뒤에 AI 가 바꿔 쓴 문장)
+
+packages/myelin-hub/api/tests/test_formal_hub.py:135: AssertionError
+_________________ test_f4_promote_after_reading_again_succeeds _________________
+
+client = <starlette.testclient.TestClient object at 0x7faeabcdf920>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f4_promote_after_reading_0/basic')
+
+    def test_f4_promote_after_reading_again_succeeds(client: TestClient, vault_root: Path) -> None:
+        """MC_sanity_reread: the rewritten draft is promoted once the human has read *that* text."""
+        _rewrite_draft(vault_root)
+        read = client.get(f"/api/notes/{DRAFT}").json()
+        assert MARK_REWRITTEN in read["body"]
+>       r = client.post(f"/api/review/promote/{DRAFT}", headers=CLICK, json={"digest": read["digest"]})
+                                                                                       ^^^^^^^^^^^^^^
+E       KeyError: 'digest'
+
+packages/myelin-hub/api/tests/test_formal_hub.py:148: KeyError
+_______ test_f5_double_click_save_pack_never_fails_on_the_other_request ________
+
+client = <starlette.testclient.TestClient object at 0x7faeabcdda60>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f5_double_click_save_pack0/basic')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7faeaabb8710>
+
+    def test_f5_double_click_save_pack_never_fails_on_the_other_request(
+        client: TestClient, vault_root: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MC_bug trace: WriteTmp(r1) WriteTmp(r2) ReadBackup(r1) Move(r1) ReadBackup(r2) Move(r2)."""
+        svc = client.app.state.service  # type: ignore[attr-defined]
+        text = _pack_yaml("me.twice")
+        barrier = threading.Barrier(2)
+        order = threading.Lock()
+        real_move = shutil.move
+    
+        def move_after_both_wrote(src: Any, dst: Any, *a: Any, **k: Any) -> Any:
+            # Hold each request at "about to move" until the other one has written its temp file
+            # too (the trace). When writes are serialised the second request never gets here while
+            # the first is inside, so the wait simply times out and the save proceeds.
+            try:
+                barrier.wait(timeout=2)
+            except threading.BrokenBarrierError:
+                pass
+            with order:
+                return real_move(src, dst, *a, **k)
+    
+        monkeypatch.setattr(service_module.shutil, "move", move_after_both_wrote)
+        results: list[Any] = []
+    
+        def click() -> None:
+            try:
+                results.append(svc.save_pack("me.twice", text))
+            except BaseException as exc:  # what the API would turn into a 4xx/5xx
+                results.append(exc)
+    
+        threads = [threading.Thread(target=click) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=30)
+        errors = [r for r in results if isinstance(r, BaseException)]
+>       assert not errors, f"P7 violated (race): a save failed on the other request — {errors!r}"
+E       AssertionError: P7 violated (race): a save failed on the other request — [FileNotFoundError(2, 'No such file or directory')]
+E       assert not [FileNotFoundError(2, 'No such file or directory')]
+
+packages/myelin-hub/api/tests/test_formal_hub.py:192: AssertionError
+________ test_f6_save_pack_is_all_or_nothing_when_the_commit_is_refused ________
+
+client = <starlette.testclient.TestClient object at 0x7faeaac2bb60>
+vault_root = PosixPath('/tmp/pytest-of-root/pytest-1/test_f6_save_pack_is_all_or_no0/basic')
+
+    def test_f6_save_pack_is_all_or_nothing_when_the_commit_is_refused(
+        client: TestClient, vault_root: Path
+    ) -> None:
+        """MC_bug_p6 trace: WriteTmp ReadBackup Move LoadOkCommitFails — the Vault stays untouched."""
+        hook = vault_root / ".git/hooks/pre-commit"
+        hook.write_text("#!/bin/sh\necho refused by the pre-commit device >&2\nexit 1\n")
+        hook.chmod(0o755)
+        before = tree_hash(vault_root)
+        r = client.put("/api/packs/me.new", headers=CLICK, json={"pack_yaml": _pack_yaml("me.new")})
+        assert r.status_code == 500 and "commit" in r.text
+>       assert tree_hash(vault_root) == before, (
+            "P6 violated: pack.yaml was written although its commit was refused"
+        )
+E       AssertionError: P6 violated: pack.yaml was written although its commit was refused
+E       assert {'.fixture-ma...aude)\n', ...} == {'.fixture-ma...xa4]]\n', ...}
+E         
+E         Omitting 44 identical items, use -vv to show
+E         Left contains 2 more items:
+E         {'.gitignore': b'# MYELIN runtime\n.myelin/\n',
+E          'packs/me.new/pack.yaml': b'pack: me.new\nversion: 1.0.0\nkind: personal\nm'
+E                                    b'aintainer: me\nrequires: [myelin.core>=1.0]\ndomai'
+E                                    b'ns:\n  - id: MY-DOMAIN\n    name: \xeb\x82\xb4 '...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+packages/myelin-hub/api/tests/test_formal_hub.py:211: AssertionError
+_________ test_f7_failed_onboarding_leaves_nothing_and_can_be_retried __________
+
+empty_client = <starlette.testclient.TestClient object at 0x7faeabd76060>
+
+    def test_f7_failed_onboarding_leaves_nothing_and_can_be_retried(empty_client: TestClient) -> None:
+        """MC_bug trace: Start WritePack InitVault Welcome Fail — the first commit is refused because
+        the chosen folder already holds a note without frontmatter (an existing Obsidian folder)."""
+        root: Path = empty_client.app.state.root  # type: ignore[attr-defined]
+        old = root / "10_Domains" / "MY-DOMAIN" / "예전 메모.md"
+        old.parent.mkdir(parents=True)
+        old.write_text("# frontmatter 없는 기존 노트\n", encoding="utf-8")
+        before = _files(root)
+        r = empty_client.post("/api/onboarding", headers=CLICK, json=ONBOARD)
+        assert r.status_code >= 400 and "예전 메모.md" in r.text  # the cause is reported
+        left = _files(root) - before
+        # P8: nothing the failed request created remains (P9: no myelin.yaml naming a deleted pack)
+>       assert not left, f"P8 violated: half-initialised Vault left behind — {sorted(left)[:8]}"
+E       AssertionError: P8 violated: half-initialised Vault left behind — ['.claude', '.claude/settings.json', '.git', '.git/HEAD', '.git/branches', '.git/config', '.git/description', '.git/hooks']
+E       assert not {'.claude', '.claude/settings.json', '.git', '.git/HEAD', '.git/branches', '.git/config', ...}
+
+packages/myelin-hub/api/tests/test_formal_hub.py:260: AssertionError
+=========================== short test summary info ============================
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f2_settings_put_between_get_and_put_keeps_domain
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f8_vault_summary_is_not_built_from_a_stale_config
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f4_promote_never_verifies_text_the_human_did_not_read
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f4_promote_after_reading_again_succeeds
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f5_double_click_save_pack_never_fails_on_the_other_request
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f6_save_pack_is_all_or_nothing_when_the_commit_is_refused
+FAILED packages/myelin-hub/api/tests/test_formal_hub.py::test_f7_failed_onboarding_leaves_nothing_and_can_be_retried
+7 failed in 2.95s

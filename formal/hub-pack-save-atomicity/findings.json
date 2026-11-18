@@ -1,0 +1,291 @@
+{
+  "concern": "hub-pack-save-atomicity",
+  "workflow": "W1",
+  "generated_at": "2026-11-18T17:25:00+09:00",
+  "repo_commit": "c29d83f (base) + branch formal/hub-2026-11-18",
+  "summary": "FIXED (F5, F6): within Reqs={r1,r2}, every combination of submitted texts and loader verdicts, commits allowed to fail (364 distinct states, depth 9) two overlapping saves of a personal pack never fail each other, never leave a loader-rejected pack.yaml, a 200 always means that request's text was committed, and a refused commit leaves the Vault untouched.",
+  "scope": {
+    "modeled": [
+      "save_pack() file steps: write temp → read backup → move → load_pack → restore | commit",
+      "two overlapping PUT /api/packs/<name> requests (thread pool)",
+      "commit failure (pre-commit device, git error)"
+    ],
+    "abstracted": [
+      "A1 three texts O/A/B; loader verdict is a function of the text",
+      "A2 one action = one file-system step",
+      "A3 sidecar copy (copy_from) not modeled; failure-path cleanup of sidecars has no model and no dedicated test",
+      "A4 commit = snapshot of pack.yaml",
+      "A5 other processes writing the same pack.yaml are outside (_write_lock is in-process)"
+    ],
+    "out_of_scope": [
+      "commons_publish() is not @_serialised either — no counterexample built, not changed, recorded as candidate",
+      "load_pack correctness"
+    ],
+    "assumptions": [
+      "A1..A5 in hub-pack-save-atomicity/SCOPE.md"
+    ]
+  },
+  "properties": [
+    {
+      "name": "P4_DiskLoadable",
+      "kind": "invariant",
+      "statement": "AllDone => final \\in good",
+      "meaning": "When no save is in flight, pack.yaml on disk is accepted by the loader",
+      "source": "packages/myelin-hub/api/src/myelin_hub_api/service.py:939-945; docs/adr/0009-hub-write-policy.md:9",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "Reqs={r1,r2}, Serialised=TRUE, Rollback=TRUE, CommitMayFail=TRUE: 380 generated / 364 distinct states, depth 9",
+      "evidence": "hub-pack-save-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "P5_OkMeansSaved",
+      "kind": "invariant",
+      "statement": "\\A r : resp[r] = \"ok\" => saved[r] = content[r]",
+      "meaning": "A 200 means the commit recorded the text that request submitted",
+      "source": "packages/myelin-hub/web/src/pages/Packs.tsx:41; docs/adr/0009-hub-write-policy.md:9",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "same",
+      "evidence": "hub-pack-save-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "P6_AllOrNothing",
+      "kind": "invariant",
+      "statement": "AllDone => final = head",
+      "meaning": "pack.yaml on disk equals the committed pack.yaml: untouched or fully committed",
+      "source": "packages/myelin-hub/api/src/myelin_hub_api/service.py:302-308; docs/adr/0009-hub-write-policy.md:9",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "same",
+      "evidence": "hub-pack-save-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "P7_NoRaceError",
+      "kind": "invariant",
+      "statement": "~raceError",
+      "meaning": "Two overlapping saves never fail each other",
+      "source": "packages/myelin-hub/api/src/myelin_hub_api/service.py:122-126",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "same",
+      "evidence": "hub-pack-save-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "S_NeverOk / S_NeverRejected / S_NeverBothOk (sanity, must fail)",
+      "kind": "bounded-check",
+      "statement": "see Properties.tla",
+      "meaning": "reachability: a save succeeds; the loader-rejection path is taken; both saves succeed in turn",
+      "source": "WDLAB-STD-VERIFY-001 §6.1",
+      "frozen": false,
+      "result": "violated",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "Reqs={r1,r2}",
+      "evidence": "hub-pack-save-atomicity/evidence/tlc_sanity.log; tlc_sanity_rejected.log; tlc_sanity_both.log"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F5",
+      "title": "save_pack is the one Vault write that is not serialised: a double click on '저장 (commit)' makes the second request fail with 500 on the shared temp file; other interleavings answer 200 for a text that was not committed or leave a loader-rejected pack.yaml on disk",
+      "severity": "medium",
+      "status": "fixed",
+      "property": "P7_NoRaceError (model also: P4_DiskLoadable, P5_OkMeansSaved)",
+      "story": "Every write of HubService is wrapped in @_serialised ('a double click or two tabs must not race each other') — except save_pack. Both requests write the same packs/<name>/pack.yaml.tmp, then move it. The first move takes the file; the second finds nothing and dies with FileNotFoundError → 500 'filesystem error', although the pack was saved. TLC found two more outcomes of the same missing lock: a request answers 200 after loading the *other* request's text (P5), and two loader-rejected saves leave a rejected pack.yaml behind because one restores the other's bad text as its 'backup' (P4). Only the double-click trace (P7) was replayed against the code; the P4 and P5 traces are model results with the same root cause and the same fix.",
+      "trace": [
+        {
+          "step": 1,
+          "actor": "r1",
+          "action": "WriteTmp(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:974",
+          "changed": {
+            "tmp": "A"
+          }
+        },
+        {
+          "step": 2,
+          "actor": "r1",
+          "action": "ReadBackup(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:966",
+          "changed": {
+            "backup[r1]": "O"
+          }
+        },
+        {
+          "step": 3,
+          "actor": "r2",
+          "action": "WriteTmp(r2)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:974",
+          "changed": {
+            "tmp": "A"
+          }
+        },
+        {
+          "step": 4,
+          "actor": "r1",
+          "action": "Move(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:975",
+          "changed": {
+            "final": "A",
+            "tmp": "-"
+          }
+        },
+        {
+          "step": 5,
+          "actor": "r2",
+          "action": "ReadBackup(r2)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:966",
+          "changed": {
+            "backup[r2]": "A"
+          }
+        },
+        {
+          "step": 6,
+          "actor": "r2",
+          "action": "Move(r2) — temp file is gone",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:975",
+          "changed": {
+            "resp[r2]": "error (500)",
+            "raceError": "TRUE"
+          },
+          "violation": true
+        }
+      ],
+      "reproduction": {
+        "test": "packages/myelin-hub/api/tests/test_formal_hub.py::test_f5_double_click_save_pack_never_fails_on_the_other_request",
+        "result_before_fix": "fails",
+        "result_after_fix": "passes"
+      },
+      "fix": {
+        "summary": "save_pack is @_serialised like promote/reject/apply_patch/save_settings/onboard.",
+        "diff": "hub-pack-save-atomicity/evidence/patches/2026-11-18-hub-F2-F4-F5-F6-F7-F8.diff",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": [
+        "hub-pack-save-atomicity/evidence/tlc_bug.log",
+        "hub-pack-save-atomicity/evidence/trace_bug.md",
+        "hub-pack-save-atomicity/evidence/tlc_bug_p4.log",
+        "hub-pack-save-atomicity/evidence/trace_bug_p4.md",
+        "hub-pack-save-atomicity/evidence/tlc_bug_p5.log",
+        "hub-pack-save-atomicity/evidence/trace_bug_p5.md",
+        "hub-pack-save-atomicity/evidence/test_before.log",
+        "hub-pack-save-atomicity/evidence/test_after.log",
+        "hub-pack-save-atomicity/evidence/tlc_fixed.log",
+        "hub-pack-save-atomicity/evidence/mutation.log"
+      ]
+    },
+    {
+      "id": "F6",
+      "title": "save_pack is not all-or-nothing: when the commit is refused (pre-commit device, git error) the new pack.yaml stays written and staged although the request answered 500",
+      "severity": "medium",
+      "status": "fixed",
+      "property": "P6_AllOrNothing",
+      "story": "ADR-0009: every Hub write ends in exactly one commit and leaves the Vault untouched or fully committed. The other writes get this from _mutation(); save_pack wrote pack.yaml, and when _commit failed the file (and copied sidecars) stayed on disk and in the git index. The user sees '저장 실패' while the pack is in fact active on the next load.",
+      "trace": [
+        {
+          "step": 1,
+          "actor": "r1",
+          "action": "WriteTmp(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:974"
+        },
+        {
+          "step": 2,
+          "actor": "r1",
+          "action": "ReadBackup(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:966"
+        },
+        {
+          "step": 3,
+          "actor": "r1",
+          "action": "Move(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:975",
+          "changed": {
+            "final": "A"
+          }
+        },
+        {
+          "step": 4,
+          "actor": "r1",
+          "action": "LoadOkCommitFails(r1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:980-987",
+          "changed": {
+            "resp[r1]": "error (500)",
+            "final": "A (head = O)"
+          },
+          "violation": true
+        }
+      ],
+      "reproduction": {
+        "test": "packages/myelin-hub/api/tests/test_formal_hub.py::test_f6_save_pack_is_all_or_nothing_when_the_commit_is_refused",
+        "result_before_fix": "fails",
+        "result_after_fix": "passes"
+      },
+      "fix": {
+        "summary": "On any failure after the first write (loader rejection or refused commit) _undo_pack_write restores pack.yaml to its previous bytes (or removes it), removes the sidecar files this request copied and the directories it created, restores .gitignore and unstages packs/<name>.",
+        "diff": "hub-pack-save-atomicity/evidence/patches/2026-11-18-hub-F2-F4-F5-F6-F7-F8.diff",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": [
+        "hub-pack-save-atomicity/evidence/tlc_bug_p6.log",
+        "hub-pack-save-atomicity/evidence/trace_bug_p6.md",
+        "hub-pack-save-atomicity/evidence/test_before.log",
+        "hub-pack-save-atomicity/evidence/test_after.log",
+        "hub-pack-save-atomicity/evidence/tlc_fixed.log",
+        "hub-pack-save-atomicity/evidence/mutation.log"
+      ]
+    }
+  ],
+  "trust_base": {
+    "tla": {
+      "tool_version": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "states_generated": 380,
+      "distinct_states": 364,
+      "depth": 9,
+      "sanity_checks": [
+        "MC_bug / MC_bug_p4 / MC_bug_p5: Serialised=FALSE -> P7 / P4 / P5 violated (exit 12)",
+        "MC_bug_p6: Rollback=FALSE -> P6 violated (exit 12)",
+        "MC_sanity / MC_sanity_rejected / MC_sanity_both: violated (exit 12)",
+        "-coverage 1: all six actions taken (evidence/tlc_coverage.log)",
+        "guard mutation (lock released after the move) -> P5 violated"
+      ]
+    }
+  },
+  "rerun": [
+    "TLC_WORKERS=2 bash formal/run_all.sh            # FORMAL_NIGHTLY=1 adds the larger bounds",
+    "uv run pytest packages/myelin-hub/api/tests/test_formal_hub.py -v",
+    "uv run pytest -q",
+    "python3 formal/tools/correspondence_check.py formal/ --root ."
+  ],
+  "next_steps": [
+    "HITL G2: confirm P4–P7 as frozen",
+    "Candidate: commons_publish() is the remaining unserialised write (Commons clone repository)",
+    "A3: add a test for sidecar cleanup when a copy_from save is rejected",
+    "W4: with save_pack serialised, the fixed temp-file name is safe; the tmp+move could be kept (atomic replace for readers) — no simplification proposed"
+  ],
+  "wdlab": {
+    "project": "MYELIN",
+    "module": "myelin-hub",
+    "level_achieved": "L2",
+    "verdict": "FIXED (F5, F6) · BOUNDED-PASS",
+    "hitl_approvals": [
+      "G2: pending Brian review (P4–P7 frozen 2026-11-18)",
+      "G7(F5,F6): pending Brian review — no API change; patch delivered as a branch, not pushed"
+    ],
+    "risk_domain": "personal-knowledge-os / config-integrity",
+    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a",
+    "w5_ci": {
+      "workflow": ".github/workflows/formal.yml",
+      "jobs": [
+        "three-config-gate",
+        "lean-trust-audit",
+        "drift-check"
+      ],
+      "policy": "fail-closed"
+    }
+  }
+}

@@ -383,7 +383,7 @@ class Assistant:
     # ------------------------------------------------------------------ 컨텍스트
     def _vault_state(self) -> str:
         svc = self.svc
-        if svc.vault is None:
+        if not svc.ready or svc.vault is None:  # `ready` re-reads myelin.yaml when it changed
             return "Vault: 아직 온보딩 전(myelin.yaml 없음)."
         cfg = svc.vault.config
         parts = [

@@ -1,0 +1,109 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42759 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up _JAVA_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_base64_encodeBlock,_base64_decodeBlock
+TLC2 Version 2026.11.15.002146 (rev: bc1b506)
+Running breadth-first search Model-Checking with fp 37 and seed -661471375298048888 with 1 worker on 2 cores with 1365MB heap and 64MB offheap memory [pid: 18585] (Linux 6.18.44-fc-v595 amd64, Ubuntu 21.0.13.0.3 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/claude/work/MYELIN/formal/review-gate-promote-toctou/tla/Properties.tla
+Parsing file /home/claude/work/MYELIN/formal/review-gate-promote-toctou/tla/Spec.tla
+Parsing file /tmp/tlc-11540003568915482165/_TLCTrace.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-11540003568915482165/Naturals.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-11540003568915482165/TLC.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-11540003568915482165/TLCExt.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-11540003568915482165/Sequences.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-11540003568915482165/FiniteSets.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-11540003568915482165/Integers.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Spec
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-11-18 17:18:17)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-18 17:18:17.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 1.1E-13
+The coverage statistics at 2026-11-18 17:18:17 (see https://explain.tlapl.us/module-coverage-statistics for how to interpret the following statistics).
+<pending line 34, col 5 to line 34, col 11 of module Spec>: 16
+<draft line 32, col 5 to line 32, col 9 of module Spec>: 16
+<refused line 37, col 5 to line 37, col 11 of module Spec>: 2
+<shown line 33, col 5 to line 33, col 9 of module Spec>: 16
+<approved line 36, col 5 to line 36, col 12 of module Spec>: 16
+<verified line 35, col 5 to line 35, col 12 of module Spec>: 16
+<Init line 45, col 1 to line 45, col 4 of module Spec>: 1:1
+  line 46, col 16 to line 46, col 34 of module Spec: 1:2
+  |line 46, col 23 to line 46, col 27 of module Spec: 1
+  line 47, col 16 to line 47, col 37 of module Spec: 1:2
+  |line 47, col 33 to line 47, col 36 of module Spec: 2
+  |line 47, col 23 to line 47, col 27 of module Spec: 1
+  line 47, col 52 to line 47, col 73 of module Spec: 1:2
+  |line 47, col 69 to line 47, col 72 of module Spec: 2
+  |line 47, col 59 to line 47, col 63 of module Spec: 1
+  line 48, col 19 to line 48, col 40 of module Spec: 1:2
+  |line 48, col 36 to line 48, col 39 of module Spec: 2
+  |line 48, col 26 to line 48, col 30 of module Spec: 1
+  line 48, col 56 to line 48, col 77 of module Spec: 1:2
+  |line 48, col 73 to line 48, col 76 of module Spec: 2
+  |line 48, col 63 to line 48, col 67 of module Spec: 1
+  line 49, col 8 to line 49, col 22 of module Spec: 1
+<WriterRewrite line 55, col 1 to line 55, col 16 of module Spec>: 194:660
+  line 56, col 8 to line 56, col 22 of module Spec: 2354
+  |line 56, col 8 to line 56, col 15 of module Spec: 1694
+  |line 56, col 19 to line 56, col 22 of module Spec: 1694
+  line 56, col 27 to line 56, col 43 of module Spec: 660
+  |line 56, col 27 to line 56, col 34 of module Spec: 1452
+  |line 56, col 38 to line 56, col 43 of module Spec: 1452
+  line 57, col 8 to line 57, col 43 of module Spec: 660
+  line 58, col 8 to line 58, col 64 of module Spec: 660
+<BrowserRead line 63, col 1 to line 63, col 14 of module Spec>: 240:1452
+  line 64, col 8 to line 64, col 22 of module Spec: 3146
+  |line 64, col 8 to line 64, col 15 of module Spec: 1694
+  |line 64, col 19 to line 64, col 22 of module Spec: 1694
+  line 65, col 8 to line 65, col 46 of module Spec: 1452
+  line 66, col 8 to line 66, col 64 of module Spec: 1452
+<HumanClick line 70, col 1 to line 70, col 13 of module Spec>: 240:462
+  line 71, col 8 to line 71, col 22 of module Spec: 2156
+  |line 71, col 8 to line 71, col 15 of module Spec: 1694
+  |line 71, col 19 to line 71, col 22 of module Spec: 1694
+  line 71, col 27 to line 71, col 43 of module Spec: 1672
+  |line 71, col 27 to line 71, col 36 of module Spec: 1210
+  |line 71, col 40 to line 71, col 43 of module Spec: 1210
+  line 72, col 8 to line 72, col 50 of module Spec: 462
+  line 73, col 8 to line 73, col 62 of module Spec: 462
+<HubPromote line 78, col 1 to line 78, col 13 of module Spec>: 172:748
+  line 79, col 8 to line 79, col 24 of module Spec: 2442
+  |line 79, col 8 to line 79, col 17 of module Spec: 1694
+  |line 79, col 21 to line 79, col 24 of module Spec: 1694
+  line 80, col 8 to line 80, col 46 of module Spec: 748
+  line 81, col 11 to line 81, col 25 of module Spec: 748
+  line 82, col 15 to line 82, col 69 of module Spec: 0
+  line 83, col 18 to line 83, col 53 of module Spec: 748
+  line 84, col 20 to line 84, col 34 of module Spec: 506
+  line 85, col 20 to line 85, col 54 of module Spec: 506
+  line 86, col 20 to line 86, col 58 of module Spec: 506
+  line 87, col 20 to line 87, col 64 of module Spec: 242
+  line 88, col 20 to line 88, col 66 of module Spec: 242
+  line 89, col 20 to line 89, col 54 of module Spec: 242
+  line 90, col 20 to line 90, col 54 of module Spec: 242
+  line 91, col 20 to line 91, col 36 of module Spec: 242
+<C2_TypeOK line 16, col 1 to line 16, col 9 of module Properties>
+  line 16, col 14 to line 16, col 19 of module Properties: 847
+<P3_VerifiedIsWhatWasRead line 13, col 1 to line 13, col 24 of module Properties>
+  line 13, col 29 to line 13, col 92 of module Properties: 847
+  |line 13, col 46 to line 13, col 92 of module Properties: 1694
+  ||line 13, col 46 to line 13, col 63 of module Properties: 1694
+  ||line 13, col 68 to line 13, col 92 of module Properties: 242
+  |line 13, col 38 to line 13, col 42 of module Properties: 847
+End of statistics.
+3323 states generated, 847 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 14.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 4 and the 95th percentile is 2).
+Finished in 00s at (2026-11-18 17:18:17)

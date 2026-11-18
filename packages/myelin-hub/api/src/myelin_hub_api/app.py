@@ -62,6 +62,8 @@ WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
 
 class PromoteBody(BaseModel):
     domain: str | None = None
+    # from GET /api/notes/{draft} ("내용 읽기"); the draft changed since → 409 (formal F4)
+    digest: str | None = None
 
 
 class RejectBody(BaseModel):
@@ -114,6 +116,17 @@ class OnboardBody(BaseModel):
     level: int = Field(default=1, ge=0, le=3)
     language: str = "ko"
     custom_domains: list[CustomDomain] = Field(default_factory=list, max_length=4)
+
+
+def _etag_value(header: str | None) -> str | None:
+    """`If-Match: "abc"` / `W/"abc"` → `abc`; absent or `*` → None (no precondition)."""
+    if header is None:
+        return None
+    v = header.strip()
+    if v.startswith("W/"):
+        v = v[2:]
+    v = v.strip('"')
+    return None if v in ("", "*") else v
 
 
 def require_user_click(x_myelin_intent: str | None = Header(default=None)) -> None:
@@ -236,8 +249,11 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
         return svc.pack_source(name)
 
     @app.get("/api/settings")
-    def settings() -> dict[str, Any]:
-        return svc.settings()
+    def settings(response: Response) -> dict[str, Any]:
+        data, version = svc.settings_versioned()
+        response.headers["ETag"] = f'"{version}"'  # echoed as If-Match by the Settings page (F2)
+        response.headers["Cache-Control"] = "no-store"
+        return data
 
     @app.get("/api/obsidian")
     def obsidian() -> dict[str, Any]:
@@ -272,7 +288,8 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     # ---------------------------------------------------------------- writes (user click only)
     @app.post("/api/review/promote/{ref:path}", dependencies=[Depends(require_user_click)])
     def promote(ref: str, body: PromoteBody | None = None) -> dict[str, Any]:
-        return svc.promote(ref, (body or PromoteBody()).domain)
+        b = body or PromoteBody()
+        return svc.promote(ref, b.domain, digest=b.digest)
 
     @app.post("/api/review/reject/{ref:path}", dependencies=[Depends(require_user_click)])
     def reject(ref: str, body: RejectBody | None = None) -> dict[str, Any]:
@@ -295,8 +312,11 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
         return svc.reject_patch(name)
 
     @app.put("/api/settings", dependencies=[Depends(require_user_click)])
-    def save_settings(body: dict[str, Any]) -> dict[str, Any]:
-        return svc.save_settings(body)
+    def save_settings(
+        body: dict[str, Any], if_match: str | None = Header(default=None)
+    ) -> dict[str, Any]:
+        # If-Match = the ETag of the GET the form was built from; stale → 412 (formal F2)
+        return svc.save_settings(body, base_version=_etag_value(if_match))
 
     @app.post("/api/packs/validate")
     def validate_pack(body: PackBody) -> dict[str, Any]:

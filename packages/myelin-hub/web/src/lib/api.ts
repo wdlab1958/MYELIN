@@ -1,13 +1,19 @@
 /** Hub API client. Writes always carry the user-click intent header and are only called from click handlers (ADR-0009). */
 export const INTENT_HEADER = "X-Myelin-Intent";
 
-async function request<T>(method: string, url: string, body?: unknown, userClick = false): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+/** A failed request: `status` lets a click handler tell "changed since you looked" (409 / 412) from other errors. */
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
+}
+
+async function request<T>(method: string, url: string, body?: unknown, userClick = false, extra?: Record<string, string>): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...(extra ?? {}) };
   if (userClick) headers[INTENT_HEADER] = "user-click";
   const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error((data && data.detail) || `${method} ${url} → ${res.status}`);
+  if (!res.ok) throw new ApiError((data && data.detail) || `${method} ${url} → ${res.status}`, res.status);
   return data as T;
 }
 
@@ -16,7 +22,7 @@ export const refPath = (rel: string) => rel.split("/").map(encodeURIComponent).j
 export const get = <T,>(url: string) => request<T>("GET", url);
 /** Only call from an onClick handler: the header is the UI's promise that a human clicked. */
 export const userPost = <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {}, true);
-export const userPut = <T,>(url: string, body?: unknown) => request<T>("PUT", url, body ?? {}, true);
+export const userPut = <T,>(url: string, body?: unknown, headers?: Record<string, string>) => request<T>("PUT", url, body ?? {}, true, headers);
 export const post = <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {});
 
 export type VaultSummary = {

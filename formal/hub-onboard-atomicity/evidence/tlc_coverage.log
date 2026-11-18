@@ -1,0 +1,122 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42759 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up _JAVA_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_base64_encodeBlock,_base64_decodeBlock
+TLC2 Version 2026.11.15.002146 (rev: bc1b506)
+Running breadth-first search Model-Checking with fp 69 and seed -374737558299621121 with 1 worker on 2 cores with 1365MB heap and 64MB offheap memory [pid: 18919] (Linux 6.18.44-fc-v595 amd64, Ubuntu 21.0.13.0.3 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/claude/work/MYELIN/formal/hub-onboard-atomicity/tla/Properties.tla
+Parsing file /home/claude/work/MYELIN/formal/hub-onboard-atomicity/tla/Spec.tla
+Parsing file /tmp/tlc-11501107525452582575/_TLCTrace.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-11501107525452582575/Naturals.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-11501107525452582575/TLC.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-11501107525452582575/TLCExt.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-11501107525452582575/Sequences.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-11501107525452582575/FiniteSets.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-11501107525452582575/Integers.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Spec
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-11-18 17:18:24)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-18 17:18:24.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 7.2E-18
+The coverage statistics at 2026-11-18 17:18:24 (see https://explain.tlapl.us/module-coverage-statistics for how to interpret the following statistics).
+<config line 29, col 5 to line 29, col 10 of module Spec>: 2
+<committed line 32, col 5 to line 32, col 13 of module Spec>: 2
+<step line 26, col 5 to line 26, col 8 of module Spec>: 5
+<phase line 27, col 5 to line 27, col 9 of module Spec>: 3
+<retried line 33, col 5 to line 33, col 11 of module Spec>: 2
+<pack line 28, col 5 to line 28, col 8 of module Spec>: 2
+<scaffold line 30, col 5 to line 30, col 12 of module Spec>: 2
+<repo line 31, col 5 to line 31, col 8 of module Spec>: 2
+<Init line 42, col 1 to line 42, col 4 of module Spec>: 1:1
+  line 43, col 5 to line 45, col 22 of module Spec: 1
+<Start line 49, col 1 to line 49, col 5 of module Spec>: 2:9
+  line 50, col 8 to line 50, col 35 of module Spec: 28
+  |line 50, col 8 to line 50, col 12 of module Spec: 19
+  |line 50, col 18 to line 50, col 35 of module Spec: 19
+  line 50, col 40 to line 50, col 46 of module Spec: 18
+  |line 50, col 41 to line 50, col 46 of module Spec: 9
+  line 51, col 8 to line 51, col 47 of module Spec: 9
+  |line 51, col 20 to line 51, col 46 of module Spec: 9
+  ||line 51, col 20 to line 51, col 26 of module Spec: 9
+  ||line 51, col 31 to line 51, col 46 of module Spec: 5
+  line 52, col 8 to line 52, col 38 of module Spec: 9
+  line 53, col 8 to line 53, col 60 of module Spec: 9
+<WritePack line 56, col 1 to line 56, col 9 of module Spec>: 2:2
+  line 57, col 8 to line 57, col 24 of module Spec: 21
+  |line 57, col 8 to line 57, col 12 of module Spec: 19
+  line 57, col 29 to line 57, col 36 of module Spec: 10
+  |line 57, col 29 to line 57, col 32 of module Spec: 8
+  line 58, col 8 to line 58, col 44 of module Spec: 2
+  line 59, col 8 to line 59, col 70 of module Spec: 2
+<InitVault line 62, col 1 to line 62, col 9 of module Spec>: 2:2
+  line 63, col 8 to line 63, col 24 of module Spec: 21
+  |line 63, col 8 to line 63, col 12 of module Spec: 19
+  line 63, col 29 to line 63, col 36 of module Spec: 10
+  |line 63, col 29 to line 63, col 32 of module Spec: 8
+  line 64, col 8 to line 64, col 34 of module Spec: 2
+  line 65, col 8 to line 65, col 68 of module Spec: 2
+<Welcome line 68, col 1 to line 68, col 7 of module Spec>: 2:2
+  line 69, col 8 to line 69, col 24 of module Spec: 21
+  |line 69, col 8 to line 69, col 12 of module Spec: 19
+  line 69, col 29 to line 69, col 36 of module Spec: 10
+  |line 69, col 29 to line 69, col 32 of module Spec: 8
+  line 70, col 8 to line 70, col 36 of module Spec: 2
+  line 71, col 8 to line 71, col 66 of module Spec: 2
+<GitCommit line 74, col 1 to line 74, col 9 of module Spec>: 2:2
+  line 75, col 8 to line 75, col 24 of module Spec: 21
+  |line 75, col 8 to line 75, col 12 of module Spec: 19
+  line 75, col 29 to line 75, col 36 of module Spec: 10
+  |line 75, col 29 to line 75, col 32 of module Spec: 8
+  line 76, col 8 to line 76, col 70 of module Spec: 2
+  line 77, col 8 to line 77, col 52 of module Spec: 2
+<Fail line 84, col 1 to line 84, col 4 of module Spec>: 8:8
+  line 85, col 8 to line 85, col 24 of module Spec: 27
+  |line 85, col 8 to line 85, col 12 of module Spec: 19
+  line 85, col 29 to line 85, col 41 of module Spec: 16
+  |line 85, col 29 to line 85, col 32 of module Spec: 8
+  |line 85, col 38 to line 85, col 41 of module Spec: 8
+  line 86, col 8 to line 86, col 24 of module Spec: 8
+  line 87, col 11 to line 87, col 22 of module Spec: 8
+  line 88, col 15 to line 88, col 87 of module Spec: 8
+  line 89, col 18 to line 89, col 30 of module Spec: 0
+  line 90, col 18 to line 90, col 35 of module Spec: 0
+  line 91, col 18 to line 91, col 47 of module Spec: 0
+  line 92, col 8 to line 92, col 45 of module Spec: 8
+<C4_TypeOK line 26, col 1 to line 26, col 9 of module Properties>
+  line 26, col 14 to line 26, col 19 of module Properties: 19
+<P8_FailedLeavesNothing line 10, col 1 to line 10, col 22 of module Properties>
+  line 11, col 5 to line 11, col 62 of module Properties: 19
+  |line 11, col 5 to line 11, col 20 of module Properties: 19
+  |line 11, col 25 to line 11, col 62 of module Properties: 8
+<P9_ConfigHasItsPack line 17, col 1 to line 17, col 19 of module Properties>
+  line 18, col 5 to line 18, col 51 of module Properties: 19
+  |line 18, col 6 to line 18, col 42 of module Properties: 19
+  ||line 18, col 6 to line 18, col 32 of module Properties: 19
+  |||line 18, col 6 to line 18, col 22 of module Properties: 19
+  |||line 18, col 27 to line 18, col 32 of module Properties: 11
+  ||line 18, col 37 to line 18, col 42 of module Properties: 2
+  |line 18, col 48 to line 18, col 51 of module Properties: 2
+<P10_VaultIsCommitted line 22, col 1 to line 22, col 20 of module Properties>
+  line 23, col 5 to line 23, col 46 of module Properties: 19
+  |line 23, col 6 to line 23, col 32 of module Properties: 19
+  ||line 23, col 6 to line 23, col 22 of module Properties: 19
+  ||line 23, col 27 to line 23, col 32 of module Properties: 11
+  |line 23, col 38 to line 23, col 46 of module Properties: 2
+End of statistics.
+26 states generated, 19 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 8.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 2 and the 95th percentile is 2).
+Finished in 00s at (2026-11-18 17:18:24)

@@ -1,0 +1,229 @@
+{
+  "concern": "review-gate-promote-toctou",
+  "workflow": "W1",
+  "generated_at": "2026-11-18T17:25:00+09:00",
+  "repo_commit": "c29d83f (base) + branch formal/hub-2026-11-18",
+  "summary": "FIXED (F4) and PROVEN: after the patch a verified note always has exactly the content the human had read when clicking Promote. Bounded: Notes={n1,n2}, MaxVer=2 (847 states, depth 14) and Notes={n1,n2,n3}, MaxVer=3 (105,648 states, depth 22). Unbounded: Lean 4 theorem ReviewGate.verified_is_what_was_read for any set of drafts, any contents, any trace length (0 sorry, axioms: propext only). Holds for clients that send the digest (the Hub UI does); a Promote request without `digest` is not checked.",
+  "scope": {
+    "modeled": [
+      "draft file content in 00_Inbox/ai-drafts",
+      "Review page: 내용 읽기 (GET /api/notes/<path>) and Promote click",
+      "HubService.promote() reading the draft at promote time",
+      "any writer replacing the draft (skill, MCP write_draft, editor)"
+    ],
+    "abstracted": [
+      "A1 content = a version number; equal digest iff equal content (sha256[:16] collisions not modeled)",
+      "A2 promote is one atomic step (real: read → check → write dest → unlink; a write between read and unlink is lost, P3 still holds)",
+      "A3 body and digest come from the same bytes (service.py note())",
+      "A4 the browser echoes the digest it was given",
+      "A5 other promote refusals (frontmatter, Domain, dest exists) and the git commit are omitted"
+    ],
+    "out_of_scope": [
+      "Promote requests without `digest` (optional field; making it mandatory is a public-API decision)",
+      "apply_patch digest covers the patch file only, not the target note (recorded as candidate)",
+      "reject, Commons publish"
+    ],
+    "assumptions": [
+      "A1..A5 in review-gate-promote-toctou/SCOPE.md"
+    ]
+  },
+  "properties": [
+    {
+      "name": "P3_VerifiedIsWhatWasRead",
+      "kind": "invariant",
+      "statement": "\\A n \\in Notes : verified[n] # None => verified[n] = approved[n]",
+      "meaning": "What becomes verified is exactly what the human read before clicking Promote",
+      "source": "docs/adr/0009-hub-write-policy.md:4; docs/adr/0009-hub-write-policy.md:14; packages/myelin-hub/web/src/pages/Review.tsx:13; packages/myelin-hub/web/src/pages/Review.tsx:68",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "Notes={n1,n2}, MaxVer=2, DigestCheck=TRUE: 3,323 generated / 847 distinct states, depth 14; Notes={n1,n2,n3}, MaxVer=3: 689,161 generated / 105,648 distinct, depth 22",
+      "evidence": "review-gate-promote-toctou/evidence/tlc_fixed.log; review-gate-promote-toctou/evidence/tlc_fixed_notes3.log"
+    },
+    {
+      "name": "ReviewGate.verified_is_what_was_read",
+      "kind": "theorem",
+      "statement": "∀ {Note} [DecidableEq Note] (s : State Note), Reachable true s → VerifiedIsWhatWasRead s",
+      "meaning": "P3 for every number of drafts, every content, every interleaving and trace length (inductive invariant: init_inv + step_inv)",
+      "source": "review-gate-promote-toctou/lean/ReviewGate/Properties.lean",
+      "frozen": true,
+      "result": "proven",
+      "tool": "Lean 4.34.0 (no Mathlib)",
+      "bounds": "unbounded",
+      "evidence": "review-gate-promote-toctou/evidence/lean_audit.log"
+    },
+    {
+      "name": "C2_TypeOK",
+      "kind": "invariant",
+      "statement": "TypeOK",
+      "meaning": "variables stay in their domains",
+      "source": "tla/Spec.tla",
+      "frozen": false,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "all configs",
+      "evidence": "review-gate-promote-toctou/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "S_NeverVerified / S_NeverRefused / S_NeverRewrittenThenVerified (sanity, must fail)",
+      "kind": "bounded-check",
+      "statement": "see Properties.tla",
+      "meaning": "reachability: a promote succeeds; the 409 path is taken; a rewritten draft is promoted after being read again",
+      "source": "WDLAB-STD-VERIFY-001 §6.1",
+      "frozen": false,
+      "result": "violated",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "Notes={n1,n2}, MaxVer=2",
+      "evidence": "review-gate-promote-toctou/evidence/tlc_sanity.log; tlc_sanity_refused.log; tlc_sanity_reread.log"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F4",
+      "title": "Promote verifies whatever is in the draft file at click time, not what the human read: a draft rewritten after '내용 읽기' becomes verified unread",
+      "severity": "high",
+      "status": "fixed",
+      "property": "P3_VerifiedIsWhatWasRead",
+      "story": "Brian opens a draft in the Review Gate and reads it. Before he clicks Promote, a Claude Code skill (or the MCP write_draft tool, or Obsidian) rewrites that file in 00_Inbox/ai-drafts. The click arrives; the Hub reads the file as it is now, sets status verified / reviewed today / origin mixed, moves it to 10_Domains and commits '[myelin:review] promote'. The note is recorded as human-reviewed, but nobody read that text. apply_patch already guards this with a digest; promote did not.",
+      "trace": [
+        {
+          "step": 1,
+          "actor": "—",
+          "action": "Init",
+          "changed": {
+            "draft": "n1 = v0"
+          }
+        },
+        {
+          "step": 2,
+          "actor": "Browser",
+          "action": "BrowserRead(n1)",
+          "code": "packages/myelin-hub/web/src/pages/Review.tsx:16-20",
+          "changed": {
+            "shown": "n1 = v0"
+          }
+        },
+        {
+          "step": 3,
+          "actor": "Writer",
+          "action": "WriterRewrite(n1)",
+          "code": "plugin/hooks/guard_bash.py:1-5",
+          "changed": {
+            "draft": "n1 = v1"
+          }
+        },
+        {
+          "step": 4,
+          "actor": "Human",
+          "action": "HumanClick(n1)",
+          "code": "packages/myelin-hub/web/src/pages/Review.tsx:68",
+          "changed": {
+            "pending": "n1 = v0"
+          }
+        },
+        {
+          "step": 5,
+          "actor": "Hub",
+          "action": "HubPromote(n1)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:645-715",
+          "changed": {
+            "verified": "n1 = v1",
+            "approved": "n1 = v0"
+          },
+          "violation": true
+        }
+      ],
+      "reproduction": {
+        "test": "packages/myelin-hub/api/tests/test_formal_hub.py::test_f4_promote_never_verifies_text_the_human_did_not_read",
+        "result_before_fix": "fails",
+        "result_after_fix": "passes"
+      },
+      "fix": {
+        "summary": "GET /api/notes/<path> returns `digest` (sha256[:16] of the file bytes) computed from the same bytes as the body. The Review page keeps it and sends it with the Promote click. promote() reads the draft once, refuses with 409 when the digest differs (nothing moved, nothing committed), and parses/promotes exactly the bytes it checked. On 409 the page closes the body so it has to be read again. `digest` is optional on the API (same policy as apply_patch).",
+        "diff": "review-gate-promote-toctou/evidence/patches/2026-11-18-hub-F2-F4-F5-F6-F7-F8.diff",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": [
+        "review-gate-promote-toctou/evidence/tlc_bug.log",
+        "review-gate-promote-toctou/evidence/trace_bug.md",
+        "review-gate-promote-toctou/evidence/test_before.log",
+        "review-gate-promote-toctou/evidence/test_after.log",
+        "review-gate-promote-toctou/evidence/tlc_fixed.log",
+        "review-gate-promote-toctou/evidence/mutation.log",
+        "review-gate-promote-toctou/evidence/lean_audit.log",
+        "review-gate-promote-toctou/evidence/regression_full_suite.log",
+        "review-gate-promote-toctou/evidence/e2e_playwright.log"
+      ]
+    }
+  ],
+  "trust_base": {
+    "tla": {
+      "tool_version": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "states_generated": 3323,
+      "distinct_states": 847,
+      "depth": 14,
+      "sanity_checks": [
+        "MC_bug.cfg: DigestCheck=FALSE -> P3 violated (exit 12), 5-step trace",
+        "MC_sanity / MC_sanity_refused / MC_sanity_reread: violated (exit 12) — success, 409 and re-read paths reachable",
+        "-coverage 1: WriterRewrite, BrowserRead, HumanClick, HubPromote all taken (evidence/tlc_coverage.log)",
+        "guard mutation (compare with shown[n] instead of pending[n]) -> P3 violated",
+        "MC_3.cfg: Notes={n1,n2,n3}, MaxVer=3 PASS (105,648 states)"
+      ]
+    },
+    "lean": {
+      "toolchain": "leanprover/lean4:v4.34.0",
+      "axioms": {
+        "ReviewGate.verified_is_what_was_read": [
+          "propext"
+        ],
+        "ReviewGate.step_inv": [
+          "propext"
+        ],
+        "ReviewGate.init_inv": [],
+        "ReviewGate.no_verify_on_refuse": [
+          "propext"
+        ],
+        "ReviewGate.unpatched_violates": [],
+        "ReviewGate.patched_can_promote": []
+      },
+      "sorry_count": 0,
+      "native_decide_used": false
+    }
+  },
+  "rerun": [
+    "TLC_WORKERS=2 bash formal/run_all.sh            # FORMAL_NIGHTLY=1 adds the larger bounds",
+    "uv run pytest packages/myelin-hub/api/tests/test_formal_hub.py -v",
+    "uv run pytest -q",
+    "python3 formal/tools/correspondence_check.py formal/ --root .",
+    "bash formal/lean_audit.sh                      # needs lake/lean 4.34.0 on PATH",
+    "(cd packages/myelin-hub/web && npx playwright test)"
+  ],
+  "next_steps": [
+    "HITL G2: confirm P3 as frozen",
+    "HITL: decide whether `digest` becomes mandatory on POST /api/review/promote (428 without it) — closes the residual for non-UI clients",
+    "Candidate: apply_patch digest should also cover the target note's bytes (preview diff vs. applied result)",
+    "A2 window: promote could re-check the draft bytes just before unlink so a writer's last edit is not deleted"
+  ],
+  "wdlab": {
+    "project": "MYELIN",
+    "module": "myelin-hub",
+    "level_achieved": "L3",
+    "verdict": "FIXED (F4) · BOUNDED-PASS (L2) · PROVEN (L3)",
+    "hitl_approvals": [
+      "G2: pending Brian review (P3 frozen 2026-11-18)",
+      "G7(F4): pending Brian review — additive optional API field `digest`; patch delivered as a branch, not pushed"
+    ],
+    "risk_domain": "personal-knowledge-os / HITL review integrity",
+    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a",
+    "w5_ci": {
+      "workflow": ".github/workflows/formal.yml",
+      "jobs": [
+        "three-config-gate",
+        "lean-trust-audit",
+        "drift-check"
+      ],
+      "policy": "fail-closed"
+    }
+  }
+}

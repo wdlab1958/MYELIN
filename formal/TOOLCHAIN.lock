@@ -1,7 +1,8 @@
-# formal/TOOLCHAIN.lock — WDLAB-STD-VERIFY-001 §4.3 (pinned 2026-10-29)
+# formal/TOOLCHAIN.lock — WDLAB-STD-VERIFY-001 §4.3 (pinned 2026-10-29, updated 2026-11-18)
 proof-skills = 0.1.1
-tla2tools    = v1.8.0 (TLC 2026.10.28)
-java         = OpenJDK 21.0.12.1
-lean         = not installed (L3 not claimed; W7 promotion is a follow-up proposal)
-python       = 3.12 (.venv) · pytest 9.1.1 · ruff 0.17.1 · mypy 2.4.0
-model        = claude-fable-5-1
+tla2tools    = v1.8.0 (rolling pre-release; 2026-10-29 run: TLC 2026.10.28 · 2026-11-18 run: TLC 2026.11.15.002146)
+java         = OpenJDK 21 (2026-10-29: 21.0.12.1 · 2026-11-18: 21.0.13.0.3)
+lean         = 4.34.0 (leanprover/lean4:v4.34.0, commit 293d5d0c0c3f; no Mathlib) — review-gate-promote-toctou/lean
+python       = 3.12+ (2026-11-18 run: CPython 3.13.18 via uv) · pytest 9.1.1 · ruff · mypy (strict)
+node         = 22 · playwright (channel chrome) for packages/myelin-hub/web e2e
+model        = claude-fable-5-1 (2026-10-29, hub-config-stale-cache) · claude-fable-5-2 (2026-11-18, Hub round)

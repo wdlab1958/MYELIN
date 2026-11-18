@@ -1,0 +1,14 @@
+# static checks after the patch (2026-11-18T17:19:37+09:00)
+$ ruff check packages scripts tests
+All checks passed!
+$ ruff format --check packages
+81 files already formatted
+$ mypy (strict)
+Success: no issues found in 60 source files
+$ (web) npm run build   # tsc --noEmit + vite build
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.55 kB │ gzip:  0.33 kB
+dist/assets/index-CHB2CxkQ.css   16.85 kB │ gzip:  3.86 kB
+dist/assets/index-BDKbc-wq.js   208.42 kB │ gzip: 67.23 kB
+✓ built in 1.27s

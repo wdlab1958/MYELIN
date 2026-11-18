@@ -1,14 +1,16 @@
-TLC2 Version 2026.10.28.014557 (rev: 56d37a9)
-Running breadth-first search Model-Checking with fp 48 and seed 7849057061590582087 with 4 workers on 28 cores with 27305MB heap and 64MB offheap memory [pid: 975740] (Linux 6.14.0-37-generic amd64, Ubuntu 21.0.12.1 64bit, MSBDiskFPSet, DiskStateQueue).
-Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Properties.tla
-Parsing file /home/ubuntu-02/ai_project/MYELIN/formal/hub-config-stale-cache/tla/Spec.tla
-Parsing file /tmp/tlc-15121409359702377156/_TLCTrace.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
-Parsing file /tmp/tlc-15121409359702377156/Naturals.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
-Parsing file /tmp/tlc-15121409359702377156/FiniteSets.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
-Parsing file /tmp/tlc-15121409359702377156/Sequences.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
-Parsing file /tmp/tlc-15121409359702377156/TLC.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
-Parsing file /tmp/tlc-15121409359702377156/TLCExt.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
-Parsing file /tmp/tlc-15121409359702377156/Integers.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42759 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up _JAVA_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_base64_encodeBlock,_base64_decodeBlock
+TLC2 Version 2026.11.15.002146 (rev: bc1b506)
+Running breadth-first search Model-Checking with fp 90 and seed 3123317834353894552 with 1 worker on 2 cores with 1365MB heap and 64MB offheap memory [pid: 17765] (Linux 6.18.44-fc-v595 amd64, Ubuntu 21.0.13.0.3 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/claude/work/MYELIN/formal/hub-config-stale-cache/tla/Properties.tla
+Parsing file /home/claude/work/MYELIN/formal/hub-config-stale-cache/tla/Spec.tla
+Parsing file /tmp/tlc-16839179309876393466/_TLCTrace.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-16839179309876393466/Naturals.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-16839179309876393466/FiniteSets.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-16839179309876393466/Sequences.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-16839179309876393466/TLC.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-16839179309876393466/TLCExt.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-16839179309876393466/Integers.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
 Semantic processing of module Naturals
 Semantic processing of module Sequences
 Semantic processing of module FiniteSets
@@ -22,9 +24,9 @@ Linting of module Spec
 Linting of module TLCExt
 Linting of module _TLCTrace
 Linting of module Properties
-Starting... (2026-10-29 15:02:21)
+Starting... (2026-11-18 17:17:59)
 Computing initial states...
-Finished computing initial states: 1 distinct state generated at 2026-10-29 15:02:21.
+Finished computing initial states: 1 distinct state generated at 2026-11-18 17:17:59.
 Error: Invariant P1_NoStaleDecision is violated.
 Error: The behavior up to this point is:
 State 1: <Initial predicate>
@@ -38,7 +40,7 @@ State 1: <Initial predicate>
 /\ badReject = FALSE
 /\ lost = {}
 
-State 2: <CliAddDomain(d1) line 60, col 5 to line 62, col 92 of module Spec>
+State 2: <CliAddDomain(d1) line 61, col 5 to line 63, col 92 of module Spec>
 /\ formBase = {}
 /\ badAccept = FALSE
 /\ cache = {}
@@ -49,7 +51,7 @@ State 2: <CliAddDomain(d1) line 60, col 5 to line 62, col 92 of module Spec>
 /\ badReject = FALSE
 /\ lost = {}
 
-State 3: <HubPromote(d1) line 72, col 5 to line 79, col 59 of module Spec>
+State 3: <HubPromote(d1) line 73, col 5 to line 80, col 59 of module Spec>
 /\ formBase = {}
 /\ badAccept = FALSE
 /\ cache = {}
@@ -60,7 +62,7 @@ State 3: <HubPromote(d1) line 72, col 5 to line 79, col 59 of module Spec>
 /\ badReject = TRUE
 /\ lost = {}
 
-20 states generated, 11 distinct states found, 1 states left on queue.
-The depth of the complete state graph search is 4.
-Finished in 00s at (2026-10-29 15:02:21)
-Trace exploration spec path: ./Properties_TTrace_1793253741.tla
+8 states generated, 5 distinct states found, 2 states left on queue.
+The depth of the complete state graph search is 3.
+Finished in 00s at (2026-11-18 17:17:59)
+Trace exploration spec path: ./Properties_TTrace_1794989879.tla

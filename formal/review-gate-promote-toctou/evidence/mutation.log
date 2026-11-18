@@ -1,0 +1,18 @@
+# mutation check (2026-11-18T17:18:16+09:00): fix toggles OFF -> frozen properties must FAIL again; fix ON -> PASS
+## MC.cfg
+    DigestCheck = TRUE 
+exit=0
+Model checking completed. No error has been found.
+3323 states generated, 847 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 14.
+## MC_bug.cfg
+    DigestCheck = FALSE 
+exit=12
+Error: Invariant P3_VerifiedIsWhatWasRead is violated.
+135 states generated, 73 distinct states found, 42 states left on queue.
+The depth of the complete state graph search is 5.
+## guard mutation: Hub compares the draft with what the page shows now instead of what the click carried
+   sed: s/IF DigestCheck \/\\ draft\[n\] # pending\[n\]/IF DigestCheck \/\\ draft[n] # shown[n]/   (on a temp copy, MC.cfg)
+exit=12 (12 = killed by an invariant; 0 would mean the property does not see this guard)
+Error: Invariant P3_VerifiedIsWhatWasRead is violated.
+322 states generated, 145 distinct states found, 72 states left on queue.

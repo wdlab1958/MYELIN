@@ -1,0 +1,622 @@
+diff --git a/packages/myelin-hub/api/src/myelin_hub_api/app.py b/packages/myelin-hub/api/src/myelin_hub_api/app.py
+index 65e89c0..01cefaa 100644
+--- a/packages/myelin-hub/api/src/myelin_hub_api/app.py
++++ b/packages/myelin-hub/api/src/myelin_hub_api/app.py
+@@ -62,6 +62,8 @@ WEB_DIST = Path(__file__).resolve().parents[3] / "web" / "dist"
+ 
+ class PromoteBody(BaseModel):
+     domain: str | None = None
++    # from GET /api/notes/{draft} ("내용 읽기"); the draft changed since → 409 (formal F4)
++    digest: str | None = None
+ 
+ 
+ class RejectBody(BaseModel):
+@@ -116,6 +118,17 @@ class OnboardBody(BaseModel):
+     custom_domains: list[CustomDomain] = Field(default_factory=list, max_length=4)
+ 
+ 
++def _etag_value(header: str | None) -> str | None:
++    """`If-Match: "abc"` / `W/"abc"` → `abc`; absent or `*` → None (no precondition)."""
++    if header is None:
++        return None
++    v = header.strip()
++    if v.startswith("W/"):
++        v = v[2:]
++    v = v.strip('"')
++    return None if v in ("", "*") else v
++
++
+ def require_user_click(x_myelin_intent: str | None = Header(default=None)) -> None:
+     """Writes must come from an explicit user click in the Hub UI (ADR-0009)."""
+     if x_myelin_intent != INTENT_VALUE:
+@@ -236,8 +249,11 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
+         return svc.pack_source(name)
+ 
+     @app.get("/api/settings")
+-    def settings() -> dict[str, Any]:
+-        return svc.settings()
++    def settings(response: Response) -> dict[str, Any]:
++        data, version = svc.settings_versioned()
++        response.headers["ETag"] = f'"{version}"'  # echoed as If-Match by the Settings page (F2)
++        response.headers["Cache-Control"] = "no-store"
++        return data
+ 
+     @app.get("/api/obsidian")
+     def obsidian() -> dict[str, Any]:
+@@ -272,7 +288,8 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
+     # ---------------------------------------------------------------- writes (user click only)
+     @app.post("/api/review/promote/{ref:path}", dependencies=[Depends(require_user_click)])
+     def promote(ref: str, body: PromoteBody | None = None) -> dict[str, Any]:
+-        return svc.promote(ref, (body or PromoteBody()).domain)
++        b = body or PromoteBody()
++        return svc.promote(ref, b.domain, digest=b.digest)
+ 
+     @app.post("/api/review/reject/{ref:path}", dependencies=[Depends(require_user_click)])
+     def reject(ref: str, body: RejectBody | None = None) -> dict[str, Any]:
+@@ -295,8 +312,11 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
+         return svc.reject_patch(name)
+ 
+     @app.put("/api/settings", dependencies=[Depends(require_user_click)])
+-    def save_settings(body: dict[str, Any]) -> dict[str, Any]:
+-        return svc.save_settings(body)
++    def save_settings(
++        body: dict[str, Any], if_match: str | None = Header(default=None)
++    ) -> dict[str, Any]:
++        # If-Match = the ETag of the GET the form was built from; stale → 412 (formal F2)
++        return svc.save_settings(body, base_version=_etag_value(if_match))
+ 
+     @app.post("/api/packs/validate")
+     def validate_pack(body: PackBody) -> dict[str, Any]:
+diff --git a/packages/myelin-hub/api/src/myelin_hub_api/assistant.py b/packages/myelin-hub/api/src/myelin_hub_api/assistant.py
+index 2a44799..f560165 100644
+--- a/packages/myelin-hub/api/src/myelin_hub_api/assistant.py
++++ b/packages/myelin-hub/api/src/myelin_hub_api/assistant.py
+@@ -383,7 +383,7 @@ class Assistant:
+     # ------------------------------------------------------------------ 컨텍스트
+     def _vault_state(self) -> str:
+         svc = self.svc
+-        if svc.vault is None:
++        if not svc.ready or svc.vault is None:  # `ready` re-reads myelin.yaml when it changed
+             return "Vault: 아직 온보딩 전(myelin.yaml 없음)."
+         cfg = svc.vault.config
+         parts = [
+diff --git a/packages/myelin-hub/api/src/myelin_hub_api/service.py b/packages/myelin-hub/api/src/myelin_hub_api/service.py
+index adadb32..8e7f89b 100644
+--- a/packages/myelin-hub/api/src/myelin_hub_api/service.py
++++ b/packages/myelin-hub/api/src/myelin_hub_api/service.py
+@@ -48,7 +48,7 @@ from myelin_core.metrics import (
+     payload_is_anonymous,
+     record_event,
+ )
+-from myelin_core.note import NoteParseError, dump_note, read_note
++from myelin_core.note import NoteParseError, dump_note, parse_note, read_note
+ from myelin_core.obsidian import ensure_obsidian_config, obsidian_status
+ from myelin_core.packs.loader import PackError, discover_packs, load_pack
+ from myelin_core.patches import (
+@@ -63,7 +63,13 @@ from myelin_core.patches import (
+     reject_patch,
+ )
+ from myelin_core.render import make_note_id, render_claude_md
+-from myelin_core.scaffold import ScaffoldError, VaultExistsError, init_vault, install_git_hook
++from myelin_core.scaffold import (
++    ScaffoldError,
++    ScaffoldPlan,
++    VaultExistsError,
++    init_vault,
++    install_git_hook,
++)
+ from myelin_core.schema.frontmatter import Origin, Status
+ from myelin_core.schema.pack import Pack
+ from myelin_core.stats import kpi_status
+@@ -92,6 +98,21 @@ def _explain_validation(exc: ValidationError) -> str:
+     return "; ".join(parts)
+ 
+ 
++def content_digest(data: bytes) -> str:
++    """Short digest of a file's bytes: the version token a click echoes back so the Hub can tell
++    that the file is still the one the human was looking at (drafts, myelin.yaml)."""
++    return hashlib.sha256(data).hexdigest()[:16]
++
++
++def _decode_note(raw: bytes, path: Path) -> str:
++    """Bytes → text exactly as `Path.read_text(encoding="utf-8")` gives it (universal newlines)."""
++    try:
++        text = raw.decode("utf-8")
++    except UnicodeDecodeError as exc:
++        raise NoteParseError(f"not UTF-8: {exc}", path) from None
++    return text.replace("\r\n", "\n").replace("\r", "\n")
++
++
+ class HubError(ValueError):
+     def __init__(self, message: str, status: int = 400) -> None:
+         self.status = status
+@@ -112,6 +133,85 @@ def _serialised[**P, R](
+     return wrapper
+ 
+ 
++@dataclass
++class _OnboardUndo:
++    """What a failed onboarding has to take back: only what the request itself created.
++
++    Captured before the first write: which directories existed, whether the folder was a git
++    repository, and the bytes of the two files onboarding may overwrite. Files come from the
++    scaffold plan (`init_vault` creates them with exclusive-create, so each one is ours)."""
++
++    dirs_before: set[str]
++    had_git: bool
++    had_runtime: bool
++    gitignore: bytes | None
++    personal_pack: bytes | None
++    plan: ScaffoldPlan | None = None
++    extra: list[str] = field(default_factory=list)  # welcome draft
++
++    @classmethod
++    def capture(cls, root: Path) -> _OnboardUndo:
++        dirs: set[str] = set()
++        if root.is_dir():
++            for cur, names, _files in os.walk(root):
++                names[:] = [n for n in names if n != ".git"]
++                dirs.update((Path(cur) / n).relative_to(root).as_posix() for n in names)
++        gi = root / ".gitignore"
++        pack = root / "packs" / PERSONAL_PACK / "pack.yaml"
++        return cls(
++            dirs_before=dirs,
++            had_git=(root / ".git").exists(),
++            had_runtime=(root / RUNTIME).exists(),
++            gitignore=gi.read_bytes() if gi.is_file() else None,
++            personal_pack=pack.read_bytes() if pack.is_file() else None,
++        )
++
++    def files_first(self, root: Path) -> None:
++        """Remove the files this request created (myelin.yaml included) and restore the two it
++        may have overwritten. Best effort: an OSError here must not hide the original error."""
++        rels = [*(self.plan.files if self.plan else []), *self.extra]
++        try:
++            for rel in rels:
++                (root / rel).unlink(missing_ok=True)
++            pack = root / "packs" / PERSONAL_PACK / "pack.yaml"
++            if self.personal_pack is None:
++                pack.unlink(missing_ok=True)
++            elif pack.is_file() and pack.read_bytes() != self.personal_pack:
++                pack.write_bytes(self.personal_pack)
++            gi = root / ".gitignore"
++            if self.gitignore is None:
++                gi.unlink(missing_ok=True)
++            elif gi.is_file() and gi.read_bytes() != self.gitignore:
++                gi.write_bytes(self.gitignore)
++        except OSError:
++            pass
++
++    def rest(self, root: Path) -> None:
++        """After the index is closed: the runtime directory and the repository this request
++        created, then every directory that did not exist before and is empty now."""
++        try:
++            if not self.had_runtime:
++                shutil.rmtree(root / RUNTIME, ignore_errors=True)
++            if not self.had_git:
++                shutil.rmtree(root / ".git", ignore_errors=True)  # holds no commit yet
++            elif self.gitignore is None:
++                subprocess.run(
++                    ["git", "reset", "-q", "--", ".gitignore"], cwd=root, capture_output=True
++                )
++            new_dirs: list[Path] = []
++            for cur, names, _files in os.walk(root):
++                names[:] = [n for n in names if n != ".git"]
++                for n in names:
++                    d = Path(cur) / n
++                    if d.relative_to(root).as_posix() not in self.dirs_before:
++                        new_dirs.append(d)
++            for d in sorted(new_dirs, key=lambda q: len(q.parts), reverse=True):
++                if d.is_dir() and not d.is_symlink() and not any(d.iterdir()):
++                    d.rmdir()
++        except OSError:
++            pass
++
++
+ @dataclass
+ class HubService:
+     root: Path
+@@ -327,6 +427,7 @@ class HubService:
+ 
+     # ------------------------------------------------------------------ reads
+     def summary(self) -> dict[str, Any]:
++        self._reload_if_changed()  # F8: never answer from a start-up copy of myelin.yaml
+         if self.vault is None:
+             return {"ready": False, "error": self.config_error, "root": str(self.root)}
+         cfg = self.vault.config
+@@ -480,7 +581,18 @@ class HubService:
+         if n is None:
+             raise HubError(f"note not found: {ref}", 404)
+         d = self._with_reuse([n.to_dict()])[0]
+-        d["body"] = idx.body(n.path) or ""
++        # F4 (formal/review-gate-promote-toctou): body and digest come from the same bytes, so
++        # the digest a Promote click echoes back names exactly the text that was on screen.
++        path = self._v().root / n.path
++        try:
++            raw = path.read_bytes()
++        except FileNotFoundError:
++            raise HubError(f"note not found: {ref}", 404) from None
++        try:
++            d["body"] = parse_note(_decode_note(raw, path), path).body
++        except NoteParseError:
++            d["body"] = idx.body(n.path) or ""
++        d["digest"] = content_digest(raw)
+         d["backlinks"] = idx.backlinks(Path(n.path).stem)
+         return d
+ 
+@@ -532,8 +644,15 @@ class HubService:
+     # ------------------------------------------------------------------ writes (user actions only)
+     @_serialised
+     def promote(
+-        self, ref: str, domain: str | None = None, today: date | None = None
++        self,
++        ref: str,
++        domain: str | None = None,
++        today: date | None = None,
++        digest: str | None = None,
+     ) -> dict[str, Any]:
++        """`digest` is the one GET /api/notes/<draft> returned with the body the human read.
++        When given, a draft whose bytes changed since then is refused (409) instead of being
++        verified unread — formal/review-gate-promote-toctou (F4, property P3)."""
+         v = self._v()
+         rel = self._rel(ref)
+         if not rel.startswith(AI_DRAFTS + "/"):
+@@ -541,8 +660,14 @@ class HubService:
+         src = v.root / rel
+         if not src.is_file():
+             raise HubError(f"draft not found: {rel}", 404)
++        raw_bytes = src.read_bytes()  # one read: the bytes checked are the bytes promoted
++        if digest is not None and not hmac.compare_digest(content_digest(raw_bytes), digest):
++            raise HubError(
++                "초안이 읽은 뒤에 바뀌었습니다 — 내용을 다시 읽고 승격하세요 (digest mismatch)",
++                409,
++            )
+         try:
+-            note = read_note(src)
++            note = parse_note(_decode_note(raw_bytes, src), src)
+         except NoteParseError as exc:
+             raise HubError(
+                 f"draft fails frontmatter validation — fix it first: {exc}", 422
+@@ -673,9 +798,28 @@ class HubService:
+         v = self._v()
+         return v.config.model_dump(mode="json")
+ 
++    def settings_versioned(self) -> tuple[dict[str, Any], str]:
++        """Settings plus the version (digest of myelin.yaml) they were read from — the ETag the
++        Settings page sends back as If-Match (formal/hub-config-stale-cache F2)."""
++        with self._write_lock:  # config and bytes are swapped together, under this lock
++            v = self._v()
++            return v.config.model_dump(mode="json"), content_digest(self._config_bytes or b"")
++
+     @_serialised
+-    def save_settings(self, data: dict[str, Any]) -> dict[str, Any]:
+-        v = self._v()
++    def save_settings(
++        self, data: dict[str, Any], base_version: str | None = None
++    ) -> dict[str, Any]:
++        """`base_version` is the version of the GET the form was built from. When given and
++        myelin.yaml has changed since (e.g. `myelin add-domain` in a terminal), the save is
++        refused with 412 instead of writing the older Domain list back (F2, property P2)."""
++        v = self._v()  # re-reads myelin.yaml when it changed on disk
++        current = content_digest(self._config_bytes or b"")
++        if base_version is not None and not hmac.compare_digest(current, base_version):
++            raise HubError(
++                "myelin.yaml 이 화면을 연 뒤에 바뀌었습니다 — 다시 불러온 뒤 저장하세요 "
++                "(version mismatch)",
++                412,
++            )
+         try:
+             cfg = MyelinConfig.model_validate(data)
+         except ValidationError as exc:
+@@ -791,12 +935,17 @@ class HubService:
+             return {"ok": False, "error": str(exc)}
+         return {"ok": True, "pack": pack.pack, "domains": pack.domain_ids}
+ 
++    @_serialised
+     def save_pack(self, name: str, text: str, copy_from: str | None = None) -> dict[str, Any]:
+         """Personal packs only: written to <Vault>/packs/<name>/pack.yaml and loader-validated.
+ 
+         `copy_from` names a registry pack whose sidecar files (taxonomy.yaml, interviews.yaml,
+         templates/ …) are copied next to the new pack.yaml — the Hub's "개인 Pack 으로 복사" — so a
+         YAML that references them loads. Existing files in the target are never overwritten.
++
++        Serialised and all-or-nothing like every other write (formal/hub-pack-save-atomicity):
++        two overlapping saves run one after the other (F5), and when the loader rejects the pack
++        or the commit is refused, pack.yaml and the copied sidecars are put back as they were (F6).
+         """
+         check = self.validate_pack_yaml(text)
+         if not check["ok"]:
+@@ -809,31 +958,84 @@ class HubService:
+                 "org/reference packs come from the registry",
+                 403,
+             )
+-        pdir = self.root / "packs" / name
+-        pdir.mkdir(parents=True, exist_ok=True)
+-        if copy_from:
+-            self._copy_pack_sidecars(copy_from, pdir)
++        packs_dir = self.root / "packs"
++        pdir = packs_dir / name
++        final = pdir / "pack.yaml"
+         tmp = pdir / "pack.yaml.tmp"
+-        tmp.write_text(text, encoding="utf-8")
++        new_dirs = [d for d in (packs_dir, pdir) if not d.exists()]
++        backup = final.read_bytes() if final.is_file() else None
++        gitignore = self.root / ".gitignore"
++        gitignore_backup = gitignore.read_bytes() if gitignore.is_file() else None
++        created: list[Path] = []
++        try:
++            pdir.mkdir(parents=True, exist_ok=True)
++            if copy_from:
++                self._copy_pack_sidecars(copy_from, pdir, created)
++            tmp.write_text(text, encoding="utf-8")
++            shutil.move(tmp, final)
++            try:
++                load_pack(pdir)
++            except PackError as exc:
++                raise HubError(f"pack rejected by loader: {exc}", 422) from None
++            commit = (
++                self._commit([f"packs/{name}"], f"[myelin:packs] save {name}")  # yaml + sidecars
++                if self.ready
++                else ""
++            )
++        except BaseException:
++            self._undo_pack_write(name, backup, created, new_dirs, gitignore_backup)
++            raise
++        return {"name": name, "commit": commit}
++
++    def _undo_pack_write(
++        self,
++        name: str,
++        backup: bytes | None,
++        created: list[Path],
++        new_dirs: list[Path],
++        gitignore_backup: bytes | None,
++    ) -> None:
++        """Put <Vault>/packs/<name> back as it was before a failed save_pack (best effort)."""
++        pdir = self.root / "packs" / name
+         final = pdir / "pack.yaml"
+-        backup = final.read_text(encoding="utf-8") if final.exists() else None
+-        shutil.move(tmp, final)
+         try:
+-            load_pack(pdir)
+-        except PackError as exc:
++            (pdir / "pack.yaml.tmp").unlink(missing_ok=True)
+             if backup is None:
+-                final.unlink()
++                final.unlink(missing_ok=True)
+             else:
+-                final.write_text(backup, encoding="utf-8")
+-            raise HubError(f"pack rejected by loader: {exc}", 422) from None
+-        commit = (
+-            self._commit([f"packs/{name}"], f"[myelin:packs] save {name}")  # yaml + sidecars
+-            if self.ready
+-            else ""
+-        )
+-        return {"name": name, "commit": commit}
++                final.write_bytes(backup)
++            for f in created:
++                f.unlink(missing_ok=True)
++            parents = {
++                d for f in created for d in f.parents if d.is_relative_to(pdir) and d != pdir
++            }
++            for d in sorted(parents, key=lambda q: len(q.parts), reverse=True):
++                if d.is_dir() and not any(d.iterdir()):
++                    d.rmdir()
++            for d in reversed(new_dirs):  # pdir, then packs/ — only when this request made them
++                if d.is_dir() and not any(d.iterdir()):
++                    d.rmdir()
++            gitignore = self.root / ".gitignore"
++            if gitignore_backup is None:
++                if (self.root / ".git").exists():
++                    subprocess.run(
++                        ["git", "reset", "-q", "--", ".gitignore"],
++                        cwd=self.root,
++                        capture_output=True,
++                    )
++                gitignore.unlink(missing_ok=True)
++            elif gitignore.read_bytes() != gitignore_backup:
++                gitignore.write_bytes(gitignore_backup)
++        except OSError:
++            pass  # e.g. read-only disk — then nothing was written either
++        if (self.root / ".git").exists():
++            subprocess.run(
++                ["git", "reset", "-q", "--", f"packs/{name}"], cwd=self.root, capture_output=True
++            )
+ 
+-    def _copy_pack_sidecars(self, source: str, dest: Path) -> None:
++    def _copy_pack_sidecars(self, source: str, dest: Path, created: list[Path]) -> None:
++        """Copy the sidecar files of registry pack `source`; every file written is appended to
++        `created` so a failed save can remove exactly those."""
+         reg = discover_packs(self.pack_roots(), strict=False)
+         if source not in reg:
+             raise HubError(f"copy_from pack not found: {source}", 404)
+@@ -847,10 +1049,15 @@ class HubService:
+                 continue
+             target.parent.mkdir(parents=True, exist_ok=True)
+             shutil.copyfile(f, target)
++            created.append(target)
+ 
+     # ------------------------------------------------------------------ onboarding
+     @_serialised
+     def onboard(self, data: dict[str, Any], now: datetime | None = None) -> dict[str, Any]:
++        """All-or-nothing (formal/hub-onboard-atomicity, F7): when any step fails — typically the
++        first commit, refused by the Vault pre-commit device because the folder already holds a
++        note without frontmatter — everything this request created is removed again, so the
++        folder is as it was and onboarding can be retried once the cause is fixed."""
+         if self.vault is not None or Vault.is_vault(self.root):
+             # also a *corrupt* myelin.yaml: onboarding never overwrites an existing Vault
+             why = f" (myelin.yaml unreadable: {self.config_error})" if self.config_error else ""
+@@ -858,22 +1065,20 @@ class HubService:
+         now = now or datetime.now()
+         custom = list(data.get("custom_domains") or [])
+         packs_wanted = list(data.get("packs", []))
+-        personal = self.root / "packs" / PERSONAL_PACK
+-        created_personal = bool(custom) and not personal.exists()
+-        if custom:
+-            self._write_personal_pack(custom)
+-            packs_wanted.append(PERSONAL_PACK)
++        undo = _OnboardUndo.capture(self.root)
+         try:
+-            return self._onboard(data, packs_wanted, now)
++            if custom:
++                self._write_personal_pack(custom)
++                packs_wanted.append(PERSONAL_PACK)
++            return self._onboard(data, packs_wanted, now, undo)
+         except BaseException:
+-            if created_personal:  # no half-initialised directory left behind
+-                shutil.rmtree(personal, ignore_errors=True)
+-                if personal.parent.is_dir() and not any(personal.parent.iterdir()):
+-                    personal.parent.rmdir()
++            undo.files_first(self.root)  # myelin.yaml is gone → reload() drops Vault and index
++            self.reload()
++            undo.rest(self.root)
+             raise
+ 
+     def _onboard(
+-        self, data: dict[str, Any], packs_wanted: list[str], now: datetime
++        self, data: dict[str, Any], packs_wanted: list[str], now: datetime, undo: _OnboardUndo
+     ) -> dict[str, Any]:
+         try:
+             cfg = MyelinConfig.model_validate(
+@@ -899,8 +1104,10 @@ class HubService:
+             raise HubError(str(exc), 409) from None
+         except (ScaffoldError, PackError) as exc:
+             raise HubError(str(exc), 422) from None
++        undo.plan = plan
+         self.reload()
+         record_event(self.root, "onboard_start", via="hub")
++        undo.extra.append(f"{AI_DRAFTS}/{WELCOME_TITLE}.md")
+         welcome = self._write_welcome(cfg, now)
+         self.ensure_git()
+         return {"root": str(self.root), "files": len(plan.files), "welcome": welcome}
+diff --git a/packages/myelin-hub/web/src/lib/api.ts b/packages/myelin-hub/web/src/lib/api.ts
+index 928a410..dbd5c5b 100644
+--- a/packages/myelin-hub/web/src/lib/api.ts
++++ b/packages/myelin-hub/web/src/lib/api.ts
+@@ -1,13 +1,19 @@
+ /** Hub API client. Writes always carry the user-click intent header and are only called from click handlers (ADR-0009). */
+ export const INTENT_HEADER = "X-Myelin-Intent";
+ 
+-async function request<T>(method: string, url: string, body?: unknown, userClick = false): Promise<T> {
+-  const headers: Record<string, string> = { "Content-Type": "application/json" };
++/** A failed request: `status` lets a click handler tell "changed since you looked" (409 / 412) from other errors. */
++export class ApiError extends Error {
++  status: number;
++  constructor(message: string, status: number) { super(message); this.status = status; }
++}
++
++async function request<T>(method: string, url: string, body?: unknown, userClick = false, extra?: Record<string, string>): Promise<T> {
++  const headers: Record<string, string> = { "Content-Type": "application/json", ...(extra ?? {}) };
+   if (userClick) headers[INTENT_HEADER] = "user-click";
+   const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+   const text = await res.text();
+   const data = text ? JSON.parse(text) : null;
+-  if (!res.ok) throw new Error((data && data.detail) || `${method} ${url} → ${res.status}`);
++  if (!res.ok) throw new ApiError((data && data.detail) || `${method} ${url} → ${res.status}`, res.status);
+   return data as T;
+ }
+ 
+@@ -16,7 +22,7 @@ export const refPath = (rel: string) => rel.split("/").map(encodeURIComponent).j
+ export const get = <T,>(url: string) => request<T>("GET", url);
+ /** Only call from an onClick handler: the header is the UI's promise that a human clicked. */
+ export const userPost = <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {}, true);
+-export const userPut = <T,>(url: string, body?: unknown) => request<T>("PUT", url, body ?? {}, true);
++export const userPut = <T,>(url: string, body?: unknown, headers?: Record<string, string>) => request<T>("PUT", url, body ?? {}, true, headers);
+ export const post = <T,>(url: string, body?: unknown) => request<T>("POST", url, body ?? {});
+ 
+ export type VaultSummary = {
+diff --git a/packages/myelin-hub/web/src/pages/Review.tsx b/packages/myelin-hub/web/src/pages/Review.tsx
+index 4ca2712..0a5d2ab 100644
+--- a/packages/myelin-hub/web/src/pages/Review.tsx
++++ b/packages/myelin-hub/web/src/pages/Review.tsx
+@@ -1,5 +1,5 @@
+ import { useCallback, useEffect, useState } from "react";
+-import { get, refPath, userPost, type Candidate, type NoteRow, type PatchPlan, type PatchRow, type VaultSummary } from "../lib/api";
++import { ApiError, get, refPath, userPost, type Candidate, type NoteRow, type PatchPlan, type PatchRow, type VaultSummary } from "../lib/api";
+ 
+ export default function Review({ vault, onChanged }: { vault: VaultSummary; onChanged: () => void }) {
+   const commonsReady = vault.commons?.configured ?? false;
+@@ -11,10 +11,11 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
+   const [plans, setPlans] = useState<Record<string, PatchPlan | { error: string }>>({});
+   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
+   const [bodies, setBodies] = useState<Record<string, string>>({}); // 읽음 확인: Promote 는 본문을 연 뒤에만
++  const [digests, setDigests] = useState<Record<string, string>>({}); // 읽은 본문의 digest — Promote 가 그대로 돌려보낸다
+   const [withPr, setWithPr] = useState<Record<string, boolean>>({});
+   const openBody = async (path: string) => {
+     if (bodies[path] !== undefined) { const next = { ...bodies }; delete next[path]; setBodies(next); return; }
+-    try { const n = await get<{ body: string }>(`/api/notes/${refPath(path)}`); setBodies({ ...bodies, [path]: n.body }); }
++    try { const n = await get<{ body: string; digest: string }>(`/api/notes/${refPath(path)}`); setBodies({ ...bodies, [path]: n.body }); setDigests({ ...digests, [path]: n.digest }); }
+     catch (e) { setBodies({ ...bodies, [path]: `(본문을 읽을 수 없다: ${String(e)})` }); }
+   };
+   const publish = async (c: Candidate) => {
+@@ -32,13 +33,17 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
+     try { const p = await get<PatchPlan>(`/api/patches/${encodeURIComponent(file)}/preview`); setPlans({ ...plans, [file]: p }); }
+     catch (e) { setPlans({ ...plans, [file]: { error: String(e) } }); }
+   };
+-  const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string) => {
++  const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string, readPath?: string) => {
+     try {
+       const r = await fn();
+       setMsg(`${label} · commit ${r.commit?.slice(0, 7) ?? ""}`);
+       if (label.startsWith("Promote") && r.path) setJustPromoted(r.path);
+       await load(); onChanged();
+-    } catch (e) { setMsg(`실패: ${String(e)}`); }
++    } catch (e) {
++      // 409 on Promote = the draft changed after it was read: close the body so it has to be read again
++      if (readPath && e instanceof ApiError && e.status === 409) { setBodies((b) => { const next = { ...b }; delete next[readPath]; return next; }); await load(); }
++      setMsg(`실패: ${String(e)}`);
++    }
+   };
+ 
+   return (
+@@ -60,7 +65,7 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
+             </div>
+             <div className="hub-row">
+               <button type="button" className="mx-btn" disabled={d.doctor_ok === false} onClick={() => openBody(d.path)} aria-pressed={bodies[d.path] !== undefined} data-testid="draft-read">{bodies[d.path] !== undefined ? "닫기" : "내용 읽기"}</button>
+-              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => userPost(`/api/review/promote/${refPath(d.path)}`), `Promote ${d.title}`)} data-testid="promote">Promote</button>
++              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => userPost(`/api/review/promote/${refPath(d.path)}`, { digest: digests[d.path] }), `Promote ${d.title}`, d.path)} data-testid="promote">Promote</button>
+               <button type="button" className="mx-btn" onClick={() => act(() => userPost(`/api/review/reject/${refPath(d.path)}`), `Reject ${d.title}`)} data-testid="reject">Reject</button>
+             </div>
+           </div>
+diff --git a/packages/myelin-hub/web/src/pages/Settings.tsx b/packages/myelin-hub/web/src/pages/Settings.tsx
+index 80bfd7a..3c103fe 100644
+--- a/packages/myelin-hub/web/src/pages/Settings.tsx
++++ b/packages/myelin-hub/web/src/pages/Settings.tsx
+@@ -1,5 +1,5 @@
+ import { useState } from "react";
+-import { userPut, type VaultSummary } from "../lib/api";
++import { ApiError, userPut, type VaultSummary } from "../lib/api";
+ 
+ export default function Settings({ vault, onChanged }: { vault: VaultSummary; onChanged: () => void }) {
+   const [level, setLevel] = useState<number>(vault.level ?? 1);
+@@ -13,13 +13,23 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
+   const commonsNeedsRemote = commonsEnabled && !commonsRemote.trim();
+   const save = async () => {
+     if (commonsNeedsRemote) { setMsg("저장 실패: Commons 연동을 켜려면 원격 저장소(commons.remote)를 먼저 입력한다"); return; }
+-    try {
+-      const current = await (await fetch("/api/settings")).json();
+-      const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
+-      const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose }, commons };
+-      const r = await userPut<{ commit: string }>("/api/settings", next);
+-      setMsg(`저장됨 · commit ${r.commit.slice(0, 7)}`); onChanged();
+-    } catch (e) { setMsg(`저장 실패: ${String(e)}`); }
++    // The form edits level · mcp · commons only; everything else (Domains, Packs …) is sent back as read.
++    // If-Match = the version that was read: when myelin.yaml changed in between (e.g. `myelin add-domain`
++    // in a terminal) the Hub answers 412 and we read again instead of writing the older Domain list back.
++    for (let attempt = 0; ; attempt++) {
++      try {
++        const res = await fetch("/api/settings", { cache: "no-store" });
++        const current = await res.json();
++        const etag = res.headers.get("ETag");
++        const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
++        const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose }, commons };
++        const r = await userPut<{ commit: string }>("/api/settings", next, etag ? { "If-Match": etag } : undefined);
++        setMsg(`저장됨 · commit ${r.commit.slice(0, 7)}`); onChanged(); return;
++      } catch (e) {
++        if (e instanceof ApiError && e.status === 412 && attempt < 2) continue;
++        setMsg(`저장 실패: ${String(e)}`); return;
++      }
++    }
+   };
+   return (
+     <>

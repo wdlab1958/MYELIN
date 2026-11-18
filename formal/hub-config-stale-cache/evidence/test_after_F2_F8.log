@@ -1,0 +1,16 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.7.0 -- /home/claude/work/MYELIN/.venv/bin/python
+rootdir: /home/claude/work/MYELIN
+configfile: pyproject.toml
+plugins: anyio-4.15.1, cov-7.1.0
+collecting ... collected 7 items
+
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f2_settings_put_between_get_and_put_keeps_domain PASSED [ 14%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f8_vault_summary_is_not_built_from_a_stale_config PASSED [ 28%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f4_promote_never_verifies_text_the_human_did_not_read PASSED [ 42%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f4_promote_after_reading_again_succeeds PASSED [ 57%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f5_double_click_save_pack_never_fails_on_the_other_request PASSED [ 71%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f6_save_pack_is_all_or_nothing_when_the_commit_is_refused PASSED [ 85%]
+packages/myelin-hub/api/tests/test_formal_hub.py::test_f7_failed_onboarding_leaves_nothing_and_can_be_retried PASSED [100%]
+
+============================== 7 passed in 5.95s ===============================

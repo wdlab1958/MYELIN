@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""F2 (CONFIRMED, NOT fixed — needs HITL) — PUT /api/settings has no version check.
+"""F2 (FIXED 2026-11-18 for clients that send If-Match) — PUT /api/settings version check.
 
 TLC trace evidence/trace_partial_P2_F2.md (MC_partial.cfg: ReloadOnRequest=TRUE, IfMatch=FALSE):
   BrowserGet (Settings.tsx:17 fetch current) -> CliAddDomain(d1) -> BrowserPut (userPut next)
@@ -7,8 +7,13 @@ The PUT body is `{...current, level, mcp, commons}`, so a Domain added between t
 is written away. After F1 the window is one browser round-trip (was: the whole Hub lifetime).
 
 Property P2 (frozen): a Settings save never removes a Domain from myelin.yaml.
-Run:  .venv/bin/python formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py
-Exit 1 = P2 violated (expected until F2 is fixed), 0 = holds.
+Run:  .venv/bin/python formal/hub-config-stale-cache/repro/repro_F2_settings_put_window.py [--no-if-match]
+Exit 1 = P2 violated, 0 = holds.
+  default        the Hub UI path: the PUT carries the version of its GET (If-Match) -> 412, exit 0
+  --no-if-match  a client that sends no If-Match (script, old UI build): not checked -> still exit 1.
+                 This is the documented residual of F2 (the header is optional; making it
+                 mandatory is a public-API decision left to HITL).
+The same trace runs in the suite: packages/myelin-hub/api/tests/test_formal_hub.py::test_f2_…
 """
 
 from __future__ import annotations
@@ -28,7 +33,7 @@ os.environ["MYELIN_PACKS"] = str(REPO / "packs")
 from myelin_core.config import load_config  # noqa: E402
 from myelin_core.scaffold import add_domain  # noqa: E402
 from myelin_core.vault import Vault  # noqa: E402
-from myelin_hub_api.service import HubService  # noqa: E402
+from myelin_hub_api.service import HubError, HubService  # noqa: E402
 
 
 def main() -> int:
@@ -41,11 +46,16 @@ def main() -> int:
             subprocess.run(["git", *args], cwd=root, check=True,
                            env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x"})
         svc = HubService.open(root)
-        current = svc.settings()                                   # BrowserGet  (Settings.tsx:17)
+        current, version = svc.settings_versioned()                # BrowserGet  (Settings.tsx:21-23, ETag)
+        if "--no-if-match" in sys.argv:
+            version = None
         add_domain(Vault.open(root), "SEC-CONSULT", datetime(2026, 10, 29, 9, 0))  # CliAddDomain (other process)
         assert "SEC-CONSULT" in load_config(root).domains.all_ids
         current["level"] = 3
-        svc.save_settings(current)                                 # BrowserPut  (Settings.tsx:18-20)
+        try:
+            svc.save_settings(current, base_version=version)       # BrowserPut  (Settings.tsx:24-26, If-Match)
+        except HubError as exc:
+            print(f"PUT refused: {exc.status} {exc}")
         after = load_config(root).domains.all_ids
         print("myelin.yaml domains after save:", after)
         if "SEC-CONSULT" not in after:

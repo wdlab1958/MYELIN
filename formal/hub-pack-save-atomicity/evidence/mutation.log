@@ -1,0 +1,36 @@
+# mutation check (2026-11-18T17:18:16+09:00): fix toggles OFF -> frozen properties must FAIL again; fix ON -> PASS
+## MC.cfg
+    Serialised = TRUE     Rollback = TRUE     CommitMayFail = TRUE 
+exit=0
+Model checking completed. No error has been found.
+380 states generated, 364 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 9.
+## MC_bug.cfg
+    Serialised = FALSE     Rollback = TRUE     CommitMayFail = FALSE 
+exit=12
+Error: Invariant P7_NoRaceError is violated.
+630 states generated, 530 distinct states found, 205 states left on queue.
+The depth of the complete state graph search is 7.
+## MC_bug_p4.cfg
+    Serialised = FALSE     Rollback = TRUE     CommitMayFail = FALSE 
+exit=12
+Error: Invariant P4_DiskLoadable is violated.
+1258 states generated, 990 distinct states found, 195 states left on queue.
+The depth of the complete state graph search is 9.
+## MC_bug_p5.cfg
+    Serialised = FALSE     Rollback = TRUE     CommitMayFail = FALSE 
+exit=12
+Error: Invariant P5_OkMeansSaved is violated.
+465 states generated, 388 distinct states found, 157 states left on queue.
+The depth of the complete state graph search is 6.
+## MC_bug_p6.cfg
+    Serialised = TRUE     Rollback = FALSE     CommitMayFail = TRUE 
+exit=12
+Error: Invariant P6_AllOrNothing is violated.
+310 states generated, 309 distinct states found, 48 states left on queue.
+The depth of the complete state graph search is 9.
+## guard mutation: lock released after the move, before load/commit
+   sed: s/              \/\\ UNCHANGED <<resp, raceError, lock>>/              \/\\ Release(r) \/\\ UNCHANGED <<resp, raceError>>/   (on a temp copy, MC.cfg)
+exit=12 (12 = killed by an invariant; 0 would mean the property does not see this guard)
+Error: Invariant P5_OkMeansSaved is violated.
+572 states generated, 536 distinct states found, 160 states left on queue.

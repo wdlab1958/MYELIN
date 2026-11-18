@@ -1,0 +1,202 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=42759 -Dhttp.nonProxyHosts=localhost|127.0.0.1|::1|127.*|0.*|::|169.254.*|api.anthropic.com|api-staging.anthropic.com|api-pr-preview.anthropic.com|mcp-proxy.anthropic.com|mcp-proxy-staging.anthropic.com|registry.npmjs.org|jsr.io|npm.jsr.io|pypi.org|files.pythonhosted.org|index.crates.io|proxy.golang.org|host.docker.internal|10.*|172.16.*|172.17.*|172.18.*|172.19.*|172.20.*|172.21.*|172.22.*|172.23.*|172.24.*|172.25.*|172.26.*|172.27.*|172.28.*|172.29.*|172.30.*|172.31.*|192.168.*|100.64.0.0/10|*.svc.cluster.local|*.svc.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+Picked up _JAVA_OPTIONS: -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_base64_encodeBlock,_base64_decodeBlock
+TLC2 Version 2026.11.15.002146 (rev: bc1b506)
+Running breadth-first search Model-Checking with fp 130 and seed 1051628659525525984 with 1 worker on 2 cores with 1365MB heap and 64MB offheap memory [pid: 18710] (Linux 6.18.44-fc-v595 amd64, Ubuntu 21.0.13.0.3 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/claude/work/MYELIN/formal/hub-pack-save-atomicity/tla/Properties.tla
+Parsing file /home/claude/work/MYELIN/formal/hub-pack-save-atomicity/tla/Spec.tla
+Parsing file /tmp/tlc-16831942021588371992/_TLCTrace.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-16831942021588371992/Naturals.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-16831942021588371992/FiniteSets.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-16831942021588371992/Sequences.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-16831942021588371992/TLC.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-16831942021588371992/TLCExt.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-16831942021588371992/Integers.tla (jar:file:/root/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module Spec
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-11-18 17:18:19)
+Computing initial states...
+Computed 2 initial states...
+Computed 4 initial states...
+Computed 8 initial states...
+Finished computing initial states: 16 distinct states generated at 2026-11-18 17:18:20.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 3.2E-16
+The coverage statistics at 2026-11-18 17:18:20 (see https://explain.tlapl.us/module-coverage-statistics for how to interpret the following statistics).
+<final line 36, col 5 to line 36, col 9 of module Spec>: 3
+<lock line 34, col 5 to line 34, col 8 of module Spec>: 3
+<good line 32, col 5 to line 32, col 8 of module Spec>: 4
+<backup line 37, col 5 to line 37, col 10 of module Spec>: 8
+<resp line 39, col 5 to line 39, col 8 of module Spec>: 16
+<raceError line 41, col 5 to line 41, col 13 of module Spec>: 1
+<content line 31, col 5 to line 31, col 11 of module Spec>: 4
+<pc line 33, col 5 to line 33, col 6 of module Spec>: 15
+<head line 38, col 5 to line 38, col 8 of module Spec>: 3
+<saved line 40, col 5 to line 40, col 9 of module Spec>: 9
+<tmp line 35, col 5 to line 35, col 7 of module Spec>: 3
+<Init line 59, col 1 to line 59, col 4 of module Spec>: 16:16
+  line 60, col 20 to line 60, col 39 of module Spec: 1:8
+  |line 60, col 21 to line 60, col 24 of module Spec: 1
+  |line 60, col 29 to line 60, col 38 of module Spec: 1:10
+  line 61, col 17 to line 61, col 56 of module Spec: 4:20
+  |line 61, col 18 to line 61, col 29 of module Spec: 16
+  ||line 61, col 18 to line 61, col 18 of module Spec: 16
+  ||line 61, col 25 to line 61, col 29 of module Spec: 16:152
+  |line 61, col 39 to line 61, col 55 of module Spec: 4
+  line 62, col 13 to line 62, col 36 of module Spec: 16:32
+  |line 62, col 20 to line 62, col 23 of module Spec: 16
+  line 63, col 8 to line 63, col 19 of module Spec: 16
+  line 64, col 8 to line 64, col 48 of module Spec: 16
+  line 65, col 17 to line 65, col 39 of module Spec: 16:32
+  |line 65, col 33 to line 65, col 38 of module Spec: 32
+  |line 65, col 24 to line 65, col 27 of module Spec: 16
+  line 66, col 15 to line 66, col 34 of module Spec: 16:32
+  |line 66, col 22 to line 66, col 25 of module Spec: 16
+  line 67, col 16 to line 67, col 38 of module Spec: 16:32
+  |line 67, col 32 to line 67, col 37 of module Spec: 32
+  |line 67, col 23 to line 67, col 26 of module Spec: 16
+  line 68, col 8 to line 68, col 24 of module Spec: 16
+<WriteTmp line 75, col 1 to line 75, col 11 of module Spec>: 80:80
+  line 76, col 8 to line 76, col 22 of module Spec: 808
+  |line 76, col 8 to line 76, col 12 of module Spec: 728
+  line 77, col 11 to line 77, col 20 of module Spec: 176
+  line 77, col 27 to line 77, col 38 of module Spec: 256
+  |line 77, col 27 to line 77, col 30 of module Spec: 176
+  |line 77, col 34 to line 77, col 38 of module Spec: 176
+  line 77, col 43 to line 77, col 51 of module Spec: 80
+  line 77, col 58 to line 77, col 71 of module Spec: 0
+  line 78, col 8 to line 78, col 24 of module Spec: 80
+  line 79, col 8 to line 79, col 39 of module Spec: 80
+  line 80, col 8 to line 80, col 79 of module Spec: 80
+<ReadBackup line 84, col 1 to line 84, col 13 of module Spec>: 80:80
+  line 85, col 8 to line 85, col 22 of module Spec: 808
+  |line 85, col 8 to line 85, col 12 of module Spec: 728
+  line 86, col 8 to line 86, col 45 of module Spec: 80
+  line 87, col 8 to line 87, col 40 of module Spec: 80
+  line 88, col 8 to line 88, col 82 of module Spec: 80
+<Move line 93, col 1 to line 93, col 7 of module Spec>: 80:80
+  line 94, col 8 to line 94, col 23 of module Spec: 808
+  |line 94, col 8 to line 94, col 12 of module Spec: 728
+  line 95, col 11 to line 95, col 22 of module Spec: 80
+  line 96, col 18 to line 96, col 34 of module Spec: 0
+  line 97, col 18 to line 97, col 53 of module Spec: 0
+  line 98, col 18 to line 98, col 48 of module Spec: 0
+  line 70, col 15 to line 70, col 56 of module Spec: 0
+  line 100, col 18 to line 100, col 41 of module Spec: 0
+  line 101, col 18 to line 101, col 46 of module Spec: 80
+  line 102, col 18 to line 102, col 49 of module Spec: 80
+  line 103, col 18 to line 103, col 52 of module Spec: 80
+  line 104, col 8 to line 104, col 55 of module Spec: 80
+<LoadRejected line 111, col 1 to line 111, col 15 of module Spec>: 28:36
+  line 112, col 8 to line 112, col 22 of module Spec: 764
+  |line 112, col 8 to line 112, col 12 of module Spec: 728
+  line 112, col 27 to line 112, col 43 of module Spec: 116
+  |line 112, col 27 to line 112, col 31 of module Spec: 80
+  |line 112, col 40 to line 112, col 43 of module Spec: 80
+  line 113, col 8 to line 113, col 25 of module Spec: 36
+  line 114, col 8 to line 114, col 46 of module Spec: 36
+  line 115, col 8 to line 115, col 38 of module Spec: 36
+  line 116, col 8 to line 116, col 17 of module Spec: 36
+  line 117, col 8 to line 117, col 71 of module Spec: 36
+<LoadOkCommit line 119, col 1 to line 119, col 15 of module Spec>: 44:44
+  line 120, col 8 to line 120, col 22 of module Spec: 772
+  |line 120, col 8 to line 120, col 12 of module Spec: 728
+  line 120, col 27 to line 120, col 40 of module Spec: 124
+  |line 120, col 27 to line 120, col 31 of module Spec: 80
+  |line 120, col 37 to line 120, col 40 of module Spec: 80
+  line 121, col 8 to line 121, col 20 of module Spec: 44
+  line 122, col 8 to line 122, col 43 of module Spec: 44
+  line 123, col 8 to line 123, col 40 of module Spec: 44
+  line 124, col 8 to line 124, col 38 of module Spec: 44
+  line 125, col 8 to line 125, col 17 of module Spec: 44
+  line 126, col 8 to line 126, col 65 of module Spec: 44
+<LoadOkCommitFails line 128, col 1 to line 128, col 20 of module Spec>: 36:44
+  line 129, col 8 to line 129, col 20 of module Spec: 44
+  line 130, col 8 to line 130, col 22 of module Spec: 772
+  |line 130, col 8 to line 130, col 12 of module Spec: 728
+  line 130, col 27 to line 130, col 40 of module Spec: 124
+  |line 130, col 27 to line 130, col 31 of module Spec: 80
+  |line 130, col 37 to line 130, col 40 of module Spec: 80
+  line 131, col 8 to line 131, col 53 of module Spec: 44
+  line 132, col 8 to line 132, col 43 of module Spec: 44
+  line 133, col 8 to line 133, col 38 of module Spec: 44
+  line 134, col 8 to line 134, col 17 of module Spec: 44
+  line 135, col 8 to line 135, col 71 of module Spec: 44
+<C3_TypeOK line 29, col 1 to line 29, col 9 of module Properties>
+  line 29, col 14 to line 29, col 19 of module Properties: 364
+  |line 47, col 5 to line 54, col 28 of module Spec: 364
+  ||line 47, col 8 to line 47, col 79 of module Spec: 364
+  ||line 48, col 8 to line 48, col 69 of module Spec: 364
+  ||line 49, col 8 to line 49, col 33 of module Spec: 364
+  |||line 49, col 8 to line 49, col 11 of module Spec: 364
+  |||line 49, col 17 to line 49, col 33 of module Spec: 364
+  ||||line 49, col 17 to line 49, col 20 of module Spec: 364
+  ||||line 49, col 27 to line 49, col 33 of module Spec: 364:728
+  |||||line 49, col 28 to line 49, col 32 of module Spec: 364
+  ||line 50, col 8 to line 50, col 71 of module Spec: 364
+  |||line 50, col 8 to line 50, col 53 of module Spec: 364
+  ||||line 50, col 8 to line 50, col 34 of module Spec: 364
+  |||||line 50, col 8 to line 50, col 10 of module Spec: 364
+  |||||line 50, col 16 to line 50, col 34 of module Spec: 364
+  ||||||line 50, col 16 to line 50, col 20 of module Spec: 364
+  ||||||line 50, col 27 to line 50, col 34 of module Spec: 364:728
+  |||||||line 50, col 28 to line 50, col 33 of module Spec: 364
+  ||||line 50, col 39 to line 50, col 53 of module Spec: 364
+  |||line 50, col 58 to line 50, col 71 of module Spec: 364
+  ||line 51, col 8 to line 51, col 47 of module Spec: 364
+  |||line 51, col 8 to line 51, col 13 of module Spec: 364
+  |||line 51, col 19 to line 51, col 47 of module Spec: 364
+  ||||line 51, col 20 to line 51, col 23 of module Spec: 364
+  ||||line 51, col 28 to line 51, col 46 of module Spec: 364
+  |||||line 51, col 28 to line 51, col 32 of module Spec: 364
+  |||||line 51, col 39 to line 51, col 46 of module Spec: 364:728
+  ||||||line 51, col 40 to line 51, col 45 of module Spec: 364
+  ||line 52, col 8 to line 52, col 58 of module Spec: 364
+  ||line 53, col 8 to line 53, col 46 of module Spec: 364
+  |||line 53, col 8 to line 53, col 12 of module Spec: 364
+  |||line 53, col 18 to line 53, col 46 of module Spec: 364
+  ||||line 53, col 19 to line 53, col 22 of module Spec: 364
+  ||||line 53, col 27 to line 53, col 45 of module Spec: 364
+  |||||line 53, col 27 to line 53, col 31 of module Spec: 364
+  |||||line 53, col 38 to line 53, col 45 of module Spec: 364:728
+  ||||||line 53, col 39 to line 53, col 44 of module Spec: 364
+  ||line 54, col 8 to line 54, col 28 of module Spec: 364
+<P4_DiskLoadable line 10, col 1 to line 10, col 15 of module Properties>
+  line 10, col 20 to line 10, col 44 of module Properties: 364
+  |line 10, col 20 to line 10, col 26 of module Properties: 364
+  ||line 140, col 12 to line 140, col 41 of module Spec: 364
+  |||line 140, col 28 to line 140, col 41 of module Spec: 520
+  |||line 140, col 21 to line 140, col 24 of module Spec: 364
+  |line 10, col 31 to line 10, col 44 of module Properties: 60
+<P5_OkMeansSaved line 16, col 1 to line 16, col 15 of module Properties>
+  line 16, col 20 to line 16, col 74 of module Properties: 364
+  |line 16, col 36 to line 16, col 74 of module Properties: 728
+  ||line 16, col 36 to line 16, col 49 of module Properties: 728
+  ||line 16, col 54 to line 16, col 74 of module Properties: 120
+  |line 16, col 29 to line 16, col 32 of module Properties: 364
+<P6_AllOrNothing line 22, col 1 to line 22, col 15 of module Properties>
+  line 22, col 20 to line 22, col 42 of module Properties: 364
+  |line 22, col 20 to line 22, col 26 of module Properties: 364
+  ||line 140, col 12 to line 140, col 41 of module Spec: 364
+  |||line 140, col 28 to line 140, col 41 of module Spec: 520
+  |||line 140, col 21 to line 140, col 24 of module Spec: 364
+  |line 22, col 31 to line 22, col 42 of module Properties: 60
+<P7_NoRaceError line 26, col 1 to line 26, col 14 of module Properties>
+  line 26, col 19 to line 26, col 28 of module Properties: 364
+End of statistics.
+380 states generated, 364 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 9.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 2 and the 95th percentile is 2).
+Finished in 00s at (2026-11-18 17:18:20)

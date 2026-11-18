@@ -1,12 +1,12 @@
 # W5 regression guard — WDLAB-STD-VERIFY-001 §13 (fail-closed)
-# Generated 2026-11-16. Three-config TLC gate (+ Lean trust audit where formal/lean_audit.sh exists) + W6 drift check.
+# Generated 2026-11-16, extended 2026-11-18 (4 concerns + Lean). Three-config TLC gate + Lean trust audit + W6 drift check.
 name: formal-verification
 on:
   pull_request:
-    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
+    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "plugin/hooks/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
   push:
     branches: ["main"]
-    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
+    paths: ["formal/**", "packages/myelin-core/src/**", "packages/myelin-hub/api/src/**", "packages/myelin-hub/web/src/**", "packages/myelin-cli/src/**", "plugin/hooks/**", "docs/adr/**", "PHASE_STATE.md", "README.md"]
   schedule:
     - cron: "17 18 * * *"   # nightly 03:17 KST
   workflow_dispatch:
@@ -35,6 +35,8 @@ jobs:
       - name: Fetch pinned TLA+ tools
         run: bash formal/ci/setup_tla.sh
       - name: Three-config gate (MC PASS / MC_bug FAIL / MC_sanity FAIL)
+        env:
+          FORMAL_NIGHTLY: ${{ github.event_name == 'schedule' && '1' || '0' }}   # larger bounds at night
         run: bash formal/run_all.sh
       - name: Upload evidence
         if: always()
@@ -46,6 +48,18 @@ jobs:
             formal/**/evidence/*.log
           if-no-files-found: ignore
           retention-days: 14
+  lean-trust-audit:
+    name: Lean trust audit (0 sorry, standard axioms)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan (toolchain pinned by each project's lean-toolchain)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: lake build + axiom audit
+        run: bash formal/lean_audit.sh
   drift-check:
     name: W6 correspondence drift
     runs-on: ubuntu-latest

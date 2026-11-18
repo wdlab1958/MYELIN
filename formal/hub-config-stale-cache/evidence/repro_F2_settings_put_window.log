@@ -1,3 +1,8 @@
+PUT refused: 412 myelin.yaml 이 화면을 연 뒤에 바뀌었습니다 — 다시 불러온 뒤 저장하세요 (version mismatch)
+myelin.yaml domains after save: ['D1', 'D3', 'D4', 'D2', 'SEC-CONSULT']
+F2 holds
+rc=0
 myelin.yaml domains after save: ['D1', 'D3', 'D4', 'D2']
 F2 VIOLATED (P2) — the save between GET and PUT dropped the Domain added by the CLI
   10_Domains/SEC-CONSULT/_MOC.md exists: True -> doctor: unregistered domain
+rc=1

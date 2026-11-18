@@ -12,14 +12,15 @@
 (*   ReloadOnRequest  (F1, IMPLEMENTED)  HubService re-reads myelin.yaml before any       *)
 (*                    decision when its bytes differ from the copy it loaded              *)
 (*                    (service.py `_reload_if_changed`, called from `_v()` / `ready`).    *)
-(*   IfMatch          (F2, PROPOSED, not in code)  PUT /api/settings is refused when      *)
-(*                    myelin.yaml changed since the GET the form was built from.          *)
+(*   IfMatch          (F2, IMPLEMENTED 2026-11-18)  PUT /api/settings is refused (412)    *)
+(*                    when myelin.yaml changed since the GET the form was built from       *)
+(*                    (ETag on GET, If-Match on PUT; service.py save_settings).            *)
 (* Granularity: one action = one HTTP request handler or one CLI write of myelin.yaml.    *)
 EXTENDS Naturals, FiniteSets
 
 CONSTANTS Doms,             \* model values: Domain IDs the CLI may add, e.g. {d1, d2}
           ReloadOnRequest,  \* BOOLEAN — fix F1
-          IfMatch           \* BOOLEAN — fix F2 (proposed)
+          IfMatch           \* BOOLEAN — fix F2
 
 ASSUME ReloadOnRequest \in BOOLEAN /\ IfMatch \in BOOLEAN
 
@@ -49,8 +50,8 @@ Init ==
     /\ accepted = {} /\ badReject = FALSE /\ badAccept = FALSE /\ lost = {}
 
 \* The Domain list a Hub request decides with.
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:159-192 `_read_config_bytes` / `_reload_if_changed` / `ready` / `_v()`
-\*      (before the F1 patch: service.py:158-169 — `_v()` returned the start-up `self.vault` unconditionally)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:259-293 `_read_config_bytes` / `_reload_if_changed` / `ready` / `_v()`
+\*      (before the F1 patch, commit 70509a5: service.py:158-169 — `_v()` returned the start-up `self.vault` unconditionally)
 View == IF ReloadOnRequest THEN file ELSE cache
 
 ----------------------------------------------------------------------------
@@ -61,13 +62,13 @@ CliAddDomain(d) ==
     /\ file' = file \cup {d}
     /\ UNCHANGED <<cache, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:126-154 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:225-252 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
 HubRestart ==
     /\ cache' = file
     /\ UNCHANGED <<file, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:534-555 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
-\*      (also domains() 419-439 and every other read of v.config.domains)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:645-680 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
+\*      (also domains() 520-560, summary() 429-446 [F8] and every other read of v.config.domains)
 HubPromote(d) ==
     /\ cache' = View
     /\ (IF d \in View
@@ -78,15 +79,15 @@ HubPromote(d) ==
                /\ UNCHANGED <<accepted, badAccept>>)
     /\ UNCHANGED <<file, form, formBase, formLoaded, lost>>
 
-\* src: packages/myelin-hub/web/src/pages/Settings.tsx:17 `current = await fetch("/api/settings")`
-\*      -> app.py:239 GET /api/settings -> service.py:672-674 settings(): v.config.model_dump()
+\* src: packages/myelin-hub/web/src/pages/Settings.tsx:21-23 `res = await fetch("/api/settings")`, `etag = res.headers.get("ETag")`
+\*      -> app.py:251-256 GET /api/settings -> service.py:801-806 settings_versioned(): config + digest of myelin.yaml
 BrowserGet ==
     /\ cache' = View
     /\ form' = View /\ formBase' = View /\ formLoaded' = TRUE
     /\ UNCHANGED <<file, accepted, badReject, badAccept, lost>>
 
-\* src: packages/myelin-hub/web/src/pages/Settings.tsx:18-20 `next = {...current, level, mcp, commons}; userPut("/api/settings", next)`
-\*      -> app.py:298 PUT /api/settings -> service.py:676-700 save_settings(): write myelin.yaml, commit, reload()
+\* src: packages/myelin-hub/web/src/pages/Settings.tsx:24-26 `next = {...current, level, mcp, commons}; userPut("/api/settings", next, {"If-Match": etag})`
+\*      -> app.py:314-319 PUT /api/settings -> service.py:808-845 save_settings(): version check -> 412 (815-822), write myelin.yaml, commit, reload()
 BrowserPut ==
     /\ formLoaded
     /\ formLoaded' = FALSE

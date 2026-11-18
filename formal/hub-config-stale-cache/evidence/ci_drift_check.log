@@ -1,3 +1,1 @@
-# W6 drift check — 2026-11-16 — cmd: /usr/bin/python3 formal/tools/correspondence_check.py formal/ --root .  (base 7c81011; pointers rebased to repo-root paths; README.md:17->32, :69->84 after README section shifts)
-19 pointers, 9 source files, 0 broken
-exit=0
+123 pointers, 13 source files, 0 broken

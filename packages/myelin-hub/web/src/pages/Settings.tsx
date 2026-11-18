@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { userPut, type VaultSummary } from "../lib/api";
+import { ApiError, userPut, type VaultSummary } from "../lib/api";
 
 export default function Settings({ vault, onChanged }: { vault: VaultSummary; onChanged: () => void }) {
   const [level, setLevel] = useState<number>(vault.level ?? 1);
@@ -13,13 +13,23 @@ export default function Settings({ vault, onChanged }: { vault: VaultSummary; on
   const commonsNeedsRemote = commonsEnabled && !commonsRemote.trim();
   const save = async () => {
     if (commonsNeedsRemote) { setMsg("저장 실패: Commons 연동을 켜려면 원격 저장소(commons.remote)를 먼저 입력한다"); return; }
-    try {
-      const current = await (await fetch("/api/settings")).json();
-      const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
-      const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose }, commons };
-      const r = await userPut<{ commit: string }>("/api/settings", next);
-      setMsg(`저장됨 · commit ${r.commit.slice(0, 7)}`); onChanged();
-    } catch (e) { setMsg(`저장 실패: ${String(e)}`); }
+    // The form edits level · mcp · commons only; everything else (Domains, Packs …) is sent back as read.
+    // If-Match = the version that was read: when myelin.yaml changed in between (e.g. `myelin add-domain`
+    // in a terminal) the Hub answers 412 and we read again instead of writing the older Domain list back.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch("/api/settings", { cache: "no-store" });
+        const current = await res.json();
+        const etag = res.headers.get("ETag");
+        const commons = { ...(current.commons ?? {}), enabled: commonsEnabled, remote: commonsRemote.trim() || null, local: commonsLocal.trim() || null, metrics_opt_in: metricsOptIn };
+        const next = { ...current, level, mcp: { write_draft: writeDraft, expose_confidential: expose }, commons };
+        const r = await userPut<{ commit: string }>("/api/settings", next, etag ? { "If-Match": etag } : undefined);
+        setMsg(`저장됨 · commit ${r.commit.slice(0, 7)}`); onChanged(); return;
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 412 && attempt < 2) continue;
+        setMsg(`저장 실패: ${String(e)}`); return;
+      }
+    }
   };
   return (
     <>

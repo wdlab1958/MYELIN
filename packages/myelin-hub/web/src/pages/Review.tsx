@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { get, refPath, userPost, type Candidate, type NoteRow, type PatchPlan, type PatchRow, type VaultSummary } from "../lib/api";
+import { ApiError, get, refPath, userPost, type Candidate, type NoteRow, type PatchPlan, type PatchRow, type VaultSummary } from "../lib/api";
 
 export default function Review({ vault, onChanged }: { vault: VaultSummary; onChanged: () => void }) {
   const commonsReady = vault.commons?.configured ?? false;
@@ -11,10 +11,11 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
   const [plans, setPlans] = useState<Record<string, PatchPlan | { error: string }>>({});
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const [bodies, setBodies] = useState<Record<string, string>>({}); // 읽음 확인: Promote 는 본문을 연 뒤에만
+  const [digests, setDigests] = useState<Record<string, string>>({}); // 읽은 본문의 digest — Promote 가 그대로 돌려보낸다
   const [withPr, setWithPr] = useState<Record<string, boolean>>({});
   const openBody = async (path: string) => {
     if (bodies[path] !== undefined) { const next = { ...bodies }; delete next[path]; setBodies(next); return; }
-    try { const n = await get<{ body: string }>(`/api/notes/${refPath(path)}`); setBodies({ ...bodies, [path]: n.body }); }
+    try { const n = await get<{ body: string; digest: string }>(`/api/notes/${refPath(path)}`); setBodies({ ...bodies, [path]: n.body }); setDigests({ ...digests, [path]: n.digest }); }
     catch (e) { setBodies({ ...bodies, [path]: `(본문을 읽을 수 없다: ${String(e)})` }); }
   };
   const publish = async (c: Candidate) => {
@@ -32,13 +33,17 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
     try { const p = await get<PatchPlan>(`/api/patches/${encodeURIComponent(file)}/preview`); setPlans({ ...plans, [file]: p }); }
     catch (e) { setPlans({ ...plans, [file]: { error: String(e) } }); }
   };
-  const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string) => {
+  const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string, readPath?: string) => {
     try {
       const r = await fn();
       setMsg(`${label} · commit ${r.commit?.slice(0, 7) ?? ""}`);
       if (label.startsWith("Promote") && r.path) setJustPromoted(r.path);
       await load(); onChanged();
-    } catch (e) { setMsg(`실패: ${String(e)}`); }
+    } catch (e) {
+      // 409 on Promote = the draft changed after it was read: close the body so it has to be read again
+      if (readPath && e instanceof ApiError && e.status === 409) { setBodies((b) => { const next = { ...b }; delete next[readPath]; return next; }); await load(); }
+      setMsg(`실패: ${String(e)}`);
+    }
   };
 
   return (
@@ -60,7 +65,7 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
             </div>
             <div className="hub-row">
               <button type="button" className="mx-btn" disabled={d.doctor_ok === false} onClick={() => openBody(d.path)} aria-pressed={bodies[d.path] !== undefined} data-testid="draft-read">{bodies[d.path] !== undefined ? "닫기" : "내용 읽기"}</button>
-              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => userPost(`/api/review/promote/${refPath(d.path)}`), `Promote ${d.title}`)} data-testid="promote">Promote</button>
+              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => userPost(`/api/review/promote/${refPath(d.path)}`, { digest: digests[d.path] }), `Promote ${d.title}`, d.path)} data-testid="promote">Promote</button>
               <button type="button" className="mx-btn" onClick={() => act(() => userPost(`/api/review/reject/${refPath(d.path)}`), `Reject ${d.title}`)} data-testid="reject">Reject</button>
             </div>
           </div>

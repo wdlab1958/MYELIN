@@ -1,0 +1,204 @@
+{
+  "concern": "hub-onboard-atomicity",
+  "workflow": "W1",
+  "generated_at": "2026-11-18T17:25:00+09:00",
+  "repo_commit": "c29d83f (base) + branch formal/hub-2026-11-18",
+  "summary": "FIXED (F7): for every point at which an onboarding request can fail (after any of its four writing steps), with and without wizard-defined Domains (19 distinct states each, depth 8 — the full state space of the model), a failed onboarding leaves nothing it created, never a myelin.yaml naming a deleted pack, and onboarding can be retried.",
+  "scope": {
+    "modeled": [
+      "onboard(): personal pack → init_vault → welcome/runtime → git init + first commit",
+      "a failure after any step",
+      "retry after failure"
+    ],
+    "abstracted": [
+      "A1 steps are atomic (init_vault dying half-way through its file writes is outside; the Hub then has no plan to undo)",
+      "A2 files reduced to four booleans",
+      "A3 undo removes only what the request created (plan files, welcome draft, .myelin/.git if absent before, directories absent before and empty now); a same-named file created by another program during the request would be removed too",
+      "A4 a pre-existing packs/me.my-domains/pack.yaml is restored byte-for-byte"
+    ],
+    "out_of_scope": [
+      "CLI `myelin init`",
+      "whether the first commit should stage the user's pre-existing files at all (`git add -A` vs ADR-0009 §4) — design choice, proposal only"
+    ],
+    "assumptions": [
+      "A1..A4 in hub-onboard-atomicity/SCOPE.md"
+    ]
+  },
+  "properties": [
+    {
+      "name": "P8_FailedLeavesNothing",
+      "kind": "invariant",
+      "statement": "phase = \"failed\" => ~pack /\\ ~config /\\ ~scaffold /\\ ~repo",
+      "meaning": "A failed onboarding leaves no half-initialised Vault",
+      "source": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1057-1060; docs/adr/0009-hub-write-policy.md:9",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "FullRollback=TRUE, Custom ∈ {TRUE,FALSE}: 26 generated / 19 distinct states, depth 8 (complete)",
+      "evidence": "hub-onboard-atomicity/evidence/tlc_fixed.log; tlc_fixed_nocustom.log"
+    },
+    {
+      "name": "P9_ConfigHasItsPack",
+      "kind": "invariant",
+      "statement": "(phase # \"running\" /\\ config /\\ Custom) => pack",
+      "meaning": "A Vault whose myelin.yaml lists the personal pack has that pack on disk",
+      "source": "docs/adr/0004-myelin-yaml-schema.md:12; packages/myelin-hub/api/src/myelin_hub_api/service.py:1233-1237",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "same",
+      "evidence": "hub-onboard-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "P10_VaultIsCommitted",
+      "kind": "invariant",
+      "statement": "(phase # \"running\" /\\ config) => committed",
+      "meaning": "A Vault created by onboarding has its [myelin:init] commit",
+      "source": "docs/adr/0009-hub-write-policy.md:9; docs/adr/0009-hub-write-policy.md:11",
+      "frozen": true,
+      "result": "holds",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "same",
+      "evidence": "hub-onboard-atomicity/evidence/tlc_fixed.log"
+    },
+    {
+      "name": "S_NeverOk / S_NeverRetryOk (sanity, must fail)",
+      "kind": "bounded-check",
+      "statement": "see Properties.tla",
+      "meaning": "onboarding succeeds; and succeeds on a retry after a failure",
+      "source": "WDLAB-STD-VERIFY-001 §6.1",
+      "frozen": false,
+      "result": "violated",
+      "tool": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "bounds": "complete",
+      "evidence": "hub-onboard-atomicity/evidence/tlc_sanity.log; tlc_sanity_retry.log"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F7",
+      "title": "A failed onboarding leaves a half-initialised Vault: myelin.yaml, the scaffold and an empty .git stay, the personal pack that myelin.yaml lists is deleted, and the retry is refused with 409",
+      "severity": "high",
+      "status": "fixed",
+      "property": "P8_FailedLeavesNothing (also P9_ConfigHasItsPack, P10_VaultIsCommitted)",
+      "story": "A new user points the Hub at a folder that already has notes — an existing Obsidian vault — and defines their own Domain in the wizard. The Hub writes packs/me.my-domains, runs init_vault (myelin.yaml + scaffold), writes the welcome draft, runs git init and stages everything with `git add -A`. The Vault pre-commit device rejects the first commit because an old note has no frontmatter → 500. The error handler then removes only the personal pack ('no half-initialised directory left behind'). Result: myelin.yaml lists me.my-domains and the Domain it declared, the pack is gone, there is no commit, and clicking the wizard again answers 409 'Vault already initialised'. The first 15 minutes of exactly the people MYELIN is meant to spread to.",
+      "trace": [
+        {
+          "step": 1,
+          "actor": "Hub",
+          "action": "Start",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1055-1078"
+        },
+        {
+          "step": 2,
+          "actor": "Hub",
+          "action": "WritePack",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1232-1273",
+          "changed": {
+            "pack": "TRUE"
+          }
+        },
+        {
+          "step": 3,
+          "actor": "Hub",
+          "action": "InitVault",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1080-1113",
+          "changed": {
+            "config": "TRUE"
+          }
+        },
+        {
+          "step": 4,
+          "actor": "Hub",
+          "action": "Welcome",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1108-1111",
+          "changed": {
+            "scaffold": "TRUE"
+          }
+        },
+        {
+          "step": 5,
+          "actor": "env",
+          "action": "Fail (first commit refused)",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:1074-1078",
+          "changed": {
+            "phase": "failed",
+            "pack": "FALSE",
+            "config": "TRUE (stays)",
+            "repo": "TRUE (stays)"
+          },
+          "violation": true
+        }
+      ],
+      "reproduction": {
+        "test": "packages/myelin-hub/api/tests/test_formal_hub.py::test_f7_failed_onboarding_leaves_nothing_and_can_be_retried",
+        "result_before_fix": "fails",
+        "result_after_fix": "passes"
+      },
+      "fix": {
+        "summary": "onboard() captures the folder's state before its first write (_OnboardUndo: existing directories, whether .git/.myelin existed, bytes of .gitignore and of an existing personal pack). On any failure it removes the files of the scaffold plan and the welcome draft, restores the two files it may have overwritten, drops the Vault/index, removes the .myelin and .git it created and every directory that did not exist before and is empty now. The user's own files are not touched; the error names the cause; the same request succeeds once the cause is fixed.",
+        "diff": "hub-onboard-atomicity/evidence/patches/2026-11-18-hub-F2-F4-F5-F6-F7-F8.diff",
+        "model_recheck": "passes",
+        "mutation_check": "fails-as-expected"
+      },
+      "evidence": [
+        "hub-onboard-atomicity/evidence/tlc_bug.log",
+        "hub-onboard-atomicity/evidence/trace_bug.md",
+        "hub-onboard-atomicity/evidence/tlc_bug_p9.log",
+        "hub-onboard-atomicity/evidence/trace_bug_p9.md",
+        "hub-onboard-atomicity/evidence/tlc_bug_p10.log",
+        "hub-onboard-atomicity/evidence/test_before.log",
+        "hub-onboard-atomicity/evidence/test_after.log",
+        "hub-onboard-atomicity/evidence/tlc_fixed.log",
+        "hub-onboard-atomicity/evidence/mutation.log",
+        "hub-onboard-atomicity/evidence/e2e_playwright.log"
+      ]
+    }
+  ],
+  "trust_base": {
+    "tla": {
+      "tool_version": "TLC 2026.11.15 (tla2tools v1.8.0 rolling), OpenJDK 21.0.13",
+      "states_generated": 26,
+      "distinct_states": 19,
+      "depth": 8,
+      "sanity_checks": [
+        "MC_bug / MC_bug_p9 / MC_bug_p10: FullRollback=FALSE -> P8 / P9 / P10 violated (exit 12)",
+        "MC_sanity / MC_sanity_retry: violated (exit 12) — success and retry-after-failure reachable",
+        "-coverage 1: Start, WritePack, InitVault, Welcome, GitCommit, Fail all taken",
+        "guard mutation (rollback forgets .git) -> P8 violated"
+      ]
+    }
+  },
+  "rerun": [
+    "TLC_WORKERS=2 bash formal/run_all.sh            # FORMAL_NIGHTLY=1 adds the larger bounds",
+    "uv run pytest packages/myelin-hub/api/tests/test_formal_hub.py -v",
+    "uv run pytest -q",
+    "python3 formal/tools/correspondence_check.py formal/ --root ."
+  ],
+  "next_steps": [
+    "HITL G2: confirm P8–P10 as frozen",
+    "HITL (design): should onboarding into a folder with existing notes succeed — first commit staging only the files MYELIN created (ADR-0009 §4) — instead of failing cleanly?",
+    "Candidate (core): init_vault is not atomic when a write fails half-way (A1)"
+  ],
+  "wdlab": {
+    "project": "MYELIN",
+    "module": "myelin-hub",
+    "level_achieved": "L2",
+    "verdict": "FIXED (F7) · BOUNDED-PASS (complete state space of the model)",
+    "hitl_approvals": [
+      "G2: pending Brian review (P8–P10 frozen 2026-11-18)",
+      "G7(F7): pending Brian review — no API change; rollback deletes files the request created (see A3); patch delivered as a branch, not pushed"
+    ],
+    "risk_domain": "personal-knowledge-os / onboarding",
+    "one_cycle_stage": "dev → (LLMOps-eval n/a) → SSC n/a",
+    "w5_ci": {
+      "workflow": ".github/workflows/formal.yml",
+      "jobs": [
+        "three-config-gate",
+        "lean-trust-audit",
+        "drift-check"
+      ],
+      "policy": "fail-closed"
+    }
+  }
+}

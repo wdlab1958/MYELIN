@@ -1,0 +1,30 @@
+# mutation check (2026-11-18T17:18:16+09:00): fix toggles OFF -> frozen properties must FAIL again; fix ON -> PASS
+## MC.cfg
+    FullRollback = TRUE     Custom = TRUE 
+exit=0
+Model checking completed. No error has been found.
+26 states generated, 19 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 8.
+## MC_bug.cfg
+    FullRollback = FALSE     Custom = TRUE 
+exit=12
+Error: Invariant P8_FailedLeavesNothing is violated.
+9 states generated, 9 distinct states found, 3 states left on queue.
+The depth of the complete state graph search is 5.
+## MC_bug_p10.cfg
+    FullRollback = FALSE     Custom = FALSE 
+exit=12
+Error: Invariant P10_VaultIsCommitted is violated.
+9 states generated, 9 distinct states found, 3 states left on queue.
+The depth of the complete state graph search is 5.
+## MC_bug_p9.cfg
+    FullRollback = FALSE     Custom = TRUE 
+exit=12
+Error: Invariant P9_ConfigHasItsPack is violated.
+9 states generated, 9 distinct states found, 3 states left on queue.
+The depth of the complete state graph search is 5.
+## guard mutation: rollback forgets the .git directory created by this request
+   sed: 0,/THEN \/\\ pack' = FALSE \/\\ config' = FALSE \/\\ scaffold' = FALSE \/\\ repo' = FALSE/s//THEN \/\\ pack' = FALSE \/\\ config' = FALSE \/\\ scaffold' = FALSE \/\\ repo' = (step = 3)/   (on a temp copy, MC.cfg)
+exit=12 (12 = killed by an invariant; 0 would mean the property does not see this guard)
+Error: Invariant P8_FailedLeavesNothing is violated.
+14 states generated, 13 distinct states found, 4 states left on queue.

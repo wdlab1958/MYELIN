@@ -1,0 +1,6 @@
+name = "ReviewGate"
+version = "0.1.0"
+defaultTargets = ["ReviewGate"]
+
+[[lean_lib]]
+name = "ReviewGate"
