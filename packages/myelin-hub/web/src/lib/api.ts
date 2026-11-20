@@ -72,7 +72,8 @@ export type PatchPlan = {
 };
 export type PackRow = {
   name: string; version: string; kind: string; maintainer: string; description: string; active: boolean; editable: boolean;
-  domains: { id: string; name: string; accent: string; sub_mocs: string[] }[];
+  /** `configured` = already one of the Vault's Domains (myelin.yaml); false → can be added with POST /api/domains */
+  domains: { id: string; name: string; accent: string; sub_mocs: string[]; configured: boolean }[];
 };
 export type Candidate = {
   path: string; title: string; eligible: boolean; ok: boolean; reasons: string[];

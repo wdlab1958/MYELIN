@@ -2,7 +2,7 @@
 
 current_phase: P9
 status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-10-28
+last_updated: 2026-11-21
 
 > **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음).
 > **P9 (Desktop 라인 기능 이식, Brian "1항으로 처리" 승인 2026-10-18)**: GitHub `main` 을 이 라인(`fable-main`)으로 확정하고, Desktop 구현에만 있던 기능을 이식했다 — 아래 P9 섹션. 이후 Desktop·Code 병행은 하지 않기로 함. **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
@@ -114,6 +114,7 @@ last_updated: 2026-10-28
 - [x] P9-T7 (2026-10-27) 운영: Vault `me` 에 개인 Pack `me.my-domains`(D1~D3 = reference 복사, **D4 AI_Project**) → `myelin add-domain D4`. `~/ai_project` 전수 조사(프로젝트 21 + 루트 문서, *.md 1,000+건) → D4 프로젝트 카드 21 + 루트 문서 1 + Sub-MOC 7 = 29 초안을 `00_Inbox/ai-drafts/` 에 생성(origin claude, Review Gate 승격 대기). `myelin commons init ~/ai_project/MYELIN/Local_Commons`. **ADR-0014** 공개 저장소·개인 Vault 분리(pre-push 거부 훅, `.gitignore`). 코드 변경 없음.
 - [x] P9-T8 (2026-10-27, v1.3.1) **Obsidian Graph View 연동** — `myelin_core.obsidian`: init/add-domain 이 `.obsidian/{core-plugins,graph,app}.json` 을 쓰고 Domain 폴더마다 Emboss accent 색 그룹(tokens.json 단일 원천), 병합·보존·fail-closed. CLI `myelin obsidian setup|status`, Hub `GET /api/obsidian`·`POST /api/obsidian/setup` + Dashboard 카드, install.sh 연계, 골든 갱신, 테스트 9건. 운영: Vault `me` 설정 commit `415f736`, Obsidian 1.14.5 에 `~/Vaults/me` 등록·열림(이전엔 샘플 `~/ai_project/Myelin` 만 등록돼 Hub 의 `obsidian://` 링크가 닿지 않았음)
 - [x] P9-T9 (2026-10-27) **사용자 가이드 v2.0.0** — `docs/guides/user-guide-v2.0/`(docx · pdf · xlsx 표 18개 · img 12장). 제품 v1.3.1 기준으로 v1.0 가이드를 갱신: 변경 요약 표(v1.0→v2.0), 읽음 확인 승격, 지표 9종·미엘린 강도·환류, 패치 미리보기/digest, 기밀 라우팅 장치(MYELIN_LLM=local · guard_read · pre-commit 훅), Commons push/PR·두 정체성, 도우미 챗봇, Obsidian Graph View, `--claude` opt-in 설치. Hub 스크린샷은 `make e2e` 로 재생성(`docs/reports/P6/`, 12 passed). 생성기 `gen_guide.py` 동봉(python-docx·openpyxl·Pillow, PDF 는 soffice). Brian 보강(3.4 Obsidian Graph View · 3.5 AiCarelink 그래프 그림) 반영 후 GitHub `main` 에 push(`c568e35`) — CI run 40468827503 **green**(check: ruff·mypy·pytest / gate: `make gate P=9` + Playwright e2e, 약 8분)
+- [x] P9-T10 (2026-11-21, v1.3.2) **Hub 에서 Domain 추가** (Brian 보고: 도우미가 안내한 'Add Domain'·'Create' 메뉴가 없음 → "Hub 에 버튼 구현") — `POST /api/domains {id, pack?}`(클릭 헤더, core `add_domain` 재사용, 건드린 경로만 1 commit `[myelin:add-domain] <ID>`, 직렬화·실패 시 전부 롤백, 404/409/422 fail-closed), `GET /api/packs` `domains[].configured`, Domain Packs 카드의 `+ Domain 추가 · <ID>` 버튼, 도우미 지식 정정(① 개인 Pack 저장 → ② 버튼, 없는 버튼 명시). **ADR-0015** · 위협 모델 T23 · API 테스트 3건 + 클릭 헤더 감사 · e2e 13번째 시나리오 — 1,295 passed · e2e 13 passed · `make gate P=9` PASS · formal 대응 검사 0 broken
 
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
@@ -125,12 +126,13 @@ last_updated: 2026-10-28
 - CI: **green** — github.com/wdlab1958/MYELIN `main` run 44285599369 (check + gate P=9 + e2e, 40c1d69, 2026-11-18) · `formal-verification` run 44285599066 (Lean trust audit · TLC three-config gate · W6 drift) 도 green. 직전 CI run 44282484680(f24742e)·43844042332(c29d83f) 는 `check` 실패 — f24742e 는 `formal/` 스크립트 ruff 오류 32건, 40c1d69 에서 정리. 이전 green: run 40468827503(c568e35, 2026-10-27)·39171277206(fc5ae4c)·39087153818(P=8). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
-- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27)
+- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27) · **ADR-0015** Hub 에서 Domain 추가 `POST /api/domains` (v1.3.2, 2026-11-21)
 - P8 결정(기록): 위협 모델 High 2건(T08 Hub Host/Origin 검증, T09 정적 서빙 경로 이탈) 조치 + 회귀 테스트. 스크립트 인터프리터 실행은 Vault settings.json 에서 ask(T02 완화). 설치는 `scripts/install.sh`(런처 = `uv --directory <repo> run …`, 기존 파일 보존, 테마 .bak). 로컬 plugin marketplace(`.claude-plugin/marketplace.json`, 이름 `myelin-local`), plugin 버전 1.0.0. 이름 확인: 미국 "MYELIN" 소프트웨어 상표 선출원(심사 중)·주요 도메인 점유·GitHub `myelin` 개인 계정 사용 중 → 사내 사용은 MYELIN 유지, 대외 공개 시 결합형. "설치→첫 verified" 자동 측정 1초 미만(캐시된 uv 기준; 신규 환경은 네트워크 의존).
 
 ## Backlog (v1.1+)
 - QA 2026-10-18 Gap 보고서 이월 중 **v1.2.0 에서 해결**: LLM 라우팅 장치화(ADR-0011) · 재사용 지표·Commons 인용 집계(ADR-0012) · Hub push/PR · `commons.remote` origin. **남은 것**: Bash Guard 범위 밖(네트워크 송신 `curl -T`/`scp`, Vault 밖 스크립트) · 40_IP 밖 confidential 노트의 제목 노출(Grep)·`.myelin/index.db` 본문 캐시(ADR-0011 잔여) · Obsidian `cssclasses` 강도 표시(`mx-strength-N`, 골든 영향) · Pack `sub_mocs` 이름 제약(`/`, `..`) · Team 모드 시 "조직은 Vault 를 열람하지 않는다" 재설계 · P7 파일럿·KIPRIS 사람 작업
 - 도우미(ADR-0013): 대화 저장·👍/👎 피드백 집계 · 스트리밍 응답 · `llm.default: claude` 연계 외부 어댑터(기밀 제외 판정 유지)
 - `myelin init`/`doctor --install-hook` 가 Vault pre-push 거부 훅도 설치(ADR-0014 제품화, 테스트 포함)
+- Hub Domain 추가 후속(ADR-0015): Domain 삭제/역할 변경 UI(되돌리기 어려움 → 별도 ADR) · `add_domain` 을 formal 모델(hub-config-stale-cache)에 편입 · 사용자 가이드 v2.0 에 '+ Domain 추가' 절·스크린샷 반영
 - Team 모드 인증(Hub 비-loopback) · 다크 모드 토큰 · CI 에 Node 22/Chrome(e2e) 단계 · Commons CI 비식별 재스캔 · Hub 에서 Registry Pack 설치 · 20k+ Vault 색인 가속(safe 로더) · 정본 Rev 2.1 제안서(§8.1 값, §7.2 Level 누적, MCP 기밀 opt-in, Hub 쓰기 헤더, Commons 비식별 차단, 이름 결합형) · 로컬 임베딩 검색(선택)
 - `myelin add-domain` 가 자기 변경분만이 아니라 작업 트리 전체를 커밋한다(`git add -A` 동작, 2026-10-23 myelin-demo 에서 `.obsidian/`·미완성 노트까지 `[myelin:add-domain]` 커밋에 포함됨) → touched 경로만 stage 하도록 수정 · Hub 가 `myelin.yaml` 변경(add-domain)을 재시작 없이 반영하지 못함(설정 캐시) → 설정 파일 변경 감지 또는 요청마다 재로드 · 일괄 /ingest(폴더 단위 가져오기) 와 Review Gate 다중 선택 승격

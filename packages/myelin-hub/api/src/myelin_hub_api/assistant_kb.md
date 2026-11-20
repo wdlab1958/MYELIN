@@ -39,9 +39,13 @@ keywords: domain, 도메인, pack, 팩, sub-moc, moc, 3+1, add-domain, primary, 
 
 Domain 은 Primary(업무 근간) · Research(연구) · Growth(성장) + 선택 1개로 구성한다(3+1). Domain 정의는 코드가 아니라 **Pack**(YAML 데이터)이
 공급한다: Core(`myelin.core`) · Reference(`brian.physical-ai`, 참고용 읽기 전용) · Org(`a3.*`) · Personal(`me.*`). 각
-Domain 은 Sub-MOC 목록 · 허용 note type · taxonomy seed · 템플릿 · 인터뷰 질문 은행 · compose 대상을 갖는다. Domain 추가는 `myelin
-add-domain <ID>` 또는 Hub 온보딩/Domain Packs 화면에서 한다. Hub › Domain Packs 에서 Reference Pack 을 '개인 Pack 으로 복사' 하면
-`packs/me.*` 로 저장(commit)되어 편집할 수 있다. My Domains 화면의 Sub-MOC 버튼은 주제 검색 패널과 Obsidian 링크(`obsidian://`)를 준다.
+Domain 은 Sub-MOC 목록 · 허용 note type · taxonomy seed · 템플릿 · 인터뷰 질문 은행 · compose 대상을 갖는다. Domain 추가는 Hub ›
+Domain Packs 에서 두 단계다: ① Pack 에 Domain 을 선언 — '새 개인 Pack' 으로 편집기에 YAML 틀을 띄워 `domains:` 의 `id`(영대문자·숫자·
+하이픈, 예 `MY-DOMAIN`)·`name`·`sub_mocs` 를 고치고 '검증' → '저장 (commit)'. ② 저장하면 그 Pack 카드에 **'+ Domain 추가 · <ID>'**
+버튼이 생긴다(Pack 에 선언됐지만 아직 Vault 에 없는 Domain 마다 하나) — 누르면 `10_Domains/<ID>/_MOC.md` · 템플릿 · `myelin.yaml` 이 한
+commit(`[myelin:add-domain] <ID>`)으로 추가되고 My Domains 에 나타난다. 이미 있는 Pack(Reference 포함)의 Domain 은 ② 만 하면 된다.
+터미널에서는 `myelin add-domain <ID>` 가 같은 일을 한다. 'Add Domain'·'Create' 라는 이름의 버튼이나 Domain ID 입력 칸은 없다. Hub ›
+Domain Packs 에서 Reference Pack 을 '개인 Pack 으로 복사' 하면 `packs/me.*` 로 저장(commit)되어 편집할 수 있다. My Domains 화면의 Sub-MOC 버튼은 주제 검색 패널과 Obsidian 링크(`obsidian://`)를 준다.
 
 ## Level 과 Skill
 keywords: level, 레벨, skill, 스킬, ingest, distill, interview, review, link, compose, ip-scan, 권한, 쓰기 범위, 자율, 단계
@@ -59,7 +63,7 @@ keywords: hub, 허브, 화면, 메뉴, dashboard, 대시보드, review gate, set
 Dashboard — KPI(주간 verified · 고아 비율 · 재사용 비율 · 재투입 소요일 · 산출물당 재료 수)와 '목표 이탈' 배지, Myelination(강도 분포), 최근 git
 커밋. My Domains — Domain orb · Sub-MOC 검색 패널 · 노트 표(강도 `myelin ×N`) · Obsidian 열기. Inbox / Review Gate — AI 초안
 '내용 읽기' → Promote/Reject, 패치 제안 미리보기(diff) → Apply, Commons 후보 비식별 검사 → 'Commons 제안'. Domain Packs — Pack 열기 ·
-개인 Pack 으로 복사 · 저장(commit). Settings — Level, MCP(`write_draft`·`expose_confidential`), Commons(로컬 clone ·
+새 개인 Pack · 개인 Pack 으로 복사 · 검증 · 저장(commit) · 카드의 '+ Domain 추가 · <ID>'(Vault 에 Domain 추가). Settings — Level, MCP(`write_draft`·`expose_confidential`), Commons(로컬 clone ·
 remote · 연동 · 익명 지표 opt-in). 온보딩 마법사 — 빈 폴더에 이름·3+1 Domain(Pack 또는 직접 정의)·Level 로 Vault 생성. 모든 쓰기 버튼은 사람의 클릭
 헤더(`X-Myelin-Intent: user-click`)가 있어야 하고 git commit 하나로 기록된다(ADR-0009). Hub 는 localhost 전용이다.
 

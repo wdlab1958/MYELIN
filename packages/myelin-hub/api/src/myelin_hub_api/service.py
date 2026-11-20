@@ -1,7 +1,8 @@
 """HubService — the write-side policy layer behind the Hub API (정본 §4.2 Review Gate, ADR-0009).
 
 Every Vault mutation goes through one of five explicit user actions and ends in a git commit:
-promote · reject · apply_patch · reject_patch · save_settings (+ onboarding init, save_pack).
+promote · reject · apply_patch · reject_patch · save_settings (+ onboarding init, save_pack,
+add_domain — ADR-0015).
 Reads never write (audited by tests).
 """
 
@@ -67,6 +68,7 @@ from myelin_core.scaffold import (
     ScaffoldError,
     ScaffoldPlan,
     VaultExistsError,
+    add_domain,
     init_vault,
     install_git_hook,
 )
@@ -79,6 +81,8 @@ from myelin_core.vault import (
     DOMAINS,
     PATCHES,
     RUNTIME,
+    TAXONOMY_MD,
+    TEMPLATES,
     Vault,
     default_pack_roots,
 )
@@ -890,6 +894,7 @@ class HubService:
     def packs(self) -> list[dict[str, Any]]:
         reg = self._registry()
         active = set(self._v().config.pack_names) if self.ready else set()
+        configured = set(self._v().config.domains.all_ids) if self.ready else set()
         out = []
         for name, lp in sorted(reg.items()):
             editable = lp.root.is_relative_to(self.root / "packs")
@@ -909,12 +914,104 @@ class HubService:
                             "name": d.name,
                             "accent": d.accent,
                             "sub_mocs": list(d.sub_mocs),
+                            "configured": d.id in configured,
                         }
                         for d in lp.pack.domains
                     ],
                 }
             )
         return out
+
+    # ------------------------------------------------------------------ add domain (ADR-0015)
+    @_serialised
+    def add_domain(self, domain_id: str, pack_name: str | None = None) -> dict[str, Any]:
+        """User click: add a Domain that a Pack declares — the Hub's `myelin add-domain <ID>`.
+
+        Same core routine as the CLI (MOC · Domain templates · taxonomy · CLAUDE.md · myelin.yaml ·
+        Obsidian colour group), existing notes are never touched, and it ends in one commit
+        `[myelin:add-domain] <ID>` that stages only the touched paths. All-or-nothing: when any
+        step or the commit fails, every file is put back and the files this request created are
+        removed. Fail-closed: unknown Domain 404, already configured / ambiguous Pack / existing
+        MOC 409, a Pack the loader rejects 422 — nothing is written in any of these.
+        """
+        v = self._v()  # re-reads myelin.yaml when it changed on disk
+        if domain_id in v.config.domains.all_ids:
+            raise HubError(f"Domain {domain_id} 은(는) 이미 Vault 에 있다", 409)
+        try:
+            registry = discover_packs(self.pack_roots())
+        except PackError as exc:
+            raise HubError(f"pack registry is inconsistent: {exc}", 422) from None
+        owners = [n for n, lp in sorted(registry.items()) if domain_id in lp.pack.domain_ids]
+        if pack_name is not None:
+            owners = [n for n in owners if n == pack_name]
+        if not owners:
+            where = f"Pack {pack_name}" if pack_name else "어느 Pack"
+            raise HubError(
+                f"{where} 에도 Domain {domain_id} 선언이 없다 — "
+                "Domain Packs 에서 Pack 을 먼저 저장한다",
+                404,
+            )
+        if len(owners) > 1:
+            raise HubError(
+                f"Domain {domain_id} 을(를) 여러 Pack 이 선언한다 {owners} — Pack 을 지정해야 한다",
+                409,
+            )
+        moc_dir = v.root / DOMAINS / domain_id
+        moc_rel = f"{DOMAINS}/{domain_id}/_MOC.md"
+        if (v.root / moc_rel).exists():
+            raise HubError(f"{moc_rel} 이 이미 있다 — 덮어쓰지 않는다", 409)
+        made_dir = not moc_dir.exists()
+        tpl_dir = v.root / TEMPLATES
+        tpl_before = {f.name for f in tpl_dir.iterdir()} if tpl_dir.is_dir() else set()
+        rels = [
+            moc_rel,
+            TAXONOMY_MD,
+            "CLAUDE.md",
+            CONFIG_FILE,
+            ".obsidian/core-plugins.json",
+            ".obsidian/graph.json",
+            ".obsidian/app.json",
+        ]
+        try:
+            with self._mutation(rels):
+                try:
+                    touched = add_domain(
+                        v,
+                        domain_id,
+                        datetime.now(),
+                        pack_name=owners[0],
+                        pack_roots=self.pack_roots(),
+                    )
+                except (ScaffoldError, PackError) as exc:
+                    raise HubError(f"Domain 을 추가할 수 없다: {exc}", 409) from None
+                except ValidationError as exc:
+                    raise HubError(
+                        "설정이 유효하지 않다: " + _explain_validation(exc), 422
+                    ) from None
+                except ValueError as exc:  # e.g. an unreadable .obsidian/*.json
+                    raise HubError(f"Domain 을 추가할 수 없다: {exc}", 422) from None
+                commit = self._commit(touched, f"[myelin:add-domain] {domain_id}")
+        except BaseException:
+            # _mutation restored the snapshotted files; take back what only this request created
+            try:
+                if tpl_dir.is_dir():
+                    for f in tpl_dir.iterdir():
+                        if f.name not in tpl_before and f.name.startswith(f"{domain_id}-"):
+                            if (v.root / ".git").exists():
+                                subprocess.run(
+                                    ["git", "reset", "-q", "--", f"{TEMPLATES}/{f.name}"],
+                                    cwd=v.root,
+                                    capture_output=True,
+                                )
+                            f.unlink(missing_ok=True)
+                if made_dir and moc_dir.is_dir() and not any(moc_dir.iterdir()):
+                    moc_dir.rmdir()
+            except OSError:
+                pass  # best effort — must not hide the original error
+            self.reload()  # the core routine may already have swapped vault.config
+            raise
+        self.reload()
+        return {"domain": domain_id, "pack": owners[0], "touched": touched, "commit": commit}
 
     def pack_source(self, name: str) -> dict[str, Any]:
         reg = self._registry()

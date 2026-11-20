@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from myelin_hub_api.service import HubError
+
 from .conftest import CLICK, tree_hash
 
 READ_ENDPOINTS = [
@@ -91,6 +93,7 @@ def test_writes_require_user_click(client: TestClient, vault_root: Path) -> None
     assert client.post("/api/patches/x.patch.md/reject").status_code == 403
     assert client.post("/api/commons/publish/x.md", json={"confirmed": True}).status_code == 403
     assert client.post("/api/onboarding", json={"name": "x", "primary": "D1"}).status_code == 403
+    assert client.post("/api/domains", json={"id": "D2"}).status_code == 403
     assert tree_hash(vault_root) == before
 
 
@@ -534,3 +537,89 @@ def test_obsidian_setup_writes_graph_config_once(client: TestClient, vault_root:
     r2 = client.post("/api/obsidian/setup", headers=CLICK)
     assert r2.status_code == 200 and r2.json()["touched"] == [] and r2.json()["commit"] is None
     assert tree_hash(vault_root) == before
+
+
+# ------------------------------------------------------------------- add domain (ADR-0015)
+_SIDE_PACK = (
+    "pack: me.side\nkind: personal\nmaintainer: me\nrequires: [myelin.core>=1.0]\n"
+    "domains:\n  - {id: SIDE, name: Side, accent: cyan, sub_mocs: [a]}\n"
+)
+
+
+def _save_side_pack(client: TestClient) -> None:
+    r = client.put("/api/packs/me.side", headers=CLICK, json={"pack_yaml": _SIDE_PACK})
+    assert r.status_code == 200, r.text
+
+
+def test_add_domain_from_saved_pack_is_one_commit(client: TestClient, vault_root: Path) -> None:
+    _save_side_pack(client)
+    packs = {p["name"]: p for p in client.get("/api/packs").json()}
+    assert [d["configured"] for d in packs["me.side"]["domains"]] == [False]
+    assert all(d["configured"] for d in packs["brian.physical-ai"]["domains"] if d["id"] == "D1")
+    (vault_root / "unrelated.txt").write_text("user work in progress\n", encoding="utf-8")
+    n = len(_log(vault_root))
+
+    r = client.post("/api/domains", headers=CLICK, json={"id": "SIDE", "pack": "me.side"})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["domain"] == "SIDE" and d["pack"] == "me.side"
+    assert "10_Domains/SIDE/_MOC.md" in d["touched"] and "myelin.yaml" in d["touched"]
+    assert (vault_root / "10_Domains/SIDE/_MOC.md").is_file()
+    log = _log(vault_root)
+    assert len(log) == n + 1 and log[0] == "[myelin:add-domain] SIDE"
+    # only the touched paths are committed — the user's unrelated file stays untracked
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=vault_root, capture_output=True, text=True
+    ).stdout.split("\n")
+    assert [ln for ln in status if ln.strip()] == ["?? unrelated.txt"]
+    # visible without a restart: summary, domain list, pack list
+    assert client.get("/api/vault").json()["domains"]["SIDE"] == "extra"
+    assert "me.side" in client.get("/api/vault").json()["packs"]
+    assert "SIDE" in {x["id"] for x in client.get("/api/domains").json()}
+    packs = {p["name"]: p for p in client.get("/api/packs").json()}
+    assert packs["me.side"]["active"] and packs["me.side"]["domains"][0]["configured"]
+    # a second click is refused and writes nothing
+    before = tree_hash(vault_root)
+    assert client.post("/api/domains", headers=CLICK, json={"id": "SIDE"}).status_code == 409
+    assert tree_hash(vault_root) == before and len(_log(vault_root)) == n + 1
+
+
+def test_add_domain_refusals_write_nothing(client: TestClient, vault_root: Path) -> None:
+    _save_side_pack(client)
+    before, n = tree_hash(vault_root), len(_log(vault_root))
+    post = lambda body: client.post("/api/domains", headers=CLICK, json=body)  # noqa: E731
+    assert post({"id": "NOPE"}).status_code == 404  # no pack declares it
+    assert post({"id": "SIDE", "pack": "brian.physical-ai"}).status_code == 404  # not in that pack
+    assert post({"id": "D1"}).status_code == 409  # already configured
+    for bad in ("../x", "side", "", "A/B", "X" * 40):
+        assert post({"id": bad}).status_code == 422, bad
+    # an existing MOC is never overwritten
+    moc = vault_root / "10_Domains/SIDE/_MOC.md"
+    moc.parent.mkdir(parents=True)
+    moc.write_text("mine\n", encoding="utf-8")
+    assert post({"id": "SIDE"}).status_code == 409
+    assert moc.read_text(encoding="utf-8") == "mine\n"
+    moc.unlink()
+    moc.parent.rmdir()
+    assert tree_hash(vault_root) == before and len(_log(vault_root)) == n
+
+
+def test_add_domain_rolls_back_when_commit_fails(
+    client: TestClient, vault_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _save_side_pack(client)
+    before, n = tree_hash(vault_root), len(_log(vault_root))
+    svc = client.app.state.service  # type: ignore[attr-defined]
+
+    def boom(paths: list[str], message: str) -> str:
+        raise HubError("git commit failed: simulated", 500)
+
+    monkeypatch.setattr(svc, "_commit", boom)
+    r = client.post("/api/domains", headers=CLICK, json={"id": "SIDE"})
+    assert r.status_code == 500
+    monkeypatch.undo()
+    assert tree_hash(vault_root) == before and len(_log(vault_root)) == n
+    assert not (vault_root / "10_Domains/SIDE").exists()
+    assert "SIDE" not in client.get("/api/vault").json()["domains"]
+    # and the same click works once git does
+    assert client.post("/api/domains", headers=CLICK, json={"id": "SIDE"}).status_code == 200

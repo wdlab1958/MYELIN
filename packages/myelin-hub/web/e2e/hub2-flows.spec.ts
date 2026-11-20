@@ -85,6 +85,27 @@ test.describe.serial("Hub 메뉴 흐름 — Domains · Packs · Patches · Commo
     expect(errors).toEqual([]);
   });
 
+  test("Packs: Pack 에 선언된 미설정 Domain 은 '+ Domain 추가' 한 번으로 Vault 에 들어간다 (1 commit)", async ({ page }) => {
+    const errors = watchConsole(page);
+    await page.goto("/packs");
+    // D2 is declared by the reference pack but was not chosen in onboarding (D1/D3/CLOUD-SEC)
+    const add = page.getByTestId("domain-add-brian.physical-ai-D2");
+    await expect(add).toBeVisible();
+    await expect(page.getByTestId("domain-add-brian.physical-ai-D1")).toHaveCount(0); // already configured
+    const before = git("rev-list --count HEAD");
+    await add.click();
+    await expect(page.getByTestId("domain-add-result")).toContainText(/Domain D2 추가됨 · commit/);
+    expect(Number(git("rev-list --count HEAD"))).toBe(Number(before) + 1);
+    expect(git("log -1 --format=%s")).toBe("[myelin:add-domain] D2");
+    expect(existsSync(path.join(state().vault, "10_Domains", "D2", "_MOC.md"))).toBeTruthy();
+    expect(git("status --porcelain")).toBe("");
+    await expect(add).toHaveCount(0); // the button goes away once the Domain is configured
+    await shot(page, "packs-add-domain");
+    await page.goto("/domains");
+    await expect(page.getByText("D2").first()).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test("패치 제안: 미리보기 → diff → digest 검사 후 Apply → applied/ 로 이동", async ({ page }) => {
     const errors = watchConsole(page);
     const vault = state().vault;

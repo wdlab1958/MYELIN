@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
+from myelin_core.schema.frontmatter import DOMAIN_ID_RE
 from myelin_hub_api import __version__
 from myelin_hub_api.assistant import Assistant
 from myelin_hub_api.service import HubError, HubService
@@ -103,6 +104,13 @@ class AssistantBody(BaseModel):
     """우측 하단 도움말 챗봇의 대화. 마지막 메시지는 user (service 가 검사)."""
 
     messages: list[AssistantMessage] = Field(min_length=1, max_length=40)
+
+
+class AddDomainBody(BaseModel):
+    """Domain Packs 화면의 'Domain 추가' 클릭 (ADR-0015). id 는 Pack 에 선언된 Domain."""
+
+    id: str = Field(pattern=DOMAIN_ID_RE.pattern)
+    pack: str | None = Field(default=None, max_length=120)
 
 
 class OnboardBody(BaseModel):
@@ -325,6 +333,10 @@ def create_app(vault_root: Path, *, serve_web: bool = True) -> FastAPI:
     @app.put("/api/packs/{name}", dependencies=[Depends(require_user_click)])
     def save_pack(name: str, body: PackBody) -> dict[str, Any]:
         return svc.save_pack(name, body.pack_yaml, copy_from=body.copy_from)
+
+    @app.post("/api/domains", dependencies=[Depends(require_user_click)])
+    def add_domain(body: AddDomainBody) -> dict[str, Any]:
+        return svc.add_domain(body.id, body.pack)
 
     @app.post("/api/commons/publish/{ref:path}", dependencies=[Depends(require_user_click)])
     def commons_publish(ref: str, body: PublishBody | None = None) -> dict[str, Any]:

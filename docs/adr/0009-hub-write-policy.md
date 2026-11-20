@@ -6,7 +6,7 @@
 ## 결정
 
 1. **읽기는 GET, 쓰기는 POST/PUT 로 분리**하고, 쓰기 엔드포인트는 전부 `X-Myelin-Intent: user-click` 헤더를 요구한다(없으면 403). 헤더는 Hub UI 의 **onClick 핸들러에서만** 붙인다(`lib/api.ts userPost/userPut`). 페이지 로드·폴링·useEffect 는 GET 만 호출한다.
-2. **쓰기 동작 6종**: `promote`(ai-draft → `10_Domains/<D>/`, status verified, reviewed 오늘, origin claude→mixed), `reject`(→ `99_Archive/rejected/`, status deprecated), `apply_patch`/`reject_patch`(ADR-0006), `save_settings`(myelin.yaml + CLAUDE.md 재렌더, personal 블록 보존), `save_pack`(개인 Pack `me.*` 만, `<Vault>/packs/`), `onboarding`(init_vault + welcome 초안 + git init). 각 동작은 **정확히 하나의 git commit** 으로 끝난다(`[myelin:<action>] …`).
+2. **쓰기 동작 6종**: `promote`(ai-draft → `10_Domains/<D>/`, status verified, reviewed 오늘, origin claude→mixed), `reject`(→ `99_Archive/rejected/`, status deprecated), `apply_patch`/`reject_patch`(ADR-0006), `save_settings`(myelin.yaml + CLAUDE.md 재렌더, personal 블록 보존), `save_pack`(개인 Pack `me.*` 만, `<Vault>/packs/`), `onboarding`(init_vault + welcome 초안 + git init). 각 동작은 **정확히 하나의 git commit** 으로 끝난다(`[myelin:<action>] …`). (2026-11-21: 7번째 동작 `add_domain` — ADR-0015.)
 3. **승격 전제**: 초안이 `00_Inbox/ai-drafts/` 에 있고 frontmatter 가 유효하며 Domain 이 설정된 것이어야 한다. 모순(confidential+share 등)은 승격 거부(422). 대상 파일이 이미 있으면 409(덮어쓰기 금지).
 4. **git**: Vault 가 저장소가 아니면 첫 쓰기에서 `git init` + `[myelin:init]` 커밋. `.myelin/` 은 `.gitignore` 로 제외. 스테이징은 변경된 경로만(`git add -- path`, 삭제는 `git rm --cached`), 무관한 사용자 변경은 커밋에 섞이지 않는다.
 5. **Welcome 초안**: 온보딩이 `00_Inbox/ai-drafts/MYELIN 시작하기.md`(origin claude, status draft) 를 만들어 Day 1 에 첫 승격을 경험하게 한다(부록 D). CLI `myelin init` 은 만들지 않는다(golden 안정, CLI 는 스크립트 용도).

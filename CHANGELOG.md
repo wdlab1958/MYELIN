@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.2 — 2026-11-21 (Hub 에서 Domain 추가)
+- hub: **Domain Packs 카드의 `+ Domain 추가 · <ID>` 버튼** — Pack 에 선언됐지만 Vault 에 없는 Domain 을 클릭 한 번으로 추가(ADR-0015). `POST /api/domains {id, pack?}`(클릭 헤더, 1 commit `[myelin:add-domain] <ID>`, 건드린 경로만 스테이징) — CLI `myelin add-domain` 과 같은 core 경로(MOC · 템플릿 · taxonomy · CLAUDE.md · myelin.yaml · Obsidian 색 그룹). 선언 없음 404 · 이미 설정됨/MOC 존재/모호한 Pack 409 · 잘못된 ID 422, 실패 시 전부 롤백. `GET /api/packs` 의 `domains[].configured`. Pack 저장 뒤 안내 문구가 다음 단계(카드의 버튼)를 가리킨다
+- 도우미: `assistant_kb.md` 의 Domain 추가 절차를 실제 화면(① 개인 Pack 저장 → ② `+ Domain 추가`)으로 정정 — 이전에는 "Domain Packs 화면에서 한다" 뿐이라 로컬 LLM 이 없는 'Add Domain'·'Create' 버튼을 지어냈다
+- tests: Hub API 3건(1 commit·무관 파일 미포함·재시작 없이 반영 / 거부 시 무변경 / commit 실패 롤백) · 클릭 헤더 감사 · e2e "Packs: + Domain 추가" · 위협 모델 T23
+
 ## v1.3.1 — 2026-10-27 (Obsidian Graph View 연동)
 - core: `myelin_core.obsidian` — Vault `.obsidian/` 에 **Graph View 설정**을 쓴다: `core-plugins.json`(graph·backlink·outgoing-link·tag-pane·properties 켜기, daily-notes·sync·publish 끄기), `graph.json`(**Domain 폴더마다 Emboss accent 색 그룹** — `design/tokens.json` 단일 원천, + Inbox/40_IP/Archive), `app.json`(새 노트 → 00_Inbox, `[[stem]]` 링크). `myelin init` 이 함께 만들고 `add-domain` 이 새 Domain 의 색 그룹을 보탠다. 있는 파일은 덮어쓰지 않고 병합, 읽을 수 없는 JSON 이면 아무것도 쓰지 않는다(fail-closed)
 - cli: `myelin obsidian setup [--open]` · `myelin obsidian status` — 기존 Vault 적용 + `obsidian://open?path=` 로 Vault 를 열어 Obsidian 에 등록

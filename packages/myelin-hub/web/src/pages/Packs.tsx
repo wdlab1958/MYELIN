@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { get, post, userPut, type PackRow } from "../lib/api";
+import { get, post, userPost, userPut, type PackRow } from "../lib/api";
 
 const TEMPLATE = `pack: me.my-domain
 version: 1.0.0
@@ -23,6 +23,8 @@ export default function Packs({ onChanged }: { onChanged: () => void }) {
   const [check, setCheck] = useState<string>("");
   const [editable, setEditable] = useState<boolean>(true);
   const [copyFrom, setCopyFrom] = useState<string | null>(null); // registry pack whose taxonomy/templates come along
+  const [added, setAdded] = useState<string>(""); // result of the last 'Domain 추가' click
+  const [adding, setAdding] = useState<string | null>(null); // "<pack>/<id>" while the request runs
   const editor = useRef<HTMLDivElement>(null);
   const load = () => get<PackRow[]>("/api/packs").then(setPacks);
   useEffect(() => { void load(); }, []);
@@ -38,18 +40,34 @@ export default function Packs({ onChanged }: { onChanged: () => void }) {
     setEditable(true); setCheck(`me.${slug} 으로 복사했다 — 검증 후 저장`);
   };
   const validate = async () => { const r = await post<{ ok: boolean; error?: string; domains?: string[] }>("/api/packs/validate", { pack_yaml: text }); setCheck(r.ok ? `ok · domains ${r.domains?.join(", ")}` : `오류: ${r.error}`); };
-  const save = async () => { try { const r = await userPut<{ commit: string }>(`/api/packs/${encodeURIComponent(name)}`, { pack_yaml: text, copy_from: copyFrom }); setCheck(`저장됨 · commit ${r.commit.slice(0, 7)}`); await load(); onChanged(); } catch (e) { setCheck(`저장 실패: ${String(e)}`); } };
+  const save = async () => { try { const r = await userPut<{ commit: string }>(`/api/packs/${encodeURIComponent(name)}`, { pack_yaml: text, copy_from: copyFrom }); setCheck(`저장됨 · commit ${r.commit.slice(0, 7)} — Vault 에 넣으려면 위 카드의 '+ Domain 추가'`); await load(); onChanged(); } catch (e) { setCheck(`저장 실패: ${String(e)}`); } };
+  // Click only (ADR-0015): the Hub's `myelin add-domain <ID>` — MOC · templates · myelin.yaml in one commit.
+  const addDomain = async (pack: string, id: string) => {
+    setAdding(`${pack}/${id}`);
+    try {
+      const r = await userPost<{ commit: string }>("/api/domains", { id, pack });
+      setAdded(`Domain ${id} 추가됨 · commit ${r.commit.slice(0, 7)} — My Domains 에서 확인`);
+      await load(); onChanged();
+    } catch (e) { setAdded(`추가 실패: ${e instanceof Error ? e.message : String(e)}`); }
+    finally { setAdding(null); }
+  };
   return (
     <>
       <h1 className="hub-h1">Domain Packs</h1>
-      <p className="hub-sub">Domain 은 코드가 아니라 선언(Pack). 개인 Pack(me.*) 은 여기서 편집하고, Org/Reference Pack 은 Registry 에서 온다.</p>
+      <p className="hub-sub">Domain 은 코드가 아니라 선언(Pack). 개인 Pack(me.*) 은 여기서 편집하고, Org/Reference Pack 은 Registry 에서 온다. Pack 에 선언됐지만 아직 Vault 에 없는 Domain 은 카드의 '+ Domain 추가' 로 넣는다.</p>
+      {added && <p className="hub-row" data-testid="domain-add-result"><span className={added.startsWith("추가 실패") ? "mx-badge--blocked" : "mx-chip mx-chip--verified"}>{added}</span></p>}
       <div className="hub-grid" data-testid="pack-list">
         {packs.map((p) => (
           <article key={p.name} className={"mx-card hub-stack" + (p.active ? " mx-ring--verified" : "")}>
             <div className="hub-row"><strong>{p.name}</strong><span className="mx-chip mx-chip--unverified">{p.kind} v{p.version}</span>{p.active && <span className="mx-chip mx-chip--verified">active</span>}</div>
             <div className="mx-muted">{p.description || p.maintainer}</div>
             <div className="hub-row">{p.domains.map((d) => <span key={d.id} className="mx-orb" data-accent={d.accent} style={{ width: 44, height: 44, fontSize: "var(--mx-font-size-xs)" }}>{d.id}</span>)}</div>
-            <div className="hub-row"><button type="button" className="mx-btn" onClick={() => open(p)} data-testid={`pack-open-${p.name}`}>{p.editable ? "편집" : "보기"}</button></div>
+            <div className="hub-row">
+              <button type="button" className="mx-btn" onClick={() => open(p)} data-testid={`pack-open-${p.name}`}>{p.editable ? "편집" : "보기"}</button>
+              {p.domains.filter((d) => !d.configured).map((d) => (
+                <button key={d.id} type="button" className="mx-btn" disabled={adding !== null} onClick={() => addDomain(p.name, d.id)} data-testid={`domain-add-${p.name}-${d.id}`} title={`${d.name} 을(를) Vault 에 추가 (commit)`}>+ Domain 추가 · {d.id}</button>
+              ))}
+            </div>
           </article>
         ))}
       </div>
