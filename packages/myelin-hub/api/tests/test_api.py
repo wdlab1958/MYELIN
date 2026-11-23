@@ -614,10 +614,11 @@ def test_add_domain_rolls_back_when_commit_fails(
     def boom(paths: list[str], message: str) -> str:
         raise HubError("git commit failed: simulated", 500)
 
-    monkeypatch.setattr(svc, "_commit", boom)
-    r = client.post("/api/domains", headers=CLICK, json={"id": "SIDE"})
-    assert r.status_code == 500
-    monkeypatch.undo()
+    # scoped: a bare monkeypatch.undo() would also drop the fixture's GIT_AUTHOR_* identity
+    with monkeypatch.context() as m:
+        m.setattr(svc, "_commit", boom)
+        r = client.post("/api/domains", headers=CLICK, json={"id": "SIDE"})
+        assert r.status_code == 500
     assert tree_hash(vault_root) == before and len(_log(vault_root)) == n
     assert not (vault_root / "10_Domains/SIDE").exists()
     assert "SIDE" not in client.get("/api/vault").json()["domains"]
