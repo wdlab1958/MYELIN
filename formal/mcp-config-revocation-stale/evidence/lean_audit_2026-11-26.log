@@ -1,0 +1,30 @@
+== lean trust audit: mcp-config-revocation-stale  (Lean (version 4.34.0, x86_64-unknown-linux-gnu, commit 293d5d0c0c3f3dded4688b3ccd6a33939ac5102b, Release))
+source scan: 0 sorry · 0 admit · 0 user axioms · 0 native_decide · 0 unsafe/implemented_by
+✔ [2/6] Built McpConfigRevocation.Spec (235ms)
+✔ [3/6] Built McpConfigRevocation.BugWitness (155ms)
+✔ [5/6] Built McpConfigRevocation (160ms)
+Build completed successfully (6 jobs).
+lake build: ok
+'McpConfigRevocation.P1_noDraftAfterRevoke' depends on axioms: [propext, Quot.sound]
+'McpConfigRevocation.P2_noConfidentialAfterRevoke' depends on axioms: [propext, Quot.sound]
+'McpConfigRevocation.inv_step' depends on axioms: [propext, Quot.sound]
+'McpConfigRevocation.inv_init' depends on axioms: [propext]
+'McpConfigRevocation.inv_reachable' depends on axioms: [propext, Quot.sound]
+'McpConfigRevocation.bug_P2_violated' depends on axioms: [propext]
+axioms: standard only (6 theorems audited)
+== lean trust audit: review-gate-promote-toctou  (Lean (version 4.34.0, x86_64-unknown-linux-gnu, commit 293d5d0c0c3f3dded4688b3ccd6a33939ac5102b, Release))
+source scan: 0 sorry · 0 admit · 0 user axioms · 0 native_decide · 0 unsafe/implemented_by
+✔ [2/5] Built ReviewGate.System (197ms)
+✔ [3/5] Built ReviewGate.Properties (219ms)
+✔ [4/5] Built ReviewGate (163ms)
+Build completed successfully (5 jobs).
+lake build: ok
+'ReviewGate.verified_is_what_was_read' depends on axioms: [propext]
+'ReviewGate.step_inv' depends on axioms: [propext]
+'ReviewGate.init_inv' does not depend on any axioms
+'ReviewGate.no_verify_on_refuse' depends on axioms: [propext]
+'ReviewGate.unpatched_violates' does not depend on any axioms
+'ReviewGate.patched_can_promote' does not depend on any axioms
+axioms: standard only (6 theorems audited)
+LEAN AUDIT: clean
+rc=0

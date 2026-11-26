@@ -1,0 +1,40 @@
+{
+  "schema": "onecycle.findings/v1",
+  "source": {
+    "platform": "argus",
+    "version": "0.0.0-sample",
+    "run_id": "campaign-sample-001",
+    "generated_at": "2026-11-26T09:00:00+09:00"
+  },
+  "subject": {
+    "name": "sample-web-portal",
+    "environment": "demo"
+  },
+  "findings": [
+    {
+      "id": "argus:campaign-sample-001",
+      "title": "로그인 실패 급증 캠페인",
+      "description": "짧은 시간에 여러 계정의 로그인 실패가 몰렸다. 재생한 데모 로그에서 나온 가상의 경보다.",
+      "category": "operations",
+      "severity": "medium",
+      "status": "open",
+      "simulated": true,
+      "evidence": [
+        {
+          "kind": "alert",
+          "ref": "alerts/campaign-sample-001"
+        }
+      ],
+      "recommendation": "인증 통제를 재평가한다 (재진단 요청 rd-sample-001).",
+      "links": {
+        "mitre": [
+          "TA0006",
+          "T1110"
+        ],
+        "upstream": [
+          "ssc:assess-sample-001/A.8.5"
+        ]
+      }
+    }
+  ]
+}

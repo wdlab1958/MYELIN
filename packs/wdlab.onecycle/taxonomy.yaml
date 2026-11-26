@@ -1,0 +1,10 @@
+terms:
+  - { term: One Cycle, aliases: [원사이클, One Cycle Dev. Framework], definition: 진단 → 보안 평가 → 형식 검증 → 관제 → 지식 자산화로 이어지는 순환 }
+  - { term: finding, aliases: [발견 사항, 발견], definition: onecycle.findings/v1 파일의 한 항목. id 는 <platform>:<local id> }
+  - { term: simulated, aliases: [모의 결과, 데모 결과], definition: 실제 대상에서 측정하지 않은 결과. 사실로 인용하지 않는다 }
+  - { term: 재진단 요청, aliases: [rediagnosis request, re-diagnosis], domain: [ARGUS], definition: ARGUS 경보가 앞 단계(LLMOps·SSC·Proof-Skills)의 재수행을 요청하는 파일과 그 Markdown 사본 }
+  - { term: source_platform, aliases: [출처 플랫폼], definition: 초안을 만든 플랫폼을 적는 frontmatter 필드 (llmops·ssc·argus·proof-skills) }
+  - { term: upstream, aliases: [선행 finding], definition: 다른 플랫폼의 finding 에서 파생됐을 때 그 id }
+  - { term: 가드레일, aliases: [guardrail], domain: [LLMOPS], definition: LLM 입출력에 거는 정책·필터 }
+  - { term: 통제 매핑, aliases: [control mapping], domain: [SSC], definition: 발견을 ISO/IEC 27001 Annex A 통제나 MITRE ATT&CK 전술에 잇는 일 }
+  - { term: 캠페인, aliases: [campaign, 경보 묶음], domain: [ARGUS], definition: 같은 원인으로 묶인 경보 집합 }

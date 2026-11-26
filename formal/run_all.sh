@@ -70,4 +70,11 @@ check "$C" MC_bug_p10      12 tlc_bug_p10.log
 check "$C" MC_sanity       12 tlc_sanity.log
 check "$C" MC_sanity_retry 12 tlc_sanity_retry.log
 
+C=mcp-config-revocation-stale       # P1 no draft after revoke · P2 no confidential after revoke (MCP F1)
+check "$C" MC         0  tlc_MC.log
+check "$C" MC_3       0  tlc_MC_3.log
+check "$C" MC_bug     12 tlc_MC_bug.log
+check "$C" MC_bug_p2  12 tlc_MC_bug_p2.log
+check "$C" MC_sanity  12 tlc_MC_sanity.log
+
 if [ "$fail" = 0 ]; then echo "GATE: all configs behaved as expected"; else echo "GATE: FAILED" >&2; exit 1; fi

@@ -1,8 +1,165 @@
+# 용어 사전 — 공개 표준 용어의 일반 정의. 고객·사고 고유 식별자는 넣지 않는다.
 terms:
-  - { term: IoC, aliases: [Indicator of Compromise, 침해 지표], domain: [IR], definition: 침해를 가리키는 관측 가능한 흔적. Commons 공개 시 비식별(해시·패턴만) }
-  - { term: Timeline, aliases: [타임라인, 사고 연대기], domain: [IR], definition: 사고의 시간순 사실 기록 — 추정과 사실을 구분 }
-  - { term: Post-mortem, aliases: [포스트모템, 사후 분석, 회고], domain: [IR], definition: 비난 없는 원인·교훈 정리 }
-  - { term: 봉쇄, aliases: [containment, 격리], domain: [IR] }
-  - { term: 초동 대응, aliases: [triage, 트리아지, 초기 대응], domain: [IR] }
-  - { term: 비식별, aliases: [de-identification, 익명화], domain: [IR], definition: 고객명·IP·호스트·계정을 제거하거나 패턴으로 대체 }
-  - { term: 탐지 규칙, aliases: [detection rule, Sigma, YARA], domain: [IR] }
+  # ── NIST SP 800-61 사고 대응 수명주기
+  - term: 사고 대응 수명주기
+    aliases: [NIST SP 800-61, SP 800-61, incident response life cycle]
+    domain: [IR]
+    definition: 준비 → 탐지·분석 → 봉쇄·근절·복구 → 사후 활동으로 이어지고 다시 준비로 환류되는 4단계 모델
+  - term: 준비
+    aliases: [Preparation, 대비 단계]
+    domain: [IR]
+    definition: 수명주기 1단계 — 대응 체계, 연락망, 도구, 로그 확보, 훈련을 사고 전에 갖춘다
+  - term: 탐지·분석
+    aliases: [Detection & Analysis, Detection and Analysis, 탐지 및 분석]
+    domain: [IR]
+    definition: 수명주기 2단계 — 징후를 확인해 사고 여부·범위·심각도를 판단하고 기록을 시작한다
+  - term: 봉쇄
+    aliases: [containment, 격리]
+    domain: [IR]
+    definition: 수명주기 3단계의 첫 활동 — 피해 확산을 막는다. 증거 보존과 서비스 영향을 함께 저울질한다
+  - term: 근절
+    aliases: [eradication, 제거]
+    domain: [IR]
+    definition: 악성코드, 공격자 계정, 지속 수단, 악용된 약점 등 사고의 구성 요소를 없앤다
+  - term: 복구
+    aliases: [recovery, 정상화]
+    domain: [IR]
+    definition: 시스템을 검증된 상태로 되돌리고 재발 징후를 강화 모니터링한다
+  - term: 사후 활동
+    aliases: [Post-Incident Activity, post incident activity, 사고 후 활동]
+    domain: [IR]
+    definition: 수명주기 4단계 — 교훈 회의, 증거 보존 기간 결정, 지표 수집, 절차 개선
+  - term: 초동 대응
+    aliases: [triage, 트리아지, 초기 대응]
+    domain: [IR]
+    definition: 접수 직후의 분류 — 사고 여부, 심각도, 우선순위, 담당 배정을 정한다
+  - term: 심각도
+    aliases: [severity, 사고 등급]
+    domain: [IR]
+    definition: 기능 영향, 정보 영향, 복구 가능성을 기준으로 매기는 사고 등급
+  - term: 징후
+    aliases: [precursor, indicator, 전조]
+    domain: [IR]
+    definition: 사고가 일어날 수 있거나 일어났음을 알리는 신호. 전조(앞으로)와 지표(이미)를 구분한다
+  # ── 기록 · 증거
+  - term: Timeline
+    aliases: [타임라인, 사고 연대기]
+    domain: [IR]
+    definition: 사고의 시간순 사실 기록 — 추정과 사실을 구분
+  - term: IoC
+    aliases: [Indicator of Compromise, 침해 지표]
+    domain: [IR]
+    definition: 침해를 가리키는 관측 가능한 흔적. Commons 공개 시 비식별(해시·패턴만)
+  - term: TTP
+    aliases: [Tactics Techniques and Procedures, 전술·기법·절차]
+    domain: [IR]
+    definition: 공격자의 행동 방식. 값이 바뀌기 쉬운 IoC 보다 오래 유효한 탐지 근거가 된다
+  - term: 증거 보관 연속성
+    aliases: [chain of custody, CoC, 관리 연속성]
+    domain: [IR]
+    definition: 증거를 누가 언제 수집·이전·보관했는지 끊김 없이 남기는 기록
+  - term: 휘발성 순서
+    aliases: [order of volatility, 휘발성 우선순위]
+    domain: [IR]
+    definition: 사라지기 쉬운 자료(메모리, 네트워크 상태)부터 수집하는 원칙
+  - term: 포렌식 이미징
+    aliases: [forensic imaging, 디스크 이미징, 증거 사본]
+    domain: [IR]
+    definition: 원본을 바꾸지 않고 비트 단위 사본을 만들고 해시로 무결성을 확인하는 절차
+  - term: 체류 시간
+    aliases: [dwell time, 잠복 기간]
+    domain: [IR]
+    definition: 최초 침해부터 탐지까지 공격자가 머문 기간
+  - term: MTTD
+    aliases: [Mean Time to Detect, 평균 탐지 시간]
+    domain: [IR]
+    definition: 사고 발생부터 탐지까지 걸린 시간의 평균
+  - term: MTTR
+    aliases: [Mean Time to Respond, Mean Time to Recover, 평균 대응 시간]
+    domain: [IR]
+    definition: 탐지부터 대응 또는 복구 완료까지 걸린 시간의 평균. 어느 정의인지 함께 밝힌다
+  - term: 근본 원인 분석
+    aliases: [RCA, root cause analysis]
+    domain: [IR]
+    definition: 사고를 가능하게 한 원인을 기술·절차·조직 층위로 추적하는 분석
+  - term: Post-mortem
+    aliases: [포스트모템, 사후 분석, 회고]
+    domain: [IR]
+    definition: 비난 없는 원인·교훈 정리
+  - term: 교훈 회의
+    aliases: [lessons learned, 교훈 도출]
+    domain: [IR]
+    definition: 사고 종결 후 무엇이 일어났고 무엇을 바꿀지 합의하는 회의와 그 산출물
+  - term: 탐지 규칙
+    aliases: [detection rule, Sigma, YARA]
+    domain: [IR]
+    definition: 로그·파일·트래픽에서 특정 행위나 흔적을 찾아내는 규칙
+  - term: 플레이북
+    aliases: [playbook, runbook, 대응 절차서]
+    domain: [IR]
+    definition: 사고 유형별로 미리 정해 둔 단계별 대응 절차
+  - term: 비식별
+    aliases: [de-identification, 익명화]
+    domain: [IR]
+    definition: 고객명·IP·호스트·계정을 제거하거나 패턴으로 대체
+  # ── MITRE ATT&CK Enterprise 전술 14종
+  - term: MITRE ATT&CK
+    aliases: [ATT&CK, 어택 프레임워크]
+    domain: [IR]
+    definition: 실제 관측된 공격자 행동을 전술(목적)과 기법(방법)으로 정리한 공개 지식 기반
+  - term: 정찰
+    aliases: [Reconnaissance]
+    domain: [IR]
+    definition: ATT&CK 전술 — 공격 계획에 쓸 정보를 수집한다
+  - term: 자원 개발
+    aliases: [Resource Development]
+    domain: [IR]
+    definition: ATT&CK 전술 — 작전에 쓸 인프라·계정·도구를 마련한다
+  - term: 초기 침투
+    aliases: [Initial Access, 최초 접근]
+    domain: [IR]
+    definition: ATT&CK 전술 — 대상 환경에 처음 발을 들인다
+  - term: 실행
+    aliases: [Execution]
+    domain: [IR]
+    definition: ATT&CK 전술 — 공격자가 통제하는 코드를 실행한다
+  - term: 지속
+    aliases: [Persistence, 지속성 유지]
+    domain: [IR]
+    definition: ATT&CK 전술 — 재시작이나 자격증명 변경 뒤에도 접근을 유지한다
+  - term: 권한 상승
+    aliases: [Privilege Escalation]
+    domain: [IR]
+    definition: ATT&CK 전술 — 더 높은 권한을 얻는다
+  - term: 방어 회피
+    aliases: [Defense Evasion, 탐지 회피]
+    domain: [IR]
+    definition: ATT&CK 전술 — 탐지와 방어 수단을 피한다
+  - term: 자격증명 접근
+    aliases: [Credential Access, 자격증명 탈취]
+    domain: [IR]
+    definition: ATT&CK 전술 — 계정 이름과 비밀번호 등 자격증명을 훔친다
+  - term: 탐색
+    aliases: [Discovery, 내부 정찰]
+    domain: [IR]
+    definition: ATT&CK 전술 — 침투한 환경의 구조와 자산을 파악한다
+  - term: 내부 이동
+    aliases: [Lateral Movement, 측면 이동]
+    domain: [IR]
+    definition: ATT&CK 전술 — 환경 안의 다른 시스템으로 옮겨 간다
+  - term: 수집
+    aliases: [Collection]
+    domain: [IR]
+    definition: ATT&CK 전술 — 목적에 맞는 데이터를 모은다
+  - term: 명령 제어
+    aliases: [Command and Control, C2, C&C]
+    domain: [IR]
+    definition: ATT&CK 전술 — 침해된 시스템과 통신하며 통제한다
+  - term: 유출
+    aliases: [Exfiltration, 데이터 반출]
+    domain: [IR]
+    definition: ATT&CK 전술 — 데이터를 환경 밖으로 빼낸다
+  - term: 영향
+    aliases: [Impact, 파괴·방해]
+    domain: [IR]
+    definition: ATT&CK 전술 — 시스템과 데이터를 조작·중단·파괴한다

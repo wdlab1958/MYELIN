@@ -1,0 +1,56 @@
+{
+  "schema": "onecycle.findings/v1",
+  "source": {
+    "platform": "llmops",
+    "version": "0.0.0-sample",
+    "run_id": "diag-sample-001",
+    "generated_at": "2026-11-26T09:00:00+09:00"
+  },
+  "subject": {
+    "name": "sample-chat-service",
+    "environment": "demo"
+  },
+  "findings": [
+    {
+      "id": "llmops:diag-sample-001/faithfulness",
+      "title": "요약 응답의 근거 일치율이 기준 미달",
+      "description": "데모 데이터셋 50건에서 근거 일치율이 기준(0.85)보다 낮게 나왔다. 가상의 표본 값이다.",
+      "category": "quality",
+      "severity": "medium",
+      "status": "open",
+      "simulated": true,
+      "evidence": [
+        {
+          "kind": "trace",
+          "ref": "traces/diag-sample-001/faithfulness.jsonl",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ],
+      "location": {
+        "component": "rag-answer"
+      },
+      "recommendation": "검색 단계의 상위 문서 수와 프롬프트의 인용 지시를 점검하고 같은 데이터셋으로 재진단한다."
+    },
+    {
+      "id": "llmops:diag-sample-001/prompt-injection",
+      "title": "간접 프롬프트 인젝션 차단율 미달",
+      "description": "가드레일 정책 시험 세트에서 일부 간접 인젝션이 통과했다. 가상의 표본 값이다.",
+      "category": "security",
+      "severity": "high",
+      "status": "open",
+      "simulated": true,
+      "evidence": [
+        {
+          "kind": "test",
+          "ref": "suites/guardrail/indirect-injection"
+        }
+      ],
+      "recommendation": "문서 본문을 지시로 해석하지 않도록 입력 구획과 출력 필터를 보강한다.",
+      "links": {
+        "mitre": [
+          "AML.T0051"
+        ]
+      }
+    }
+  ]
+}

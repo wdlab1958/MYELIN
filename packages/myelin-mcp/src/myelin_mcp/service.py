@@ -21,7 +21,9 @@ from functools import wraps
 from pathlib import Path
 from typing import Any
 
+from myelin_core.config import CONFIG_FILE, ConfigError
 from myelin_core.index import VaultIndex, open_index
+from myelin_core.infoguard import GuardError, GuardPolicy, GuardReport, scan_text
 from myelin_core.levels import LLM_ENV, LLM_LOCAL, is_local_session
 from myelin_core.render import make_note_id, render_template
 from myelin_core.schema.frontmatter import Classification, NoteType
@@ -45,6 +47,7 @@ def _serialized[**P, T](fn: Callable[P, T]) -> Callable[P, T]:
         self = args[0]
         assert isinstance(self, VaultService)
         with self._lock:
+            self._reload_if_changed()
             return fn(*args, **kwargs)
 
     return inner
@@ -55,11 +58,46 @@ class VaultService:
     vault: Vault
     index: VaultIndex
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    # Bytes of myelin.yaml the current `vault.config` was loaded from (None = unknown).
+    _config_bytes: bytes | None = field(default=None, repr=False, compare=False)
 
     @classmethod
     def open(cls, root: Path, *, refresh: bool = True) -> VaultService:
+        # Read the bytes first: if the file changes before load_config, the next call reloads.
+        raw = cls._read_config_bytes_at(Path(root).resolve())
         vault = Vault.open(root)
-        return cls(vault=vault, index=open_index(vault, refresh=refresh))
+        svc = cls(vault=vault, index=open_index(vault, refresh=refresh))
+        svc._config_bytes = raw
+        return svc
+
+    @staticmethod
+    def _read_config_bytes_at(root: Path) -> bytes | None:
+        try:
+            return (root / CONFIG_FILE).read_bytes()
+        except OSError:
+            return None
+
+    def _reload_if_changed(self) -> None:
+        """Re-read myelin.yaml (under the service lock) when it changed on disk since the last load.
+
+        The policy (`mcp.write_draft`, `level`, `mcp.expose_confidential`) is owned by the file,
+        which other processes (Hub Settings, CLI, an editor) rewrite while this server runs. A tool
+        call that starts after a revocation is on disk must see it — formal/mcp-config-revocation-
+        stale (F1); same approach as the Hub's `_reload_if_changed`. Fail-closed: an unreadable or
+        invalid file refuses the call (and is re-checked on every call) instead of keeping the old
+        permissions.
+        """
+        raw = self._read_config_bytes_at(self.vault.root)
+        if raw is not None and raw == self._config_bytes:
+            return
+        try:
+            vault = Vault.open(self.vault.root)
+        except ConfigError as exc:
+            self._config_bytes = None
+            raise MCPError(f"myelin.yaml is invalid — refusing until fixed: {exc}") from None
+        self.vault = vault
+        self.index.vault = vault
+        self._config_bytes = raw
 
     # ------------------------------------------------------------------ policy helpers
     @property
@@ -273,6 +311,19 @@ class VaultService:
                 "source: []", "source: [" + ", ".join(f'"{s}"' for s in source) + "]", 1
             )
         text = text.rstrip("\n") + "\n\n" + body.strip() + "\n"
+        # 고객정보 가드 (ADR-0017): a credential, resident number or denylisted customer name is
+        # not written at all — not even as a draft. Flags are left to the Review Gate.
+        try:
+            report = scan_text(text, GuardPolicy.load(self.vault.root))
+        except GuardError as exc:
+            raise MCPError(
+                f"customer-information guard policy unreadable — refusing: {exc}"
+            ) from None
+        if report.blocked:
+            raise MCPError(
+                "draft refused by the customer-information guard (credentials, resident numbers "
+                "and customer names are never recorded): " + GuardReport(report.blocks).summary()
+            )
         target_dir = self.vault.root / AI_DRAFTS
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / f"{title}.md"

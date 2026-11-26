@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from myelin_core.product import PRODUCT_NAME
 from myelin_core.vault import IP
 
 if TYPE_CHECKING:
@@ -55,7 +56,7 @@ MAX_CONTENT_CHARS = 4000
 MAX_CONTEXT_HITS = 5
 SNIPPET_CHARS = 280
 
-ASSISTANT_NAME = "MYELIN 도우미"
+ASSISTANT_NAME = f"{PRODUCT_NAME} 도우미"
 AI_SELF_DISCLOSURE = f"저는 사람이 아닌 {ASSISTANT_NAME}(AI) 입니다."
 SCOPE = (
     "이 도우미는 MYELIN 의 개념·사용법·절차와 이 Vault 의 상태만 안내하며, "
@@ -358,6 +359,8 @@ def is_injection(text: str) -> bool:
 class Assistant:
     svc: HubService
     config: AssistantConfig = field(default_factory=AssistantConfig.from_env)
+    # team channel (ADR-0016): confidential notes stay out of the context even with a local LLM
+    force_external: bool = False
 
     # ------------------------------------------------------------------ 상태
     def status(self) -> dict[str, Any]:
@@ -408,7 +411,8 @@ class Assistant:
         """FTS 발췌. EXTERNAL 엔드포인트면 confidential 과 40_IP 를 제외한다(ADR-0011)."""
         if self.svc.vault is None:
             return []
-        local = self.config.local
+        # team channel (ADR-0016): treated like an EXTERNAL endpoint — confidential stays out
+        local = self.config.local and not self.force_external
         idx = self.svc._idx()
         # 자연어 질문은 AND 검색에 거의 맞지 않으므로 검색어별로 찾아 합친다
         # (여러 검색어에 걸린 노트가 앞에 온다).

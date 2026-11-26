@@ -1,8 +1,154 @@
+# 용어 사전 — 공개 표준 용어의 일반 정의. 고객·프로젝트 고유 용어는 넣지 않는다.
 terms:
-  - { term: ISMS-P, aliases: [정보보호 및 개인정보보호 관리체계, ISMS], domain: [SEC-CONSULT] }
-  - { term: 취약점 진단, aliases: [VA, vulnerability assessment, 기술 진단], domain: [SEC-CONSULT] }
-  - { term: 모의해킹, aliases: [펜테스트, penetration test, pentest], domain: [SEC-CONSULT] }
-  - { term: 위협 모델링, aliases: [threat modeling, STRIDE], domain: [SEC-CONSULT] }
-  - { term: 조치 권고, aliases: [remediation, 개선 권고], domain: [SEC-CONSULT], definition: 발견 사항별 우선순위·방법·검증 기준을 담은 권고 }
-  - { term: 고객 유형, aliases: [customer type, 산업군], domain: [SEC-CONSULT], definition: 금융·공공·제조·플랫폼 등 — lesson 노트의 분류 축 }
-  - { term: 비식별, aliases: [de-identification, 익명화], domain: [SEC-CONSULT], definition: 고객명·IP·시스템명을 제거해 Commons 공개 가능하게 만드는 처리 }
+  # ── 과업 유형 · 공통
+  - term: ISMS-P
+    aliases: [정보보호 및 개인정보보호 관리체계, ISMS]
+    domain: [SEC-CONSULT]
+    definition: 국내 정보보호·개인정보보호 관리체계 인증 제도. 관리체계 수립·운영, 보호대책 요구사항, 개인정보 처리 단계별 요구사항으로 구성된다
+  - term: ISO/IEC 27001
+    aliases: [ISO 27001, ISO/IEC 27001:2022, ISMS 국제표준]
+    domain: [SEC-CONSULT]
+    definition: 정보보호 관리체계(ISMS) 요구사항 국제표준. 2022 개정판의 부속서 A 는 93개 통제를 4개 주제로 묶는다
+  - term: 부속서 A
+    aliases: [Annex A, 통제 목록]
+    domain: [SEC-CONSULT]
+    definition: ISO/IEC 27001:2022 의 참조 통제 목록 — 조직적·인적·물리적·기술적 통제 4개 주제
+  - term: 조직적 통제
+    aliases: [Organizational controls, A.5]
+    domain: [SEC-CONSULT]
+    definition: Annex A 주제 5 — 정책, 역할과 책임, 자산 관리, 접근 통제 정책, 공급자 관계, 사고 관리, 연속성, 준거성 등
+  - term: 인적 통제
+    aliases: [People controls, A.6]
+    domain: [SEC-CONSULT]
+    definition: Annex A 주제 6 — 채용 전 검증, 고용 조건, 인식 제고·교육, 징계 절차, 퇴직·직무 변경, 비밀유지, 원격 근무, 사건 보고
+  - term: 물리적 통제
+    aliases: [Physical controls, A.7]
+    domain: [SEC-CONSULT]
+    definition: Annex A 주제 7 — 물리적 보안 경계, 출입 통제, 사무 공간 보호, 장비 보호, 저장매체, 케이블링, 장비 폐기·재사용
+  - term: 기술적 통제
+    aliases: [Technological controls, A.8]
+    domain: [SEC-CONSULT]
+    definition: Annex A 주제 8 — 단말, 특수 권한, 인증, 악성코드 대응, 취약점 관리, 구성 관리, 백업, 로깅·모니터링, 네트워크 보안, 암호, 안전한 개발
+  - term: 적용성 보고서
+    aliases: [SoA, Statement of Applicability]
+    domain: [SEC-CONSULT]
+    definition: 각 통제의 적용 여부와 그 근거, 구현 상태를 정리한 문서
+  - term: 취약점 진단
+    aliases: [VA, vulnerability assessment, 기술 진단]
+    domain: [SEC-CONSULT]
+    definition: 합의된 범위의 자산에서 알려진 약점을 식별·분류하는 활동. 악용 가능성 검증 깊이는 모의해킹보다 얕다
+  - term: 모의해킹
+    aliases: [펜테스트, penetration test, pentest]
+    domain: [SEC-CONSULT]
+    definition: 합의된 규칙 안에서 공격자 관점으로 실제 악용 가능성과 영향을 검증하는 활동
+  # ── PTES 7단계
+  - term: PTES
+    aliases: [Penetration Testing Execution Standard, 모의해킹 수행 표준]
+    domain: [SEC-CONSULT]
+    definition: 모의해킹을 사전 협의부터 보고까지 7단계로 정의한 공개 수행 표준
+  - term: 사전 협의
+    aliases: [Pre-engagement Interactions, pre-engagement, 착수 협의]
+    domain: [SEC-CONSULT]
+    definition: PTES 1단계 — 범위, 일정, 수행 규칙, 연락 체계, 중단 조건을 문서로 합의한다
+  - term: 수행 규칙
+    aliases: [RoE, Rules of Engagement, 교전 규칙]
+    domain: [SEC-CONSULT]
+    definition: 허용·금지 행위, 수행 시간대, 대상 범위, 비상 연락, 데이터 취급을 정한 합의 문서
+  - term: 정보 수집
+    aliases: [Intelligence Gathering, OSINT, 정찰 단계]
+    domain: [SEC-CONSULT]
+    definition: PTES 2단계 — 공개 정보와 합의된 능동 조사로 대상의 공격 표면을 파악한다
+  - term: 위협 모델링
+    aliases: [Threat Modeling, threat modelling, STRIDE]
+    domain: [SEC-CONSULT]
+    definition: PTES 3단계이자 설계 검토 기법 — 자산, 위협 주체, 공격 경로를 구조화해 진단 우선순위를 정한다
+  - term: 취약점 분석
+    aliases: [Vulnerability Analysis, 약점 분석]
+    domain: [SEC-CONSULT]
+    definition: PTES 4단계 — 자동·수동 방법으로 약점을 찾고 오탐을 걸러 검증 대상을 확정한다
+  - term: 익스플로잇
+    aliases: [Exploitation, 침투 단계, 악용 검증]
+    domain: [SEC-CONSULT]
+    definition: PTES 5단계 — 확인된 약점을 수행 규칙 안에서 실제로 악용해 영향을 입증한다
+  - term: 후속 공격
+    aliases: [Post-Exploitation, post exploitation, 침투 후 활동]
+    domain: [SEC-CONSULT]
+    definition: PTES 6단계 — 획득한 접근의 가치(권한 상승, 내부 이동, 데이터 접근 가능성)를 평가하고 흔적을 정리한다
+  - term: 결과 보고
+    aliases: [Reporting, 보고 단계]
+    domain: [SEC-CONSULT]
+    definition: PTES 7단계 — 경영진 요약과 기술 상세(재현 절차, 증적, 대책)를 전달한다
+  # ── 발견 사항 수명주기
+  - term: 발견 사항
+    aliases: [finding, 취약 항목, 지적 사항]
+    domain: [SEC-CONSULT]
+    definition: 진단에서 확인된 개별 약점 또는 미흡 사항 — 현상, 재현 조건, 영향, 위험도, 증적으로 구성한다
+  - term: 대책
+    aliases: [countermeasure, 보호대책, 개선 방안]
+    domain: [SEC-CONSULT]
+    definition: 발견 사항의 위험을 낮추는 통제 — 근본 조치와 임시 완화를 구분해 적는다
+  - term: 조치 권고
+    aliases: [remediation, 개선 권고]
+    domain: [SEC-CONSULT]
+    definition: 발견 사항별 우선순위·방법·검증 기준을 담은 권고
+  - term: 이행 기록
+    aliases: [remediation record, 조치 이력, 이행 내역]
+    domain: [SEC-CONSULT]
+    definition: 대책이 언제, 어떤 방식으로 적용됐고 무엇으로 확인했는지 남기는 기록
+  - term: 재진단
+    aliases: [retest, 이행 점검, 재점검]
+    domain: [SEC-CONSULT]
+    definition: 이행된 대책이 발견 사항을 실제로 해소했는지 같은 조건으로 다시 확인하는 활동
+  - term: 위험 수용
+    aliases: [risk acceptance, 잔여 위험 수용]
+    domain: [SEC-CONSULT]
+    definition: 조치하지 않기로 한 위험을 책임자가 근거와 재검토 기한을 두고 승인하는 결정
+  - term: 잔여 위험
+    aliases: [residual risk]
+    domain: [SEC-CONSULT]
+    definition: 대책 적용 후에도 남는 위험
+  - term: 증적
+    aliases: [evidence, 증빙, 근거 자료]
+    domain: [SEC-CONSULT]
+    definition: 발견 사항이나 이행을 뒷받침하는 자료(화면, 로그, 설정 값). 노트에는 비식별한 요약만 남긴다
+  - term: 오탐
+    aliases: [false positive, FP]
+    domain: [SEC-CONSULT]
+    definition: 도구나 절차가 약점으로 보고했지만 검증 결과 약점이 아닌 항목
+  # ── 분류 · 평가 체계
+  - term: CVSS
+    aliases: [Common Vulnerability Scoring System, 취약점 점수]
+    domain: [SEC-CONSULT]
+    definition: 취약점의 심각도를 기본·위협·환경 지표로 점수화하는 공개 체계. 점수와 함께 벡터 문자열을 기록한다
+  - term: CWE
+    aliases: [Common Weakness Enumeration, 약점 유형]
+    domain: [SEC-CONSULT]
+    definition: 소프트웨어·하드웨어 약점 유형의 공개 분류 목록
+  - term: CVE
+    aliases: [Common Vulnerabilities and Exposures, 공개 취약점 식별자]
+    domain: [SEC-CONSULT]
+    definition: 공개된 개별 취약점에 부여되는 식별자
+  - term: OWASP Top 10
+    aliases: [OWASP, 웹 10대 위험]
+    domain: [SEC-CONSULT]
+    definition: 웹 애플리케이션의 주요 보안 위험 범주를 정리한 공개 인식 제고 문서
+  - term: 위험도
+    aliases: [risk rating, 심각도, severity]
+    domain: [SEC-CONSULT]
+    definition: 발생 가능성과 영향을 결합한 등급. 산정 기준(예 CVSS, 자체 매트릭스)을 함께 밝힌다
+  - term: 공격 표면
+    aliases: [attack surface]
+    domain: [SEC-CONSULT]
+    definition: 공격자가 접근해 상호작용할 수 있는 진입점의 총합
+  - term: 경영진 요약
+    aliases: [executive summary, 요약 보고]
+    domain: [SEC-CONSULT]
+    definition: 비기술 의사결정자를 위한 보고서 첫 부분 — 전체 위험 수준, 핵심 발견, 우선 조치
+  - term: 고객 유형
+    aliases: [customer type, 산업군]
+    domain: [SEC-CONSULT]
+    definition: 금융·공공·제조·플랫폼 등 — lesson 노트의 분류 축
+  - term: 비식별
+    aliases: [de-identification, 익명화]
+    domain: [SEC-CONSULT]
+    definition: 고객명·IP·시스템명을 제거해 Commons 공개 가능하게 만드는 처리

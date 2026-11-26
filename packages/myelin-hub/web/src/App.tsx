@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { get, type VaultSummary } from "./lib/api";
+import { get, type VaultSummary, PRODUCT_NAME } from "./lib/api";
 import Dashboard from "./pages/Dashboard";
 import Domains from "./pages/Domains";
 import Review from "./pages/Review";
@@ -30,7 +30,7 @@ export default function App() {
   return (
     <div className="hub-shell">
       <aside className="hub-side">
-        <div className="hub-brand">MYELIN <span className="mx-muted" style={{ fontWeight: 400, fontSize: "var(--mx-font-size-sm)" }}>Hub</span></div>
+        <div className="hub-brand">{PRODUCT_NAME} <span className="mx-muted" style={{ fontWeight: 400, fontSize: "var(--mx-font-size-sm)" }}>Hub</span></div>
         <nav className="mx-nav" aria-label="주 메뉴">
           {NAV.map(([to, label]) => (
             <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => "mx-nav-item" + (isActive ? " is-active" : "")} data-testid={`nav-${label.split(" ")[0].toLowerCase()}`}>

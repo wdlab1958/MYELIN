@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -193,3 +195,183 @@ def test_init_and_add_domain_commit_to_git(
     v2 = tmp_path / "v2"
     assert run([*_init_args(v2, packs_dir), "--no-git"]) == 0
     assert not (v2 / ".git").exists()
+
+
+def _git_out(vault: Path, *args: str) -> str:
+    import subprocess
+
+    return subprocess.run(
+        ["git", *args], cwd=vault, capture_output=True, text=True, check=True
+    ).stdout
+
+
+def test_add_domain_commits_only_its_own_paths(
+    tmp_path: Path, packs_dir: Path, fixed_now: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """formal F3 (ADR-0009 §4): unrelated user files — untracked, modified or already staged —
+    must not land in the `[myelin:add-domain]` commit (was `git add -A`)."""
+    vault = tmp_path / "v"
+    assert run(_init_args(vault, packs_dir, research="D3", growth="D4")) == 0
+    scratch = vault / "30_Resources" / "wip-notes.txt"
+    scratch.parent.mkdir(exist_ok=True)
+    scratch.write_text("private scratch\n", encoding="utf-8")  # untracked
+    staged = vault / "30_Resources" / "staged-by-user.txt"
+    staged.write_text("the user staged this for their own commit\n", encoding="utf-8")
+    _git_out(vault, "add", "--", "30_Resources/staged-by-user.txt")
+    moc = vault / "10_Domains/D1/_MOC.md"
+    moc.write_text(moc.read_text(encoding="utf-8") + "\nunfinished edit\n", encoding="utf-8")
+    capsys.readouterr()
+
+    assert run(["add-domain", "D2", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 0
+    out = capsys.readouterr().out
+    touched = set(out.split("변경: ", 1)[1].splitlines()[0].split(", "))
+    assert _git_out(vault, "log", "-1", "--format=%s").strip() == "[myelin:add-domain] D2"
+    committed = set(_git_out(vault, "show", "--pretty=format:", "--name-only", "HEAD").split())
+    assert "10_Domains/D2/_MOC.md" in committed and "myelin.yaml" in committed
+    assert committed <= touched, f"unrelated paths in the commit: {sorted(committed - touched)}"
+    status = _git_out(vault, "status", "--porcelain")
+    assert "?? 30_Resources/wip-notes.txt" in status  # still untracked
+    assert "A  30_Resources/staged-by-user.txt" in status  # still staged, not committed
+    assert " M 10_Domains/D1/_MOC.md" in status  # still an uncommitted edit
+
+
+def test_obsidian_setup_commits_only_obsidian_paths(
+    tmp_path: Path, packs_dir: Path, fixed_now: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Sibling of F3: `myelin obsidian setup` used the same whole-tree commit."""
+    import json as _json
+
+    vault = tmp_path / "v"
+    assert run(_init_args(vault, packs_dir)) == 0
+    graph = vault / ".obsidian/graph.json"
+    data = _json.loads(graph.read_text(encoding="utf-8"))
+    data["colorGroups"] = []  # so that setup has something to restore
+    graph.write_text(_json.dumps(data), encoding="utf-8")
+    _git_out(vault, "add", "--", ".obsidian/graph.json")
+    _git_out(vault, "commit", "-q", "-m", "user: reset graph", "--no-verify")
+    (vault / "30_Resources").mkdir(exist_ok=True)
+    (vault / "30_Resources/wip.txt").write_text("scratch\n", encoding="utf-8")
+    capsys.readouterr()
+    assert run(["obsidian", "setup", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 0
+    assert _git_out(vault, "log", "-1", "--format=%s").strip().startswith("[myelin:settings]")
+    committed = set(_git_out(vault, "show", "--pretty=format:", "--name-only", "HEAD").split())
+    assert committed and all(p.startswith(".obsidian/") for p in committed), committed
+    assert "?? 30_Resources/" in _git_out(vault, "status", "--porcelain")
+
+
+# ------------------------------------------------------------------ 고객정보 가드 · One Cycle
+def _fixture_vault(tmp_path: Path, fixtures_dir: Path) -> Path:
+    import shutil
+
+    dst = tmp_path / "basic"
+    shutil.copytree(
+        fixtures_dir / "vaults/basic", dst, ignore=shutil.ignore_patterns(".myelin", ".obsidian")
+    )
+    return dst
+
+
+def test_guard_scan_blocks_flags_and_masks(
+    tmp_path: Path, fixtures_dir: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    vault = _fixture_vault(tmp_path, fixtures_dir)
+    assert run(["guard", "scan", "--vault", str(vault)]) == 0
+    assert "0 blocked" in capsys.readouterr().out
+    bad = vault / "10_Domains/D2/leak.md"
+    bad.write_text("# x\n\npassword = Sup3rS3cret!!\n", encoding="utf-8")
+    code = vault / "10_Domains/D2/code.md"
+    code.write_text("# x\n```\n" + "a\n" * 40 + "```\n", encoding="utf-8")
+    assert run(["guard", "scan", "--vault", str(vault)]) == 1
+    out = capsys.readouterr().out
+    assert "BLOCK" in out and "credential-assignment" in out and "Sup3rS3cret" not in out
+    assert "FLAG" in out and "large-code-block" in out and "1 blocked · 1 flagged" in out
+    assert run(["guard", "scan", "--vault", str(vault), str(code), "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["blocked"] == 0 and data["flagged"] == 1 and data["scanned"] == 1
+    assert run(["guard", "scan", "--vault", str(vault), str(code), "--strict"]) == 1
+    capsys.readouterr()
+    assert run(["guard", "scan", str(bad)]) == 1  # without a Vault: built-in rules
+    capsys.readouterr()
+    assert run(["guard", "scan"]) == 2
+    (vault / "90_System/infoguard.yaml").write_text("bogus: 1\n", encoding="utf-8")
+    assert run(["guard", "scan", "--vault", str(vault)]) == 2  # fail-closed
+    assert "fail-closed" in capsys.readouterr().err
+
+
+def test_pre_commit_guard_refuses_a_secret_outside_the_inbox(
+    tmp_path: Path, packs_dir: Path, fixed_now: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import subprocess
+
+    vault = tmp_path / "v"
+    assert run(_init_args(vault, packs_dir)) == 0
+    note = (
+        "---\nid: 20261018-0900-leak\ntype: evergreen\ndomain: [D1]\ncreated: 2026-10-18\n---\n"
+        "# 누출\n\n{body}\n"
+    )
+    leak = vault / "10_Domains/D1/leak.md"
+    leak.write_text(note.format(body="api_key: abcd1234efgh5678"), encoding="utf-8")
+    inbox = vault / "00_Inbox/leak-inbox.md"
+    inbox.write_text(note.format(body="api_key: abcd1234efgh5678"), encoding="utf-8")
+    _git_out(vault, "add", "--", "00_Inbox/leak-inbox.md")
+    capsys.readouterr()
+    assert run(["doctor", "--staged", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 0
+    _git_out(vault, "add", "--", "10_Domains/D1/leak.md")
+    assert run(["doctor", "--staged", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 1
+    err = capsys.readouterr().err
+    assert "credential-assignment" in err and "abcd1234efgh5678" not in err
+    # the real hook: git commit is refused
+    env = {**os.environ, "MYELIN_BIN": f"{sys.executable} -m myelin_cli"}
+    proc = subprocess.run(
+        ["git", "commit", "-q", "-m", "leak"], cwd=vault, capture_output=True, text=True, env=env
+    )
+    assert proc.returncode != 0 and "고객정보 가드" in proc.stderr
+    leak.write_text(note.format(body="api_key 는 금고에 둔다"), encoding="utf-8")
+    _git_out(vault, "add", "--", "10_Domains/D1/leak.md")
+    assert run(["doctor", "--staged", "--vault", str(vault), "--packs-dir", str(packs_dir)]) == 0
+
+
+def test_onecycle_import_findings_cli(
+    tmp_path: Path,
+    fixtures_dir: Path,
+    repo_root: Path,
+    fixed_now: str,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    vault = _fixture_vault(tmp_path, fixtures_dir)
+    samples = repo_root / "docs/onecycle/samples"
+    src = str(samples / "findings.llmops.sample.json")
+    before = sorted(p.name for p in (vault / "00_Inbox/ai-drafts").iterdir())
+    assert run(["onecycle", "import-findings", src, "--vault", str(vault), "--dry-run"]) == 0
+    assert "만들 예정" in capsys.readouterr().out
+    assert sorted(p.name for p in (vault / "00_Inbox/ai-drafts").iterdir()) == before
+    assert run(["onecycle", "import-findings", src, "--vault", str(vault), "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["ok"] and len(data["created"]) == 2 and "LLMOPS" in data["hint"]
+    assert all((vault / c["path"]).is_file() for c in data["created"])
+    assert not (vault / ".git").exists()  # the importer never runs git
+    assert run(["onecycle", "import-findings", src, "--vault", str(vault)]) == 0
+    assert "2 건너뜀" in capsys.readouterr().out
+    assert run(["doctor", "--vault", str(vault), "--packs-dir", str(repo_root / "packs")]) == 0
+    capsys.readouterr()
+    # bad input: exit 2, nothing written
+    bad = tmp_path / "bad.json"
+    bad.write_text('{"schema": "onecycle.findings/v1", "findings": []}', encoding="utf-8")
+    n = len(list((vault / "00_Inbox/ai-drafts").iterdir()))
+    assert run(["onecycle", "import-findings", str(bad), "--vault", str(vault)]) == 2
+    assert "not a valid onecycle.findings/v1" in capsys.readouterr().err
+    assert (
+        run(["onecycle", "import-findings", str(tmp_path / "none.json"), "--vault", str(vault)])
+        == 2
+    )
+    capsys.readouterr()
+    # a finding the guard blocks: exit 1, the clean ones are still imported
+    doc = json.loads((samples / "findings.ssc.sample.json").read_text(encoding="utf-8"))
+    doc["findings"].append(
+        dict(doc["findings"][0], id="ssc:x/leak", description="token=abcdef0123456789")
+    )
+    mixed = tmp_path / "mixed.json"
+    mixed.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+    assert run(["onecycle", "import-findings", str(mixed), "--vault", str(vault)]) == 1
+    cap = capsys.readouterr()
+    assert "가드가 막음: ssc:x/leak" in cap.err and "abcdef0123456789" not in cap.err
+    assert len(list((vault / "00_Inbox/ai-drafts").iterdir())) == n + 1

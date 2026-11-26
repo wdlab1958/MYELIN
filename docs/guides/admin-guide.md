@@ -3,7 +3,7 @@
 ## 1. 구성 요소와 포트
 | 구성 | 실행 | 비고 |
 |---|---|---|
-| Hub | `myelin-hub --vault <v> --port 8787` | localhost 전용. 비-loopback 바인딩 거부. Host/Origin 검증 |
+| Hub | `myelin-hub --vault <v> --port 8787` | 기본은 localhost 전용·무인증(Personal). 비-loopback 바인딩은 Team 모드(`--auth-file` + `allowed_hosts` + TLS)일 때만 — ADR-0016, [`docs/INSTALL.md`](../INSTALL.md) §4. Host/Origin 검증 |
 | MCP | `claude mcp add myelin -- uv --directory <repo> run myelin-mcp --vault <v>` | stdio, 읽기 전용 기본 |
 | Plugin | `claude plugin marketplace add <repo>` → `claude plugin install myelin@myelin-local` | `claude plugin validate <repo>/plugin --strict` |
 | Commons | 사내 git (`myelin commons init <dir>` 후 push) | 구성원은 `MYELIN_PACKS=<clone>/registry/packs` |
@@ -19,7 +19,8 @@
 ## 3. 보안 정책 (정본 §9.1, 위협 모델 docs/security/threat-model.md)
 - 개인 Vault 불가침 — 관리자는 Vault 에 접근하지 않는다. 지표는 opt-in 익명 집계만.
 - 외부 AI 사용 범위: `classification: confidential` 과 `40_IP/` 는 외부 LLM 금지(`llm.route`, MCP 기본 비노출). HR·법무·보안과 지식 소유권·직무발명 절차를 **사전 합의**(정본 §9.1).
-- Hub 는 공유 호스트에서 띄우지 않는다(같은 호스트의 다른 사용자가 접근 가능). Team 모드 인증은 v1.1.
+- Hub 는 공유 호스트에서 띄우지 않는다(같은 호스트의 다른 사용자가 접근 가능). 팀이 검토 대기열을 함께 봐야 하면 Team 모드(v1.4.0, ADR-0016)를 쓴다 — 기밀 노트는 그 채널로 나가지 않는다.
+- 고객 식별 정보·고객 코드·자격증명은 기록하지 않는다 — [`knowledge-management-policy.md`](knowledge-management-policy.md), 고객정보 가드(ADR-0017).
 
 ## 4. 배포 (Rollout, 정본 §9.2)
 Alpha(Brian, 2주) → Pilot(5~10명, 3주, `docs/guides/pilot-guide.md`) → Wave 1(희망 팀) → Wave 2(전사). 각 단계 종료 시 `scripts/pilot.py report`, `myelin metrics aggregate`.

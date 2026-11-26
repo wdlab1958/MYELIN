@@ -1,6 +1,6 @@
 [project]
 name = "myelin-cli"
-version = "0.1.0a0"
+version = "1.4.0"
 description = "MYELIN CLI: init / add-domain / doctor / stats"
 requires-python = ">=3.12"
 dependencies = [

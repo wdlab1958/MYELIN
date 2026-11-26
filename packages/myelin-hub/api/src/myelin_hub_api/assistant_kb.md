@@ -65,7 +65,7 @@ Dashboard — KPI(주간 verified · 고아 비율 · 재사용 비율 · 재투
 '내용 읽기' → Promote/Reject, 패치 제안 미리보기(diff) → Apply, Commons 후보 비식별 검사 → 'Commons 제안'. Domain Packs — Pack 열기 ·
 새 개인 Pack · 개인 Pack 으로 복사 · 검증 · 저장(commit) · 카드의 '+ Domain 추가 · <ID>'(Vault 에 Domain 추가). Settings — Level, MCP(`write_draft`·`expose_confidential`), Commons(로컬 clone ·
 remote · 연동 · 익명 지표 opt-in). 온보딩 마법사 — 빈 폴더에 이름·3+1 Domain(Pack 또는 직접 정의)·Level 로 Vault 생성. 모든 쓰기 버튼은 사람의 클릭
-헤더(`X-Myelin-Intent: user-click`)가 있어야 하고 git commit 하나로 기록된다(ADR-0009). Hub 는 localhost 전용이다.
+헤더(`X-Myelin-Intent: user-click`)가 있어야 하고 git commit 하나로 기록된다(ADR-0009). Hub 는 기본적으로 localhost 전용이다(팀 공유는 선택 기능인 Team 모드 — 토큰 인증, 기밀 노트 미제공, ADR-0016).
 
 ## Review Gate — Promote · Reject
 keywords: promote, 승격, reject, 거절, verified, 초안, draft, ai-draft, 검토, 승인, 읽기, inbox

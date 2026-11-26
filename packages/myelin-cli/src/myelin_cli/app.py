@@ -34,6 +34,7 @@ from myelin_core.commons import (
 )
 from myelin_core.config import ConfigError, Domains, MyelinConfig, Owner
 from myelin_core.doctor import run_doctor, run_doctor_staged
+from myelin_core.infoguard import GuardError, GuardPolicy, GuardReport, scan_text
 from myelin_core.levels import LEVEL_NAMES, skill_table
 from myelin_core.metrics import (
     aggregate,
@@ -44,7 +45,9 @@ from myelin_core.metrics import (
     write_metrics_to_commons,
 )
 from myelin_core.obsidian import ensure_obsidian_config, obsidian_status, open_uri
+from myelin_core.onecycle import OneCycleError, import_findings
 from myelin_core.packs.loader import PackError, discover_packs
+from myelin_core.product import PRODUCT_NAME, PRODUCT_TAGLINE
 from myelin_core.scaffold import (
     ScaffoldError,
     VaultExistsError,
@@ -53,12 +56,12 @@ from myelin_core.scaffold import (
     install_git_hook,
 )
 from myelin_core.stats import compute_stats
-from myelin_core.vault import Vault, default_pack_roots
+from myelin_core.vault import INBOX, SKIP_DIRS, Vault, default_pack_roots
 
 app = typer.Typer(
     name="myelin",
     help=(
-        "MYELIN — Personal Knowledge OS. "
+        f"{PRODUCT_NAME} — {PRODUCT_TAGLINE}. "
         "Vault 생성(init) · Domain 추가 · 무결성 점검(doctor) · 지표(stats)."
     ),
     no_args_is_help=True,
@@ -85,8 +88,13 @@ def _self_bin() -> str:
     return f"{sys.executable} -m myelin_cli"
 
 
-def _git_commit_vault(root: Path, message: str) -> str | None:
+def _git_commit_vault(root: Path, message: str, paths: list[str] | None = None) -> str | None:
     """정본 §3 "모든 변경은 Git commit": make the Vault a repo on first use and commit.
+
+    `paths` (Vault-relative) limits the commit to exactly the files this command touched
+    (ADR-0009 §4 "스테이징은 변경된 경로만", formal F3): unrelated working-tree changes and
+    anything the user had already staged stay out of the `[myelin:*]` commit. `paths=None` is
+    only for the very first commit of a Vault this command just created (`myelin init`).
 
     Mirrors the Hub's ensure_git. When the repo is created, the Vault pre-commit device
     (`90_System/hooks/pre-commit` → `.git/hooks/pre-commit`, ADR-0011 §5) is installed, so every
@@ -102,13 +110,28 @@ def _git_commit_vault(root: Path, message: str) -> str | None:
                 if has.returncode != 0:
                     subprocess.run(["git", "config", k, val], cwd=root, check=True)
             install_git_hook(root)
-        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        env = {**os.environ, "MYELIN_BIN": _self_bin()}  # the hook runs this very CLI
+        if paths is None:
+            subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+            only: list[str] = []
+        else:
+            only = _stage_only(root, paths)
+            if not only:
+                return None  # nothing of ours changed (or everything is git-ignored)
         subprocess.run(
-            ["git", "commit", "-q", "-m", message, "--allow-empty"],
+            # `--only -- <paths>`: commit these paths and nothing else that happens to be staged
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                message,
+                *(["--only", "--", *only] if only else ["--allow-empty"]),
+            ],
             cwd=root,
             check=True,
             capture_output=True,
-            env={**os.environ, "MYELIN_BIN": _self_bin()},  # the hook runs this very CLI
+            env=env,
         )
         head = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"], cwd=root, check=True, capture_output=True
@@ -126,6 +149,35 @@ def _git_commit_vault(root: Path, message: str) -> str | None:
             f"  (git commit 생략: {exc} — 직접 `git init && git add -A && git commit` 하세요)"
         )
         return None
+
+
+def _stage_only(root: Path, paths: list[str]) -> list[str]:
+    """`git add` exactly `paths` (skipping git-ignored ones); return those that differ from HEAD."""
+    changed: list[str] = []
+    for rel in dict.fromkeys(paths):
+        ignored = subprocess.run(["git", "check-ignore", "-q", "--", rel], cwd=root)
+        if ignored.returncode == 0:
+            continue
+        if (root / rel).exists():
+            subprocess.run(["git", "add", "--", rel], cwd=root, check=True, capture_output=True)
+        else:
+            tracked = subprocess.run(
+                ["git", "ls-files", "--error-unmatch", "--", rel], cwd=root, capture_output=True
+            )
+            if tracked.returncode != 0:
+                continue
+            subprocess.run(
+                ["git", "rm", "-q", "--cached", "--", rel],
+                cwd=root,
+                check=True,
+                capture_output=True,
+            )
+        st = subprocess.run(
+            ["git", "status", "--porcelain", "--", rel], cwd=root, capture_output=True, check=True
+        )
+        if st.stdout.strip():
+            changed.append(rel)
+    return changed
 
 
 def _staged_notes(root: Path) -> tuple[list[str], dict[str, bytes]]:
@@ -380,7 +432,7 @@ def add_domain_cmd(
         _die(str(exc))
     typer.echo(f"✔ Domain {domain_id} 추가 (extra). 변경: {', '.join(touched)}")
     if (v.root / ".git").exists():
-        commit = _git_commit_vault(v.root, f"[myelin:add-domain] {domain_id}")
+        commit = _git_commit_vault(v.root, f"[myelin:add-domain] {domain_id}", touched)
         if commit:
             typer.echo(f"  git: {commit} ([myelin:add-domain])")
 
@@ -428,6 +480,19 @@ def doctor(
         )
     else:
         report = run_doctor(v, pack_roots=_roots(v.root, packs_dir))
+    # 고객정보 가드 (ADR-0017): a staged note outside 00_Inbox with a credential, resident number
+    # or denylisted customer name is not committed. Flags (code blocks, IPs) are shown only.
+    guard_blocked = False
+    if staged:
+        policy = _guard_policy(v)
+        for rel in rels:
+            if not rel.endswith(".md") or rel.startswith(INBOX + "/"):
+                continue
+            rep = scan_text(blobs[rel].decode("utf-8", errors="replace"), policy)
+            if rep.blocked:
+                guard_blocked = True
+            if not as_json:
+                _echo_guard(rel, rep, err=True)
     if as_json:
         typer.echo(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
     else:
@@ -445,8 +510,148 @@ def doctor(
                 "(사람이 의도적으로 건너뛸 때만 git commit --no-verify)",
                 err=True,
             )
-    failed = bool(report.errors) or (strict and bool(report.warnings))
+    if guard_blocked:
+        typer.echo(
+            "MYELIN pre-commit: 고객정보 가드가 막았다 — 자격증명·고객명을 지운 뒤 다시 커밋하세요 "
+            "(docs/guides/knowledge-management-policy.md)",
+            err=True,
+        )
+    failed = bool(report.errors) or (strict and bool(report.warnings)) or guard_blocked
     raise typer.Exit(EXIT_FINDINGS if failed else EXIT_OK)
+
+
+# ------------------------------------------------------------- 고객정보 가드 · One Cycle
+guard_app = typer.Typer(
+    help="고객정보 가드 — 자격증명·고객명·고객 코드가 노트에 남지 않게 하는 결정적 검사 (ADR-0017)",
+    no_args_is_help=True,
+)
+app.add_typer(guard_app, name="guard")
+onecycle_app = typer.Typer(
+    help="One Cycle Dev. Framework 인계 — 다른 플랫폼이 넘긴 파일을 초안 노트로 받는다 (ADR-0018)",
+    no_args_is_help=True,
+)
+app.add_typer(onecycle_app, name="onecycle")
+
+
+def _guard_policy(v: Vault | None) -> GuardPolicy:
+    try:
+        return GuardPolicy.load(v.root if v is not None else None)
+    except GuardError as exc:
+        _die(f"고객정보 가드 정책을 읽을 수 없다 (fail-closed): {exc}")
+        raise AssertionError from None
+
+
+def _echo_guard(rel: str, rep: GuardReport, *, err: bool = False) -> None:
+    for h in rep.hits:
+        typer.echo(
+            f"{'BLOCK' if h.severity == 'block' else 'FLAG':<7} {h.rule:<22} "
+            f"{rel}:{h.line}: {h.excerpt}",
+            err=err,
+        )
+
+
+@guard_app.command("scan")
+def guard_scan(
+    paths: Annotated[
+        list[Path] | None,
+        typer.Argument(help="검사할 파일·폴더 (기본: Vault 의 모든 노트). Vault 밖 파일도 가능"),
+    ] = None,
+    vault: Annotated[
+        Path | None,
+        typer.Option("--vault", "-v", help="Vault 경로 — 그 Vault 의 가드 정책·고객명 목록을 쓴다"),
+    ] = None,
+    as_json: JsonOpt = False,
+    strict: Annotated[bool, typer.Option("--strict", help="FLAG 도 실패로 취급")] = False,
+) -> None:
+    """노트에서 자격증명·주민번호·고객명(BLOCK)과 긴 코드 블록·IP·내부 URL(FLAG)을 찾는다.
+    BLOCK 이 있으면 exit 1. 적중 내용은 가려서 출력한다."""
+    v = _open_vault(vault) if vault is not None else None
+    if v is None and not paths:
+        _die("--vault 또는 검사할 경로를 준다")
+    policy = _guard_policy(v)
+    files: list[Path] = []
+    for target in paths or [v.root if v is not None else Path()]:
+        t = target if target.is_absolute() or v is None or target.exists() else v.root / target
+        if t.is_dir():
+            files += sorted(
+                f for f in t.rglob("*.md") if not (set(f.relative_to(t).parts) & SKIP_DIRS)
+            )
+        elif t.is_file():
+            files.append(t)
+        else:
+            _die(f"경로가 없다: {target}")
+    results: list[dict[str, object]] = []
+    blocked = flagged = 0
+    for f in files:
+        try:
+            rep = scan_text(f.read_text(encoding="utf-8", errors="replace"), policy)
+        except OSError as exc:
+            _die(f"읽을 수 없다 (fail-closed): {f}: {exc}")
+            raise AssertionError from None
+        if rep.clean:
+            continue
+        rel = v.rel(f) if v is not None and f.resolve().is_relative_to(v.root) else str(f)
+        blocked += rep.blocked
+        flagged += rep.flagged and not rep.blocked
+        results.append({"path": rel, **rep.to_dict()})
+        if not as_json:
+            _echo_guard(rel, rep)
+    if as_json:
+        typer.echo(
+            json.dumps(
+                {"scanned": len(files), "blocked": blocked, "flagged": flagged, "files": results},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    else:
+        typer.echo(
+            f"guard: {len(files)} files · {blocked} blocked · {flagged} flagged · "
+            f"고객명 목록 {len(policy.customer_terms)}건"
+        )
+    raise typer.Exit(EXIT_FINDINGS if blocked or (strict and flagged) else EXIT_OK)
+
+
+@onecycle_app.command("import-findings")
+def onecycle_import_findings(
+    file: Annotated[Path, typer.Argument(help="onecycle.findings/v1 JSON 파일")],
+    vault: VaultOpt = Path(),
+    domain: Annotated[
+        str | None,
+        typer.Option(
+            "--domain", help="초안에 넣을 Domain (기본: 출처 플랫폼의 Domain 이 있으면 그것)"
+        ),
+    ] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="쓰지 않고 결과만 보인다")] = False,
+    as_json: JsonOpt = False,
+) -> None:
+    """finding 하나당 초안 노트 하나를 00_Inbox/ai-drafts 에 만든다. 덮어쓰지 않고, 같은 finding 은
+    다시 만들지 않는다. 잘못된 파일·빈 파일은 거부(exit 2), 가드가 막은 finding 이 있으면 exit 1."""
+    v = _open_vault(vault)
+    try:
+        res = import_findings(v, file, now=_now(), domain=domain, dry_run=dry_run)
+    except OneCycleError as exc:
+        _die(str(exc))
+        raise AssertionError from None
+    if as_json:
+        typer.echo(json.dumps(res.to_dict(), ensure_ascii=False, indent=2))
+    else:
+        verb = "만들 예정" if dry_run else "생성"
+        for c in res.created:
+            flag = f"  [가드 표시: {', '.join(c.flagged)}]" if c.flagged else ""
+            typer.echo(f"✔ {verb}: {c.path}{flag}")
+        for fid, existing in res.skipped:
+            typer.echo(f"· 건너뜀(이미 있음): {fid} → {existing}")
+        for fid, reason in res.blocked:
+            typer.echo(f"✖ 가드가 막음: {fid} — {reason}", err=True)
+        if res.hint:
+            typer.echo(f"  {res.hint}")
+        typer.echo(
+            f"onecycle: {len(res.created)} {verb} · {len(res.skipped)} 건너뜀 · "
+            f"{len(res.blocked)} 차단 — Hub Review Gate 에서 읽고 승격한다 "
+            "(git·myelin.yaml 은 건드리지 않았다)"
+        )
+    raise typer.Exit(EXIT_OK if res.ok else EXIT_FINDINGS)
 
 
 # ------------------------------------------------------------------------------------ stats
@@ -728,7 +933,7 @@ def obsidian_setup(
     if touched:
         typer.echo("✔ Obsidian 설정: " + ", ".join(touched))
         if (v.root / ".git").exists():
-            commit = _git_commit_vault(v.root, "[myelin:settings] obsidian graph view")
+            commit = _git_commit_vault(v.root, "[myelin:settings] obsidian graph view", touched)
             if commit:
                 typer.echo(f"  git: {commit} ([myelin:settings])")
     else:

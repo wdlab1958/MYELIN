@@ -33,6 +33,17 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
     try { const p = await get<PatchPlan>(`/api/patches/${encodeURIComponent(file)}/preview`); setPlans({ ...plans, [file]: p }); }
     catch (e) { setPlans({ ...plans, [file]: { error: String(e) } }); }
   };
+  // 고객정보 가드 (ADR-0017): 409 + "guard_ack" = 긴 코드 블록·IP 등 표시가 있다 → 사람이 확인한 뒤에만 다시 보낸다
+  const promoteDraft = async (path: string) => {
+    const url = `/api/review/promote/${refPath(path)}`;
+    try { return await userPost<{ commit?: string; path?: string }>(url, { digest: digests[path] }); }
+    catch (e) {
+      if (e instanceof ApiError && e.status === 409 && e.message.includes("guard_ack") && window.confirm(`${e.message}\n\n고객 코드·고객 식별 정보가 아님을 확인했습니까?`)) {
+        return await userPost<{ commit?: string; path?: string }>(url, { digest: digests[path], guard_ack: true });
+      }
+      throw e;
+    }
+  };
   const act = async (fn: () => Promise<{ commit?: string; path?: string }>, label: string, readPath?: string) => {
     try {
       const r = await fn();
@@ -41,7 +52,7 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
       await load(); onChanged();
     } catch (e) {
       // 409 on Promote = the draft changed after it was read: close the body so it has to be read again
-      if (readPath && e instanceof ApiError && e.status === 409) { setBodies((b) => { const next = { ...b }; delete next[readPath]; return next; }); await load(); }
+      if (readPath && e instanceof ApiError && e.status === 409 && !e.message.includes("guard_ack")) { setBodies((b) => { const next = { ...b }; delete next[readPath]; return next; }); await load(); }
       setMsg(`실패: ${String(e)}`);
     }
   };
@@ -65,7 +76,7 @@ export default function Review({ vault, onChanged }: { vault: VaultSummary; onCh
             </div>
             <div className="hub-row">
               <button type="button" className="mx-btn" disabled={d.doctor_ok === false} onClick={() => openBody(d.path)} aria-pressed={bodies[d.path] !== undefined} data-testid="draft-read">{bodies[d.path] !== undefined ? "닫기" : "내용 읽기"}</button>
-              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => userPost(`/api/review/promote/${refPath(d.path)}`, { digest: digests[d.path] }), `Promote ${d.title}`, d.path)} data-testid="promote">Promote</button>
+              <button type="button" className="mx-btn mx-btn-promote" disabled={d.doctor_ok === false || bodies[d.path] === undefined} title={bodies[d.path] === undefined ? "승격은 사람이 읽은 뒤에만 — 먼저 내용을 읽는다" : ""} onClick={() => act(() => promoteDraft(d.path), `Promote ${d.title}`, d.path)} data-testid="promote">Promote</button>
               <button type="button" className="mx-btn" onClick={() => act(() => userPost(`/api/review/reject/${refPath(d.path)}`), `Reject ${d.title}`)} data-testid="reject">Reject</button>
             </div>
           </div>

@@ -280,7 +280,23 @@ def check_publishable(vault: Vault, rel: str, rule: DeidRule | None = None) -> P
             except NoteParseError:
                 continue
     rule = rule or DeidRule.load(vault.root / "90_System" / DEID_FILE)
-    hits = scan_text(dump_note(note), rule)
+    text = dump_note(note)
+    hits = scan_text(text, rule)
+    # 고객정보 가드 (ADR-0017) on the export path: credentials / customer names the de-id patterns
+    # do not know, and long code blocks (possibly customer code). Excerpts are masked.
+    from myelin_core.infoguard import GuardError, GuardPolicy
+    from myelin_core.infoguard import scan_text as guard_scan
+
+    try:
+        report = guard_scan(text, GuardPolicy.load(vault.root))
+    except GuardError as exc:
+        reasons.append(f"고객정보 가드 정책을 읽을 수 없다 (fail-closed): {exc}")
+    else:
+        seen = {(h.line, h.kind) for h in hits}
+        for g in report.hits:
+            wanted = g.severity == "block" or g.rule == "large-code-block"
+            if wanted and (g.line, g.rule) not in seen:
+                hits.append(DeidHit(f"guard:{g.rule}", g.line, g.excerpt))
     return PublishCheck(rel, not reasons, reasons, hits, note)
 
 

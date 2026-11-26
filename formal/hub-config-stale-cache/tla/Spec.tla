@@ -50,24 +50,24 @@ Init ==
     /\ accepted = {} /\ badReject = FALSE /\ badAccept = FALSE /\ lost = {}
 
 \* The Domain list a Hub request decides with.
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:259-293 `_read_config_bytes` / `_reload_if_changed` / `ready` / `_v()`
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:261-295 `_read_config_bytes` / `_reload_if_changed` / `ready` / `_v()`
 \*      (before the F1 patch, commit 70509a5: service.py:158-169 — `_v()` returned the start-up `self.vault` unconditionally)
 View == IF ReloadOnRequest THEN file ELSE cache
 
 ----------------------------------------------------------------------------
 \* src: packages/myelin-core/src/myelin_core/scaffold.py:307-316,352 add_domain(): extra += [d]; write myelin.yaml
-\*      packages/myelin-cli/src/myelin_cli/app.py:363-385 `myelin add-domain`
+\*      packages/myelin-cli/src/myelin_cli/app.py:415-437 `myelin add-domain`
 CliAddDomain(d) ==
     /\ d \notin file
     /\ file' = file \cup {d}
     /\ UNCHANGED <<cache, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:225-252 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:227-254 HubService.open()/reload() — the operator restarts the Hub (today's workaround)
 HubRestart ==
     /\ cache' = file
     /\ UNCHANGED <<file, form, formBase, formLoaded, accepted, badReject, badAccept, lost>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:645-680 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:662-715 promote(): v = self._v() ... `if target_domain not in v.config.domains.all_ids: 422`
 \*      (also domains() 520-560, summary() 429-446 [F8] and every other read of v.config.domains)
 HubPromote(d) ==
     /\ cache' = View

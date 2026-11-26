@@ -1,0 +1,4 @@
+{
+  "tests": ["packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py"],
+  "technique": "단일 스레드 순차 실행으로 반례 순서를 강제한다: VaultService.open(Open, 권한 TRUE) → 다른 프로세스 역할로 myelin.yaml 에 철회를 완전히 기록(Revoke, 원자적 write_text) → 그 뒤 도구 호출(write_draft / get_note / search_notes)이 서비스 락을 획득(Begin)해 Check·Prepare·Release 를 수행. 철회 기록이 호출 시작보다 엄격히 앞서므로 sleep·타이밍 의존이 없다. 외부 서비스 없이 tmp_path 의 합성 fixture Vault 만 사용하고, P2 는 local_session(MYELIN_LLM=local) 로 A2 를 고정한다. 단언은 P1 Inv_NoDraftAfterRevoke(초안 파일 미생성)·P2 Inv_NoConfidentialAfterRevoke(본문 REDACTED·검색 결과에 confidential 없음)를 직접 검사한다."
+}

@@ -6,3 +6,5 @@ lean         = 4.34.0 (leanprover/lean4:v4.34.0, commit 293d5d0c0c3f; no Mathlib
 python       = 3.12+ (2026-11-18 run: CPython 3.13.18 via uv) · pytest 9.1.1 · ruff · mypy (strict)
 node         = 22 · playwright (channel chrome) for packages/myelin-hub/web e2e
 model        = claude-fable-5-1 (2026-10-29, hub-config-stale-cache) · claude-fable-5-2 (2026-11-18, Hub round)
+# 2026-11-21 run (mcp-config-revocation-stale): wdproof 0.1.0 · tla2tools 2026.10.28.014557 · java 21.0.13.1 · lean 4.34.0 · model claude-opus-5-5
+# 2026-11-26 re-run of the full gate (31 configs) + Lean audit (2 projects): same tla2tools / lean, no model change

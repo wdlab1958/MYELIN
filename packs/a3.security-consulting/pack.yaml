@@ -1,4 +1,5 @@
-# A3 Org Pack (초안) — 보안 컨설팅 (정본 §5.2 예시, §5.6). Sub-MOC·용어는 P7 에서 팀 챔피언과 확정한다.
+# A3 Org Pack v1.0 — 보안 컨설팅 (정본 §5.2 예시, §5.6). 진단 수명주기: 범위 합의 → 진단 → 발견 사항 → 대책 → 이행 기록 → 재진단.
+# 용어·Sub-MOC 는 A3 컨설턴트 확인 전이다 (WBS 2.5.3) — 공개 표준(ISO/IEC 27001:2022 Annex A, PTES, CVSS, CWE, OWASP) 기반의 일반 내용만 담는다.
 pack: a3.security-consulting
 version: 1.0.0
 kind: org
@@ -9,9 +10,9 @@ domains:
   - id: SEC-CONSULT
     name: 보안 컨설팅
     accent: violet
-    description: 진단·컨설팅 업무 지식 — 방법론, 산출물, 고객 유형별 교훈
-    sub_mocs: [진단 방법론, 컴플라이언스(ISMS-P 등), 위협 모델링, 보고서 작성, 고객 커뮤니케이션]
-    note_types: [evergreen, lesson, checklist, adr]
+    description: 진단·컨설팅 업무 지식 — 방법론, 산출물, 고객 유형별 교훈. 고객명·시스템명·IP 는 기록하지 않는다 (비식별).
+    sub_mocs: [진단 방법론, 컴플라이언스(ISMS-P 등), 위협 모델링, 보고서 작성, 고객 커뮤니케이션, 발견 사항·대책, 이행·재진단]
+    note_types: [evergreen, lesson, checklist, adr, experiment]
     taxonomy_seed: taxonomy.yaml
     templates: templates
     interview_bank: interviews.yaml

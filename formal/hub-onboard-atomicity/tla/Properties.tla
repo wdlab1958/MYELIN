@@ -5,7 +5,7 @@ EXTENDS Spec
 
 \* P8 (protocol, frozen) — a failed onboarding leaves no half-initialised Vault: nothing the
 \* request created remains.
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1057-1060 (onboard() docstring: all-or-nothing; before the patch the except-branch said "no half-initialised directory left behind" and removed only the personal pack)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1140-1143 (onboard() docstring: all-or-nothing; before the patch the except-branch said "no half-initialised directory left behind" and removed only the personal pack)
 \*      docs/adr/0009-hub-write-policy.md:9 (§2 onboarding = init_vault + welcome 초안 + git init, 정확히 하나의 commit)
 P8_FailedLeavesNothing ==
     phase = "failed" => ~pack /\ ~config /\ ~scaffold /\ ~repo
@@ -13,7 +13,7 @@ P8_FailedLeavesNothing ==
 \* P9 (protocol, frozen) — when no request is running, a Vault whose myelin.yaml lists the
 \* personal pack has that pack on disk (a Domain is always declared by an installed pack).
 \* src: docs/adr/0004-myelin-yaml-schema.md:12 (`packs` 는 Pack 이름 …), docs/adr/0004-myelin-yaml-schema.md:10 (모든 Domain ID 는 Pack 이 선언)
-\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:1233-1237 (_write_personal_pack docstring)
+\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:1316-1320 (_write_personal_pack docstring)
 P9_ConfigHasItsPack ==
     (phase # "running" /\ config /\ Custom) => pack
 

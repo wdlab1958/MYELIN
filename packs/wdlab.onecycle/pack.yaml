@@ -1,0 +1,40 @@
+# One Cycle Dev. Framework 수신 Pack — LLMOps · SSC · ARGUS 가 넘긴 초안이 들어갈 Domain (WBS 3.6, ADR-0018).
+# Proof-Skills 의 PROOF-SKILLS Domain 은 WDLAB-Proof-Skills 가 배포하는 wdlab.proof-skills Pack 이 선언한다.
+# 설치: myelin add-domain LLMOPS|SSC|ARGUS --pack wdlab.onecycle  (필요한 것만)
+pack: wdlab.onecycle
+version: 1.0.0
+kind: org
+maintainer: WDLAB
+requires: [myelin.core>=1.0]
+description: One Cycle Dev. Framework 의 진단·보안·관제 단계에서 나온 발견과 교훈 (고객 식별 정보·고객 코드·자격증명은 기록하지 않는다)
+domains:
+  - id: LLMOPS
+    name: LLM 품질 진단
+    accent: cyan
+    description: WDLAB-LLMOps 진단에서 나온 발견 — 평가 지표, 회귀, 가드레일, 운영 교훈
+    sub_mocs: [진단 발견, 평가 지표·데이터셋, 가드레일·정책, 회귀·재진단]
+    note_types: [lesson, experiment, checklist, evergreen]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates
+    classification_default: internal
+    compose_targets: [진단 요약 보고서, 재진단 점검표]
+  - id: SSC
+    name: 보안 자가 진단
+    accent: violet
+    description: SSC(Self Security Consulting) 평가에서 나온 발견 — 통제 미흡, 대책, 이행 확인
+    sub_mocs: [평가 발견, 대책·이행, 통제 매핑(ISO 27001·ATT&CK), 재평가]
+    note_types: [lesson, checklist, evergreen, adr]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates
+    classification_default: internal
+    compose_targets: [보안 평가 요약, 대책 이행 점검표]
+  - id: ARGUS
+    name: 보안 관제
+    accent: magenta
+    description: ARGUS 관제에서 나온 경보·캠페인 요약과 재진단 요청 — 탐지 규칙, 오탐 교훈
+    sub_mocs: [경보·캠페인, 재진단 요청, 탐지 규칙, 오탐·튜닝]
+    note_types: [lesson, checklist, evergreen, experiment]
+    taxonomy_seed: taxonomy.yaml
+    templates: templates
+    classification_default: internal
+    compose_targets: [관제 주간 요약, 탐지 규칙 제안]

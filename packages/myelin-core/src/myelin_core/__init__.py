@@ -1,5 +1,6 @@
 """MYELIN core: schema, note parser, Pack loader, doctor, index (shared by CLI/MCP/Hub)."""
 
+from myelin_core._version import __version__
 from myelin_core.note import Note, NoteParseError, WikiLink, dump_note, parse_note, read_note
 from myelin_core.packs import (
     LoadedPack,
@@ -10,8 +11,6 @@ from myelin_core.packs import (
     resolve_packs,
 )
 from myelin_core.schema import Domain, Frontmatter, Pack
-
-__version__ = "0.1.0a0"
 
 __all__ = [
     "Domain",

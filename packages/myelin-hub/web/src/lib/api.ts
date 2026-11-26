@@ -7,10 +7,28 @@ export class ApiError extends Error {
   constructor(message: string, status: number) { super(message); this.status = status; }
 }
 
-async function request<T>(method: string, url: string, body?: unknown, userClick = false, extra?: Record<string, string>): Promise<T> {
+/** Team mode (ADR-0016): the bearer token lives in sessionStorage only — per tab, gone when the tab closes, never in a cookie. */
+const TOKEN_KEY = "myelin.team.token";
+const teamToken = () => { try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; } };
+let asking: Promise<string | null> | null = null;
+/** A 401 means the Hub runs in team mode: ask once (shared by concurrent requests), keep for this tab. */
+const askToken = () => (asking ??= Promise.resolve().then(() => {
+  const t = window.prompt("이 Hub 는 팀 모드입니다. 발급받은 접근 토큰을 붙여 넣으세요.")?.trim() || null;
+  try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch { /* storage unavailable */ }
+  setTimeout(() => { asking = null; }, 0);
+  return t;
+}));
+
+async function request<T>(method: string, url: string, body?: unknown, userClick = false, extra?: Record<string, string>, retried = false): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(extra ?? {}) };
   if (userClick) headers[INTENT_HEADER] = "user-click";
+  const token = teamToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  if (res.status === 401 && !retried) {
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    if (await askToken()) return request<T>(method, url, body, userClick, extra, true);
+  }
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) throw new ApiError((data && data.detail) || `${method} ${url} → ${res.status}`, res.status);
@@ -18,6 +36,8 @@ async function request<T>(method: string, url: string, body?: unknown, userClick
 }
 
 /** Encode a Vault-relative path for use inside a URL path: each segment separately, so `#`, `?`, `%` in titles survive. */
+/** Product display name in one place (WBS 1.6 — the name is provisional). Identifiers such as the `X-Myelin-Intent` header stay as they are. */
+export const PRODUCT_NAME = "MYELIN";
 export const refPath = (rel: string) => rel.split("/").map(encodeURIComponent).join("/");
 export const get = <T,>(url: string) => request<T>("GET", url);
 /** Only call from an onClick handler: the header is the UI's promise that a human clicked. */

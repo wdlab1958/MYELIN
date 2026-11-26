@@ -2,7 +2,7 @@
 
 current_phase: P9
 status: awaiting_approval   # in_progress | gate_pending | awaiting_approval
-last_updated: 2026-11-21
+last_updated: 2026-11-26
 
 > **P8 Gate PASS → `phase-P8` · `v1.0.0` 태그.** 정본 Rev 2.0 의 구현 Phase 는 모두 끝났다(`docs/reports/P8.md` 회고). P7 은 사람 참여 Gate 2항목이 열린 상태(`gate_pending`, 태그 없음).
 > **P9 (Desktop 라인 기능 이식, Brian "1항으로 처리" 승인 2026-10-18)**: GitHub `main` 을 이 라인(`fable-main`)으로 확정하고, Desktop 구현에만 있던 기능을 이식했다 — 아래 P9 섹션. 이후 Desktop·Code 병행은 하지 않기로 함. **남은 사람 참여 항목**: ① P7 파일럿 기록(`scripts/pilot.py record`)과 피드백 리포트 → `make gate P=7` → `phase-P7` 태그 ② KIPRIS 국내 상표 직접 조회 결과를 `docs/reports/P8/naming-check.md` 에 기입 ③ (선택) 변리사 검토.
@@ -116,6 +116,18 @@ last_updated: 2026-11-21
 - [x] P9-T9 (2026-10-27) **사용자 가이드 v2.0.0** — `docs/guides/user-guide-v2.0/`(docx · pdf · xlsx 표 18개 · img 12장). 제품 v1.3.1 기준으로 v1.0 가이드를 갱신: 변경 요약 표(v1.0→v2.0), 읽음 확인 승격, 지표 9종·미엘린 강도·환류, 패치 미리보기/digest, 기밀 라우팅 장치(MYELIN_LLM=local · guard_read · pre-commit 훅), Commons push/PR·두 정체성, 도우미 챗봇, Obsidian Graph View, `--claude` opt-in 설치. Hub 스크린샷은 `make e2e` 로 재생성(`docs/reports/P6/`, 12 passed). 생성기 `gen_guide.py` 동봉(python-docx·openpyxl·Pillow, PDF 는 soffice). Brian 보강(3.4 Obsidian Graph View · 3.5 AiCarelink 그래프 그림) 반영 후 GitHub `main` 에 push(`c568e35`) — CI run 40468827503 **green**(check: ruff·mypy·pytest / gate: `make gate P=9` + Playwright e2e, 약 8분)
 - [x] P9-T10 (2026-11-21, v1.3.2) **Hub 에서 Domain 추가** (Brian 보고: 도우미가 안내한 'Add Domain'·'Create' 메뉴가 없음 → "Hub 에 버튼 구현") — `POST /api/domains {id, pack?}`(클릭 헤더, core `add_domain` 재사용, 건드린 경로만 1 commit `[myelin:add-domain] <ID>`, 직렬화·실패 시 전부 롤백, 404/409/422 fail-closed), `GET /api/packs` `domains[].configured`, Domain Packs 카드의 `+ Domain 추가 · <ID>` 버튼, 도우미 지식 정정(① 개인 Pack 저장 → ② 버튼, 없는 버튼 명시). **ADR-0015** · 위협 모델 T23 · API 테스트 3건 + 클릭 헤더 감사 · e2e 13번째 시나리오 — 1,295 passed · e2e 13 passed · `make gate P=9` PASS · formal 대응 검사 0 broken
 
+### P10 — One Cycle 선결 과제 (v1.4.0, 2026-11-26, 소유자 지시 "선결 과제로 남아 있는 부분도 모두 구현") — **커밋 전, 작업 트리에만 있음**
+- [x] P10-T1 (WBS 2.5.1) formal: MCP `mcp-config-revocation-stale` F1 수정을 브랜치 `wdproof/20261121-115639-myelin` 에서 반영(소스·회귀 테스트·TLA+·Lean) · F3 CLI `git add -A` → 건드린 경로만 커밋 · 후보 C2·C3·C5·C6 재현 후 수정 · run_all 31개 설정 · Lean 감사 2개 · 포인터 재정렬. **미수정**: 후보 C4·C7·C8, MCP 부수 발견 F2·F4
+- [x] P10-T2 (2.5.2) 버전 단일 원천 `myelin_core/_version.py` = 1.4.0 + `scripts/sync_version.py` + `tests/test_version.py`
+- [x] P10-T3 (2.5.3) A3 Pack 2종 v1.0 구조(용어 37/40 · 템플릿 9/10 · 인터뷰 27/26). **A3 컨설턴트 용어 확인은 사람의 일**
+- [x] P10-T4 (2.5.5) Hub Team 모드(선택) — ADR-0016, `team.py`, 테스트 39
+- [x] P10-T5 (2.5.5) 고객정보 가드 — ADR-0017, `infoguard.py`, `myelin guard scan`, 지침 `docs/guides/knowledge-management-policy.md`
+- [x] P10-T6 (2.5.4 · 1.6 준비물) `docs/guides/pilot-kit.md` · 표시 이름 상수 `myelin_core.product.PRODUCT_NAME`. **파일럿 수행·챔피언 지정·KIPRIS 조회는 사람의 일(미완료)**
+- [x] P10-T7 (3.6 · 3.5) One Cycle 인계 수신 — ADR-0018, `onecycle.py`, `myelin onecycle import-findings`, Pack `wdlab.onecycle`, `docs/onecycle/`
+- [x] P10-T8 공통: `THIRD_PARTY_LICENSES.md` · `docs/INSTALL.md` · `docs/RELEASE_READINESS.md` · README · CHANGELOG · 위협 모델 T24~T26
+- [x] 검증: 1,418 passed · 1 skipped · ruff · mypy(strict) · tsc. **미실행**: `make web`/e2e, `make gate`, CI(커밋·push 안 함)
+- [ ] 사람: 변경 검토 후 commit(`P10: …`) → `make web` · `make e2e` · `make gate P=9` → Hub/MCP 재시작
+
 ## Next
 - [ ] P7(사람): 파일럿 운영·기록 → `make gate P=7` → `git tag phase-P7`
 - [ ] P8(사람): KIPRIS 직접 조회 결과 기입(제9류·제42류), 필요 시 결합형 명칭(MYELIN KOS) 결정
@@ -126,7 +138,7 @@ last_updated: 2026-11-21
 - CI: **green** — github.com/wdlab1958/MYELIN `main` run 44285599369 (check + gate P=9 + e2e, 40c1d69, 2026-11-18) · `formal-verification` run 44285599066 (Lean trust audit · TLC three-config gate · W6 drift) 도 green. 직전 CI run 44282484680(f24742e)·43844042332(c29d83f) 는 `check` 실패 — f24742e 는 `formal/` 스크립트 ruff 오류 32건, 40c1d69 에서 정리. 이전 green: run 40468827503(c568e35, 2026-10-27)·39171277206(fc5ae4c)·39087153818(P=8). 기존 원격 main 은 `main-alt-2026-10-18` 브랜치에 보존.
 
 ## Decisions (→ ADR)
-- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27) · **ADR-0015** Hub 에서 Domain 추가 `POST /api/domains` (v1.3.2, 2026-11-21)
+- ADR-0001~0010 (변경 없음) · ADR-0011·0012 (v1.2.0) · ADR-0013 Hub 도움말 챗봇 (v1.3.0, 2026-10-19) · **ADR-0014** 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지, 코드만 재배포 (2026-10-27) · **ADR-0015** Hub 에서 Domain 추가 `POST /api/domains` (v1.3.2, 2026-11-21) · **ADR-0016** Hub Team 모드 · **ADR-0017** 고객정보 가드 · **ADR-0018** One Cycle 인계 수신 (v1.4.0, 2026-11-26)
 - P8 결정(기록): 위협 모델 High 2건(T08 Hub Host/Origin 검증, T09 정적 서빙 경로 이탈) 조치 + 회귀 테스트. 스크립트 인터프리터 실행은 Vault settings.json 에서 ask(T02 완화). 설치는 `scripts/install.sh`(런처 = `uv --directory <repo> run …`, 기존 파일 보존, 테마 .bak). 로컬 plugin marketplace(`.claude-plugin/marketplace.json`, 이름 `myelin-local`), plugin 버전 1.0.0. 이름 확인: 미국 "MYELIN" 소프트웨어 상표 선출원(심사 중)·주요 도메인 점유·GitHub `myelin` 개인 계정 사용 중 → 사내 사용은 MYELIN 유지, 대외 공개 시 결합형. "설치→첫 verified" 자동 측정 1초 미만(캐시된 uv 기준; 신규 환경은 네트워크 의존).
 
 ## Backlog (v1.1+)

@@ -4,9 +4,22 @@
 > Obsidian + Claude 기반 개인 지식 운영체계. 개인의 관심·경험을 재사용 가능한 지식으로 전환한다.
 
 정본 명세: [`docs/spec/MYELIN_Rev2.0.md`](docs/spec/MYELIN_Rev2.0.md) (WDLAB-MYELIN-SPEC Rev 2.0, 2026-10-18) · 원본 [`docs/spec/MYELIN_Rev2.0.docx`](docs/spec/MYELIN_Rev2.0.docx)
-상태: **v1.1.0** — 정본의 구현 Phase P0~P8 완료 + P9(Desktop 라인 기능 이식) (`phase-P0`~`phase-P8`, `v1.0.0` 태그). 남은 것은 사람 참여 항목과 운영(아래 "남은 일").
+상태: **v1.4.0** (2026-11-26) — 정본의 구현 Phase P0~P8 완료 + P9(Desktop 라인 기능 이식) + P10(One Cycle 선결 과제: 형식 검증 수정 반영 · Team 모드 · 고객정보 가드 · 인계 수신). git 태그는 `phase-P0`~`phase-P8`, `v1.0.0` 까지만 있다. 남은 것은 사람 참여 항목과 운영(아래 §11), 출하 점검표는 [`docs/RELEASE_READINESS.md`](docs/RELEASE_READINESS.md).
 
-## 🔬 형식 검증 (Formal Verification) — Oct.29, 2026
+> **위치** — MYELIN 은 고객에게 파는 상품이 아니다. One Cycle Dev. Framework 에서 생긴 정보 자산을 개발자·운영자가 관리하는 **개인 지식 관리 서비스**다. 고객 식별 정보·고객 코드·자격증명은 기록하지 않는다([지식 관리 지침](docs/guides/knowledge-management-policy.md)).
+
+## 🔬 형식 검증 (Formal Verification) — 현재 상태 (Nov.26, 2026)
+
+| Concern | 결과 |
+|---|---|
+| `hub-config-stale-cache` | F1·F2·F8 FIXED · **F3 FIXED (2026-11-26)** — CLI `add-domain` 이 건드린 경로만 커밋 · L2 |
+| `review-gate-promote-toctou` | F4 FIXED · L2 + **L3 (Lean 4)** |
+| `hub-pack-save-atomicity` · `hub-onboard-atomicity` | F5·F6·F7 FIXED · L2 |
+| `mcp-config-revocation-stale` | **F1 FIXED — 브랜치에만 있던 수정을 2026-11-26 작업 트리에 반영.** 설정 철회 뒤에도 MCP 서버가 초안을 만들고 confidential 본문을 내보내던 결함 · L2 + **L3 (Lean 4)** |
+
+미수정 CONFIRMED 0건. 2026-11-21 라운드의 의심 후보 C2·C3·C5·C6 은 재현 테스트 후 수정, C4·C7·C8 과 MCP 부수 발견 F2(도구 목록은 기동 시 결정)·F4(호출 안의 수 ms 창)는 **미수정**(기록). 2026-11-26 재실행: `formal/run_all.sh` 31개 설정 모두 기대값, `formal/lean_audit.sh` 2개 프로젝트 clean, 포인터 검사 0 broken. 모델은 유한 경계 안에서만 유효하다(경계 밖·추상화 안의 버그는 배제하지 않는다). 상세 [`formal/README.md`](formal/README.md).
+
+### 첫 라운드 — Oct.29, 2026
 
 WDLAB Unified Proof-Skills Standard v1.0(WDLAB-STD-VERIFY-001, proof-skills 0.1.1 · TLA+/TLC)을 적용했다. 산출물은 [`formal/`](formal/README.md), 보고서는 `~/ai_project/Proof-Skills/MYELIN_ProofSkills_Report_2026-10-29.docx`(사본 [`formal/reports/`](formal/reports/2026-10-29-hub-config-stale-cache.md)).
 
@@ -15,7 +28,7 @@ WDLAB Unified Proof-Skills Standard v1.0(WDLAB-STD-VERIFY-001, proof-skills 0.1.
 | Concern | [`hub-config-stale-cache`](formal/hub-config-stale-cache/SCOPE.md) — Hub 가 캐시한 `myelin.yaml` vs CLI `myelin add-domain` vs Settings 저장 (Backlog 항목) |
 | Verdict | **F1 FIXED** · F2 CONFIRMED(HITL) · F3 CONFIRMED(기록) — 모델 **BOUNDED-PASS (L2)**, 경계 `Doms={d1,d2}` 72 states/depth 7 · `{d1,d2,d3}` 432/depth 9, 신뢰 기반 TLC 2026.10.28 + 추상화 A1~A8(SCOPE.md). 경계 밖·추상화 안의 버그는 배제하지 않는다 |
 | F1 (수정) | Hub 가 기동 시 1회 읽은 `myelin.yaml` 로만 결정해 CLI 가 추가한 Domain 으로의 승격이 422 로 거부되고, Settings 저장이 옛 Domain 목록을 되써서 추가가 사라졌다 → `HubService._reload_if_changed`: 파일 바이트가 바뀌면 요청마다 재로드 (`service.py`, 재현 테스트 `packages/myelin-hub/api/tests/test_config_reload.py`) |
-| F2 / F3 (미수정) | `PUT /api/settings` 버전 검사 부재(GET→PUT 창, If-Match 제안) · CLI `add-domain` 의 `git add -A` 커밋 범위(ADR-0009 §4 위반) — `formal/hub-config-stale-cache/repro/` 스크립트로 재현, 수정안은 보고서 §3.2/§3.3 |
+| F2 / F3 (당시 미수정 → 이후 수정) | `PUT /api/settings` 버전 검사 부재 → 2026-11-18 If-Match 로 수정 · CLI `add-domain` 의 `git add -A` 커밋 범위(ADR-0009 §4 위반) → 2026-11-26 수정. 재현 스크립트 `formal/hub-config-stale-cache/repro/` 는 이제 exit 0 |
 | 실행 | `TLC_WORKERS=4 formal/run_all.sh` (3-config 게이트) · `.venv/bin/python -m pytest packages/myelin-hub/api/tests/test_config_reload.py -v` |
 
 ### W5 CI 회귀 가드 — Nov.16, 2026
@@ -42,7 +55,7 @@ WDLAB Unified Proof-Skills Standard v1.0(WDLAB-STD-VERIFY-001, proof-skills 0.1.
 | 제품 | 경로 | 내용 |
 |---|---|---|
 | **MYELIN Vault** | Vault 표준 §6 | Frontmatter v2(id/type/domain/status/origin/confidence/classification/share/source/created/reviewed/tags), 폴더 표준(`00_Inbox 10_Domains 20_Projects 30_Resources 40_IP 50_Journal 80_Outputs 90_System 99_Archive _patches .myelin`) |
-| **MYELIN Packs** | [`packs/`](packs/) | `myelin.core`(note type 9종 템플릿 + 공통 용어), `brian.physical-ai`(Reference, D1~D4, 인터뷰 질문 16), `a3.security-consulting`, `a3.incident-response`(Org). Pack 스키마·로더·의존성 해석·검증 |
+| **MYELIN Packs** | [`packs/`](packs/) | `myelin.core`(note type 9종 템플릿 + 공통 용어), `brian.physical-ai`(Reference, D1~D4, 인터뷰 질문 16), `a3.security-consulting`(용어 37·템플릿 9·인터뷰 27), `a3.incident-response`(용어 40·템플릿 10·인터뷰 26)(Org, v1.0 구조 — 용어는 A3 컨설턴트 확인 전), `wdlab.onecycle`(One Cycle 수신 Domain `LLMOPS`·`SSC`·`ARGUS`). Pack 스키마·로더·의존성 해석·검증 |
 | **MYELIN CLI** | [`packages/myelin-cli`](packages/myelin-cli) | `myelin init`(3+1 마법사) · `add-domain` · `doctor`(규칙 8종) · `stats`(§11.1) · `skills` · `interview-bank` · `publish` · `pack-propose` · `metrics` · `commons` |
 | **MYELIN for Claude Code** | [`plugin/`](plugin/) | Skill 7종 `/myelin:ingest distill interview review link compose ip-scan`, Fail-closed Guard(`guard_write.py`, `guard_bash.py`, 표준 라이브러리만), 로컬 marketplace |
 | **MYELIN MCP** | [`packages/myelin-mcp`](packages/myelin-mcp) | stdio 서버, 읽기 전용 기본(`search_notes get_note query_frontmatter list_domains vault_stats`), opt-in `write_draft`, 기밀 비노출 기본, SQLite FTS5 색인 |
@@ -88,7 +101,10 @@ CLI 로만: `myelin init --vault ~/Vaults/me` → Obsidian 에서 열기 → Vau
 | `myelin publish <note> [--check -y --push --pr]` | Commons 제안: 하드 게이트 → 비식별 스캔 → 확인 → `publish/<id>` 브랜치 커밋 |
 | `myelin pack-propose <dir>` · `myelin commons init\|add-pack\|registry` | Org Pack 제안 · Commons 골격/Registry |
 | `myelin metrics show\|send\|aggregate` | 익명 지표(opt-in) |
-| `myelin-mcp --vault <v>` · `myelin-hub --vault <v> [--port]` | MCP 서버 · Hub (localhost 전용) |
+| `myelin guard scan [경로…] [--vault --json --strict]` | 고객정보 가드: 자격증명·주민번호·고객명(BLOCK, exit 1) · 긴 코드 블록·IP·내부 URL(FLAG). 적중 내용은 가려서 출력 (ADR-0017) |
+| `myelin onecycle import-findings <file.json> [--vault --domain --dry-run --json]` | `onecycle.findings/v1` 의 finding 하나당 초안 하나를 `00_Inbox/ai-drafts` 에. 덮어쓰기 없음·멱등·가드 적용. 잘못된 파일 exit 2, 가드 차단 exit 1 (ADR-0018) |
+| `myelin-mcp --vault <v>` · `myelin-hub --vault <v> [--port]` | MCP 서버 · Hub (기본 localhost 전용·무인증) |
+| `myelin-hub --host <addr> --auth-file <yaml> --tls-cert/--tls-key \| --behind-tls-proxy` · `myelin-hub --new-token <name> [--role]` | Team 모드(선택): 토큰 인증·역할·기밀 미제공·접근 기록. 조건이 하나라도 빠지면 비-loopback 바인딩 거부 (ADR-0016) |
 
 Claude Code: `/myelin:ingest` `/myelin:distill` `/myelin:interview` (Level ≥ 1) · `/myelin:review` (1) · `/myelin:link` `/myelin:compose` (2) · `/myelin:ip-scan` (3, 사용자 호출 전용).
 
@@ -150,29 +166,39 @@ make perf · make ttfv · make phases · make schemas · make fixtures · make g
 | [0011](docs/adr/0011-confidential-routing-devices.md) | 기밀 라우팅 장치화: `MYELIN_LLM=local` 세션만 `40_IP/**`·confidential 접근, Read/Grep/Glob Guard, MCP 강제, Vault pre-commit 훅 |
 | [0012](docs/adr/0012-myelin-strength-and-reuse-metrics.md) | 미엘린 강도 0~3, 재사용 KPI 3종, Commons 인용 집계·top_contributors, Hub push/PR |
 | [0013](docs/adr/0013-hub-assistant.md) | Hub 도움말 챗봇 — 읽기 전용, 로컬 Ollama 전용(비-loopback 이면 기밀 제외), 지식 기반 폴백, 입력 가드 |
+| [0014](docs/adr/0014-public-repo-vault-isolation.md) | 공개 저장소와 개인 Vault·로컬 Commons 분리 — Vault/Commons 는 push 금지 |
+| [0015](docs/adr/0015-hub-add-domain.md) | Hub 에서 Domain 추가 `POST /api/domains` |
+| [0016](docs/adr/0016-hub-team-mode.md) | Hub Team 모드(선택) — 토큰 인증, read/write 역할과 경로 허용 목록, 기밀 미제공, 접근 기록, 비-loopback 바인딩 조건 |
+| [0017](docs/adr/0017-customer-information-guard.md) | 고객정보 가드 — 쓰기 전 결정적 검사(block/flag), 호출 경로, 고객명 목록 위치, fail-closed |
+| [0018](docs/adr/0018-onecycle-handoff.md) | One Cycle 인계 수신 — `source_platform` 초안, Pack `wdlab.onecycle`, 라우팅 규칙, findings 가져오기 |
 
 ## 9. 문서
 
+- 설치·운영: [**INSTALL**(사내·망분리 설치, 백업·복구, 업그레이드)](docs/INSTALL.md) · [출하 점검표](docs/RELEASE_READINESS.md) · [지식 관리 지침](docs/guides/knowledge-management-policy.md) · [One Cycle 인계 절차](docs/onecycle/HANDOFF.md) · [파일럿 키트](docs/guides/pilot-kit.md)
 - 가이드: [사용자](docs/guides/user-guide.md) · [관리자](docs/guides/admin-guide.md) · [Obsidian 연동](docs/guides/obsidian-setup.md) · [MCP 설정](docs/guides/mcp-setup.md) · [파일럿](docs/guides/pilot-guide.md) · [60분 워크숍](docs/guides/workshop-60min.md) · [Day 1 체크리스트](docs/guides/day1-checklist.md)
 - 스펙: [정본](docs/spec/MYELIN_Rev2.0.md) · [JSON Schema](docs/spec/schema/) · [Commons 구조](docs/spec/commons.md) · [컴포넌트 스펙](design/components.md)
 - 보안: [위협 모델(STRIDE)](docs/security/threat-model.md) · [이름 확인(상표·도메인·GitHub)](docs/reports/P8/naming-check.md)
 - 릴리스: [RELEASE_NOTES](docs/RELEASE_NOTES.md) · [CHANGELOG](CHANGELOG.md)
 
-## 10. 검증 요약 (v1.0.0)
+## 10. 검증 요약 (v1.4.0, 2026-11-26 측정)
 
-| 항목 | 값 |
-|---|---|
-| 테스트 | 406 (core 99% 커버리지) · Guard 차단 케이스 137 · Playwright e2e 4 · 성능 1 |
-| Gate | P0~P8 스크립트 고정, `make gate P=<n>` |
-| 성능 | 5,000 노트 검색 p95 17ms · 설치→첫 verified 0.5s(캐시 기준) |
-| 접근성 | 텍스트 쌍 13개 전부 ≥ 4.5:1, 네온 텍스트 0, 색 하드코딩 0 |
-| 보안 | STRIDE 21건, High 0 (2건 조치·회귀 테스트) |
+| 항목 | 값 | 측정 방법 |
+|---|---|---|
+| 테스트 | **1,418 passed · 1 skipped**(성능 벤치는 `MYELIN_PERF=1` 일 때만) | `.venv/bin/python -m pytest -q` (약 2분 20초). 이번 변경 전 1,295 |
+| 정적 검사 | ruff · ruff format · mypy(strict, 67 파일) 통과 | `ruff check` · `ruff format --check .` · `mypy` |
+| 형식 검증 | TLC 3-config 게이트 31개 설정 기대값 · Lean 2개 프로젝트 clean · 포인터 0 broken | `formal/run_all.sh` · `formal/lean_audit.sh` · `correspondence_check.py` |
+| Pack | 5개 검증(`myelin.core`·`brian.physical-ai`·`a3.*` 2·`wdlab.onecycle`) | `scripts/validate_packs.py` + 임시 Vault 에 `myelin add-domain` |
+| 이번에 다시 재지 않은 것 | Playwright e2e · 5,000 노트 성능 벤치 · 접근성(대비) 검사 · Phase Gate(`make gate`) | 이전 값은 `docs/reports/P4·P5·P6·P8.md` |
 
 ## 11. 알려진 제약 · 남은 일
 
-- 다크 모드 미지원(§8.3 가드레일 5) · Team 모드 인증 없음(Hub 는 localhost 전용) · Bash Guard 는 Vault 밖 스크립트·패키지 설치·네트워크 송신은 검사하지 않음(settings.json ask + 커밋 이력 사후 감사) · 비식별 스캔은 휴리스틱(챔피언 리뷰 2중) · MCP 기밀 노출은 소유자 opt-in.
+- 다크 모드 미지원(§8.3 가드레일 5) · Team 모드는 선택 기능이며 사용자 관리 화면·토큰 만료·SSO 가 없고 침투 시험을 하지 않았다(ADR-0016) · 고객정보 가드는 패턴 검사라 목록에 없는 고객명·형식 없는 비밀값은 잡지 못한다(ADR-0017, 사람의 검토가 1차 통제) · Hub 웹 UI 의 Team 토큰 입력·가드 확인 창은 타입 검사만 했고 e2e 로 확인하지 않았다 · 망분리 설치 절차는 실제 망분리 PC 에서 검증하지 않았다 · A3 Pack 2종의 용어는 A3 컨설턴트 확인 전 · 다섯 플랫폼의 실제 내보내기를 이어 돌린 통합 시험은 이 저장소에서 하지 않았다 · Bash Guard 는 Vault 밖 스크립트·패키지 설치·네트워크 송신은 검사하지 않음(settings.json ask + 커밋 이력 사후 감사) · 비식별 스캔은 휴리스틱(챔피언 리뷰 2중) · MCP 기밀 노출은 소유자 opt-in.
 - **사람 참여 항목**: P7 파일럿 5명 온보딩·피드백 기록(`scripts/pilot.py`) → `make gate P=7` → `phase-P7` 태그 · KIPRIS 국내 상표 직접 조회 결과 기입 · Commons 챔피언 지정 · 정본 §9.2 Rollout Wave 1·2.
 - 브랜드명 MYELIN 은 사내용 가칭(미국 동일 명칭 소프트웨어 상표 선출원 심사 중, 주요 도메인 점유). 대외 공개 시 결합형 `MYELIN KOS` 검토.
+
+## 12. 라이선스
+
+Apache License 2.0 — [`LICENSE`](LICENSE) · [`NOTICE`](NOTICE) (Copyright 2026 Brian (이원대), WDLAB). 상업적 이용이 가능한 공개 라이선스이며 다시 라이선스하지 않았다. 직접 의존성과 외부 도구의 라이선스는 [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)(직접 의존성 24개 중 copyleft·비상업 조건 0, 미확인 1). 이 문서들은 **법무 검토 전**이다.
 
 ---
 WDLAB · A3 Security · AI·ML·AX Research Division · 작성 Brian (Research Director, A3-AI WG) · 구현 Claude Code

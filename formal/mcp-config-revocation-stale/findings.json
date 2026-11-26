@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "project": "MYELIN",
+  "run_id": "20261121-115639-myelin",
+  "base_commit": "3690adae5a5f2a093d33e225cd2cd7c752ccd85c",
+  "generated_at": "2026-11-21T12:14:31+09:00",
+  "findings": [
+    {
+      "id": "F1",
+      "concern": "mcp-config-revocation-stale",
+      "title": "MCP 서버가 기동 시 캐시한 myelin.yaml 로 write_draft·expose_confidential 을 판정해, 디스크에 기록된 동의 철회 뒤에도 초안 생성과 confidential 본문 반출을 계속한다",
+      "severity": "high",
+      "property": "Inv_NoDraftAfterRevoke",
+      "trace_summary": "Open (cache=file={write:TRUE, expose:TRUE}, registered=TRUE) → Revoke(\"write\") (file.write=FALSE, cache.write=TRUE 유지) → Begin(c1, kind=write, revokedAtBegin=TRUE) → Check(c1) [cache.write=TRUE 로 허용] → Prepare(c1) → Release(c1) ⇒ leakedW=1 (Inv_NoDraftAfterRevoke 위반). 같은 모양으로 Revoke(\"expose\") → get_note/search_notes 가 Inv_NoConfidentialAfterRevoke 도 위반(MC_bug_p2.cfg).",
+      "trace": [
+        {
+          "action": "Open",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:59-62",
+          "effect": "serve()(server.py:162) → VaultService.open → Vault.open 이 myelin.yaml 을 한 번 읽어 self.vault.config 에 캐시: cache = file = {write:TRUE, expose:TRUE}; build_server 가 write_enabled 를 보고 write_draft 도구를 등록(server.py:127), registered=TRUE"
+        },
+        {
+          "action": "Revoke(\"write\")",
+          "code": "packages/myelin-hub/api/src/myelin_hub_api/service.py:834",
+          "effect": "다른 프로세스(Hub PUT /api/settings save_settings, CLI 또는 편집기)가 myelin.yaml 에 mcp.write_draft: false (또는 level: 0) 를 기록: file.write=FALSE. MCP 프로세스의 cache.write 는 TRUE 그대로"
+        },
+        {
+          "action": "Begin(c1)",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:47",
+          "effect": "write_draft 도구 호출이 _serialized 의 self._lock 획득: lock=c1, kind=write, revokedAtBegin[c1]=TRUE (철회가 이미 디스크에 있음)"
+        },
+        {
+          "action": "Check(c1)",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:232-235",
+          "effect": "if not self.write_enabled 가 캐시(service.py:83-84 self.vault.config.mcp.write_draft and level>=1)만 읽어 TRUE → 거부하지 않음, pc=prepare. 설정 재적재 경로가 없다"
+        },
+        {
+          "action": "Prepare(c1)",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:236-281",
+          "effect": "제목·타입 검증, 템플릿 읽기, 00_Inbox/ai-drafts mkdir — 정책과 무관한 I/O, pc=release"
+        },
+        {
+          "action": "Release(c1)",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:283-284",
+          "effect": "target.open(\"x\") 로 00_Inbox/ai-drafts/<title>.md 생성: released=1, leakedW=1 → Inv_NoDraftAfterRevoke 위반"
+        },
+        {
+          "action": "End(c1)",
+          "code": "packages/myelin-mcp/src/myelin_mcp/service.py:47-48",
+          "effect": "락 해제 후 stdio 로 성공 응답: lock=NoCall, pc=done"
+        }
+      ],
+      "code_mapping": [
+        "packages/myelin-mcp/src/myelin_mcp/service.py:59-62",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:65-68",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:82-89",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:126-138",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:142-156",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:232-235",
+        "packages/myelin-mcp/src/myelin_mcp/service.py:283-284",
+        "packages/myelin-mcp/src/myelin_mcp/server.py:127-148",
+        "packages/myelin-mcp/src/myelin_mcp/server.py:160-167",
+        "packages/myelin-hub/api/src/myelin_hub_api/service.py:813-848"
+      ],
+      "root_cause": {
+        "layer": "system",
+        "bug_class": "check-then-act",
+        "mechanism": "VaultService 는 기동 시 Vault.open 으로 myelin.yaml 을 한 번만 읽어 self.vault.config 에 보관하고(service.py:59-62), 권한 판정 프로퍼티 write_enabled(service.py:83-84)와 expose_confidential(service.py:66-68)·_hidden(service.py:86-89)은 이 프로세스 메모리 사본만 본다. 도구 호출(search_notes·get_note·write_draft 등)은 매번 index.refresh() 로 노트 색인은 갱신하지만 설정 파일은 다시 읽지 않는다. myelin.yaml 은 Hub·CLI·편집기가 함께 쓰는 공유 파일인데, '권한 확인(Check)'이 기동 시점으로 고정되어 있어 그 뒤의 철회와 실제 쓰기/반출(Act) 사이에 프로세스 수명 전체만큼의 TOCTOU 창이 생긴다. Hub 는 같은 문제를 _reload_if_changed(바이트 비교 재적재, myelin_hub_api/service.py:269-282)로 고쳤지만 MCP 쪽에는 대응 경로가 없다.",
+        "trigger": "사용자가 Claude Code 세션(MCP 서버 장수명 stdio 프로세스)을 열어 둔 채 Hub Settings 에서 mcp.write_draft 를 끄거나 level 을 0 으로 내리거나 mcp.expose_confidential 을 끄고 저장한다(또는 CLI/편집기로 myelin.yaml 을 수정한다). 특별한 타이밍이 필요 없고, 이후 세션이 재기동될 때까지(수 시간~수 일) 모든 write_draft 호출이 초안을 만들고, 로컬 세션의 get_note/search_notes/query_frontmatter 가 confidential·40_IP 본문과 경로를 계속 응답에 담는다. 철회 저장 성공 메시지와 git 커밋이 남아 사용자는 철회가 적용됐다고 믿는다.",
+        "location": "packages/myelin-mcp/src/myelin_mcp/service.py:59-89",
+        "why_tests_missed": "기존 테스트(test_mcp_adversarial.py:235-251, test_service.py:16-48, 108-123)는 모두 정책을 myelin.yaml 에 먼저 써 둔 뒤 VaultService.open 을 호출해, '기동 시점 설정이 올바르게 적용되는가'만 검사한다. 서비스가 열린 뒤 다른 프로세스가 설정을 바꾸는 순서(Open → Revoke → 호출)를 만드는 테스트가 없어서, 캐시가 갱신되지 않는다는 사실이 드러나지 않았다. Hub 쪽 같은 결함(hub-config-stale-cache F1)을 고칠 때도 범위가 HubService 로 한정되었다.",
+        "pattern": "consent-revocation (stale authorization cache / TOCTOU)"
+      },
+      "narrative": "MYELIN 의 MCP 서버는 Claude Code 세션이 시작될 때 한 번 떠서 세션이 끝날 때까지 살아 있는 별도 프로세스다. 이 서버는 시작할 때 myelin.yaml 을 읽어 'AI 초안 쓰기 허용(mcp.write_draft·level)'과 'confidential 노출 허용(mcp.expose_confidential)'을 메모리에 저장해 두고, 이후 모든 도구 호출에서 그 메모리 값만 확인한다. 노트 색인은 호출마다 새로 고치지만 설정 파일은 다시 읽지 않는다. 그래서 사용자가 Hub Settings 화면에서 초안 쓰기나 confidential 노출을 끄고 저장(커밋까지 성공)해도, 이미 떠 있는 MCP 서버는 그 사실을 모른 채 00_Inbox/ai-drafts 에 계속 초안을 만들고 confidential·40_IP 노트 본문을 LLM 컨텍스트로 계속 내보낸다. 이 상태는 세션을 재시작할 때까지 이어지며, 한 번 내보낸 본문은 되돌릴 수 없다. 재현 테스트(packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py)는 서비스를 연 뒤 myelin.yaml 에 철회를 기록하고 도구를 호출하는 순서만으로 두 위반을 결정적으로 보여 준다. Hub 는 같은 문제를 '결정 전에 myelin.yaml 바이트를 비교해 바뀌었으면 다시 읽기'로 이미 고쳤고, MCP 서비스에도 같은 재적재(실패 시 권한 거부)를 락 안에서 수행해야 한다.",
+      "verdict": "FIXED",
+      "level_achieved": "L3",
+      "bounds": {
+        "Calls": 2,
+        "Caps": 2,
+        "states": 919,
+        "generated": 1555,
+        "depth": 15
+      },
+      "derived_from": "consent-revocation",
+      "trust_base": [
+        "TLC 2026.10.28.014557 (rev: 56d37a9)",
+        "Lean 4.34.0 kernel",
+        "the frozen property statements (PROPERTIES.md)",
+        "model↔code correspondence (CORRESPONDENCE.md + reproduction test)"
+      ],
+      "evidence": [
+        "evidence/lean_audit.log",
+        "evidence/mutation_code.log",
+        "evidence/regression.log",
+        "evidence/test_after.log",
+        "evidence/test_before.log",
+        "evidence/tlc_MC.log",
+        "evidence/tlc_MC_3.log",
+        "evidence/tlc_MC_3_fixed.log",
+        "evidence/tlc_MC_bug.log",
+        "evidence/tlc_MC_bug_fixed.log",
+        "evidence/tlc_MC_bug_p2.log",
+        "evidence/tlc_MC_bug_p2_fixed.log",
+        "evidence/tlc_MC_fixed.log",
+        "evidence/tlc_MC_sanity.log",
+        "evidence/tlc_MC_sanity_fixed.log"
+      ],
+      "hitl": [
+        "G2:property-freeze:pending",
+        "G7:non-obvious-fix:pending"
+      ],
+      "project": "MYELIN",
+      "risk_domain": "other",
+      "reproduction": {
+        "tests": [
+          "packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py"
+        ],
+        "expect": "fail",
+        "verified": true,
+        "log": "evidence/test_before.log",
+        "fails_before_fix": true,
+        "passes_after_fix": true
+      },
+      "fix": {
+        "outcome": "applied",
+        "applied": true,
+        "exported": true,
+        "patch": "evidence/patches/F1-mcp-config-revocation-stale.diff",
+        "files": [
+          "packages/myelin-mcp/src/myelin_mcp/service.py"
+        ],
+        "summary": "packages/myelin-mcp/src/myelin_mcp/service.py: VaultService 가 기동 시 적재한 myelin.yaml 바이트(_config_bytes)를 기억하고, _serialized 래퍼가 서비스 락을 잡은 직후(도구 본문 실행 전) _reload_if_changed() 를 호출한다. 디스크 바이트가 마지막 적재본과 다르면 Vault.open 으로 설정을 다시 읽어 self.vault 와 self.index.vault 를 교체한다(Hub F1 _reload_if_changed 와 같은 방식, mtime 이 아닌 바이트 비교). 재적재가 ConfigError(파일 없음·부분 쓰기·잘못된 YAML/스키마)면 이전 권한을 유지하지 않고 MCPError 로 그 호출을 거부하며 _config_bytes 를 None 으로 지워 다음 호출에서도 다시 검사한다(fail-closed, SCOPE A3). 모델의 FIX=TRUE 분기(Check 시 cache' = file 후 디스크 값으로 판정)와 일치하므로 Spec.tla 는 바꾸지 않았다.",
+        "behavior_change_scope": "MCP 서버 기동 후 다른 프로세스(Hub PUT /api/settings, CLI, 편집기)가 myelin.yaml 을 바꾼 경우에만 동작이 달라진다: (1) mcp.write_draft:false 또는 level:0 이 기록된 뒤 시작된 write_draft 호출은 MCPError 로 거부되고 초안 파일을 만들지 않는다; (2) mcp.expose_confidential:false 가 기록된 뒤 시작된 search_notes/get_note/query_frontmatter/역링크는 confidential·40_IP 를 숨기고 본문을 REDACTED 로 돌려준다; (3) 반대로 기동 후 허용/도메인/레벨 변경도 다음 호출부터 반영된다(list_domains·write_draft 도메인 검증 포함, 단 write_draft 도구 등록 목록은 여전히 기동 시 기준); (4) 기동 후 myelin.yaml 이 삭제되거나 무효가 되면 모든 도구 호출이 MCPError 로 거부된다(이전에는 기동 시 사본으로 계속 동작). 파일이 바뀌지 않은 경우의 동작과 공개 함수 시그니처는 그대로이며, 호출마다 myelin.yaml 을 한 번 read_bytes 하는 비용이 추가된다.",
+        "alternatives": [
+          "mtime/size 비교로 재적재 — 같은 tick 안의 편집을 놓칠 수 있어 바이트 비교를 택함(Hub F1 과 동일 근거)",
+          "재적재 실패 시 이전 캐시 유지 — A3 가 금지하는 fail-open, 부분 쓰기 창에서 철회를 무시하게 됨",
+          "재적재 실패 시 권한만 FALSE 로 강등하고 다른 도구는 계속 허용 — 더 가용성이 높지만 config 없는 상태의 의미를 따로 정의해야 해서 전체 거부(fail-closed)를 택함",
+          "inotify/watchdog 파일 감시 — 의존성 추가와 이벤트 지연 창이 남아 호출 진입 시 동기 검사보다 약함",
+          "write_draft 도구 등록 목록도 갱신(tools/list_changed 알림) — ADR-0007 '도구 자체가 없다' 문구와 맞지만 범위 밖(side finding)",
+          "판정 지점(write_enabled/expose_confidential 프로퍼티)에서만 매번 디스크를 읽기 — 한 호출 안에서 판정마다 다른 설정을 볼 수 있어 호출 단위 일관성이 깨짐"
+        ]
+      },
+      "mutation_check": {
+        "model": "MC_bug.cfg (fix OFF) still violates the property after the fix",
+        "code": "evidence/mutation_code.log"
+      }
+    }
+  ],
+  "side_findings": [
+    {
+      "id": "F2",
+      "title": "write_draft 도구 등록이 기동 시 1회 결정되어, 철회 후에도 도구 목록에 남는다(ADR-0007 '도구 자체가 없다'와 불일치)",
+      "location": "packages/myelin-mcp/src/myelin_mcp/server.py:127",
+      "note": "F1 을 호출 시 재적재로 고쳐도 등록 목록은 기동 시 기준이라, 철회 뒤 도구는 보이지만 호출이 거부된다. 안전성은 유지되나 ADR 문구와 다르며 tools/list_changed 알림도 없다. 반대로 기동 후 허용으로 바꾼 경우 재기동 전에는 도구가 나타나지 않는다. 검증하지 않음.",
+      "severity": "low"
+    },
+    {
+      "id": "F3",
+      "title": "write_draft 의 Domain 검증과 list_domains 가 캐시된 config 를 사용해, 기동 뒤 추가·삭제된 Domain 을 반영하지 않는다",
+      "location": "packages/myelin-mcp/src/myelin_mcp/service.py:245-247",
+      "note": "self.vault.config.domains.all_ids(245-247)와 list_domains(184-210)의 level·domains·packs 도 같은 기동 시 캐시를 본다. 기동 후 myelin add-domain 으로 추가된 Domain 으로의 초안 쓰기가 거부되고, list_domains 는 옛 목록·옛 level 을 보고한다. 권한 철회와 같은 원인이지만 동결 속성 밖이라 검증하지 않음.",
+      "severity": "low"
+    },
+    {
+      "id": "F4",
+      "title": "철회(Check)와 반출(Release) 사이 같은 호출 안의 수 ms 창은 fix 후에도 남는다",
+      "location": "packages/myelin-mcp/src/myelin_mcp/service.py:142-155",
+      "note": "설정 파일 읽기와 SQLite 본문 읽기를 프로세스 간 원자적으로 묶을 수 없어, 호출이 락을 잡은 뒤 끼어든 철회는 그 호출에는 반영되지 않는다(모델 가정 A5 로 위반에서 제외). 실질 위험은 낮다. 검증하지 않음.",
+      "severity": "low"
+    }
+  ],
+  "applied_to_main_worktree": {
+    "date": "2026-11-26",
+    "from_branch": "wdproof/20261121-115639-myelin",
+    "note": "source + regression test + model/Lean evidence applied to the working tree of main (uncommitted); three-config gate and Lean audit re-run: evidence/run_all_2026-11-26.log, evidence/lean_audit_2026-11-26.log",
+    "side_findings": {
+      "F2": "not fixed (tool list is decided at start-up; calls are refused — safe)",
+      "F3": "resolved by the per-call reload (test_domain_list_follows_the_file_too)",
+      "F4": "not fixed (inherent ms window, SCOPE A5)"
+    }
+  }
+}

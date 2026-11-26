@@ -15,12 +15,13 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
+from myelin_core.product import PRODUCT_NAME, PRODUCT_TAGLINE
 from myelin_mcp import __version__
 from myelin_mcp.service import MCPError, VaultService
 
 # ADR-0011 §3: an EXTERNAL process must not even advertise that confidential content exists.
 INSTRUCTIONS = (
-    "MYELIN Personal Knowledge OS — read-only access to one Obsidian Vault. "
+    f"{PRODUCT_NAME} {PRODUCT_TAGLINE} — read-only access to one Obsidian Vault. "
     "Notes have Frontmatter v2 (id/type/domain/status/origin/classification). "
     "status: verified notes are human-approved; origin: claude + status: draft are AI drafts. "
     "Never claim to have modified the Vault: only write_draft (if present) creates files, and only "

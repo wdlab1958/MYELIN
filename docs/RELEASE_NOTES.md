@@ -38,7 +38,7 @@ Personal Knowledge OS — powered by Obsidian + Claude. 정본 `docs/spec/MYELIN
 
 ## 알려진 제약
 - **다크 모드 미지원** (정본 §8.3 가드레일 5). 토큰 `modes` 만 예약.
-- **Team 모드 인증 없음** — Hub 는 localhost 전용. 공유 호스트에서 띄우지 말 것.
+- **Team 모드는 선택 기능(v1.4.0, ADR-0016)** — 기본은 localhost 전용·무인증이며 공유 호스트에서 띄우지 말 것. Team 모드에는 사용자 관리 화면·토큰 만료·SSO 가 없다.
 - **Bash Guard 의 범위는 Vault 쓰기 정책이다** — Vault 내부 스크립트 실행·stdin 스크립트·`find -delete`·`curl -o` 등은 차단하지만(v1.1.1), Vault 밖 스크립트·패키지 설치·네트워크 송신(`curl -T`, `scp`)은 검사하지 않는다. settings.json 에서 `bash/sh/perl/ruby/curl/wget` 은 ask. 커밋 이력으로 사후 감사.
 - **비식별 스캔은 휴리스틱** — 별명·프로젝트 코드는 `deid.yaml` 에 등록해야 잡힌다. 챔피언 PR 리뷰가 2차 통제.
 - **MCP 기밀 노출은 소유자 opt-in 이며 로컬 프로세스(`MYELIN_LLM=local`)에서만 유효** — 외부 세션에서는 무시된다(v1.2.0). 잔여 위험(40_IP 밖 confidential 제목, `.myelin/index.db` 캐시, Vault 밖 스크립트)은 ADR-0011.

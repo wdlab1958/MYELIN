@@ -1,0 +1,84 @@
+{
+  "candidates": [
+    {
+      "id": "C1",
+      "title": "mcp-config-revocation-stale — MCP 서버가 기동 시 읽은 myelin.yaml 로 write_draft 허용·confidential 노출을 판정해, Hub Settings 에서 철회한 동의가 반영되지 않는다",
+      "location": "packages/myelin-mcp/src/myelin_mcp/service.py:59-84",
+      "bug_class": "check-then-act",
+      "blast_radius": "H",
+      "concurrency": "H",
+      "pattern": "consent-revocation",
+      "rationale": "VaultService.open(server.py:160-167)이 Vault.open 으로 설정을 한 번 읽고, write_enabled·expose_confidential(service.py:59-84)은 이 캐시만 본다. search_notes/get_note(service.py:116-168)와 write_draft(service.py:220-292)는 매 호출마다 index 는 refresh 하지만 설정은 재로드하지 않는다. 사용자가 Hub Settings 에서 mcp.write_draft=false·level=0·expose_confidential=false 로 저장(커밋)해도, 몇 시간씩 떠 있는 Claude Code 세션의 MCP 서버는 초안 쓰기를 계속 허용하고 confidential/40_IP 본문을 외부 LLM 컨텍스트로 계속 반출한다. 반출은 되돌릴 수 없고(blast H), 철회는 일상 조작이며 MCP 는 별도 장수명 프로세스라 특별한 타이밍 없이 성립한다(conc. H). HubService 는 같은 결함을 F1(바이트 비교 재로드)로 고쳤고, 이전 라운드 SCOPE 가 MCP 쪽을 후속 concern 으로 지목했다. consent-revocation 의 Inv_NoReleaseAfterRevoke 에 직접 대응한다."
+    },
+    {
+      "id": "C2",
+      "title": "hub-add-domain-stale-vault — Hub add_domain 이 _mutation 진입 전에 잡은 Vault 를 core add_domain 에 넘겨, 그 사이 CLI 가 추가한 Domain 을 myelin.yaml 에서 지운다",
+      "location": "packages/myelin-hub/api/src/myelin_hub_api/service.py:926-1014",
+      "bug_class": "lost-update",
+      "blast_radius": "H",
+      "concurrency": "M",
+      "pattern": "lease-fencing",
+      "rationale": "v = self._v() 후 discover_packs 등 파일 I/O 를 거쳐 _mutation 이 self._v() 를 다시 호출한다. 그 사이 myelin.yaml 이 바뀌면 _mutation 은 새 바이트를 스냅샷하고 self.vault 를 교체하지만, core add_domain(scaffold.py:277-360)은 옛 v.config 에 Domain 하나를 더한 전체 설정을 dump 해 덮어쓴다 — CLI myelin add-domain 의 추가가 사라지고 10_Domains/<D>/_MOC.md 만 남는다(F1 과 같은 lost update 의 새 경로). 프로세스 간 잠금이 없어 core 내부 read→write 창도 남는다. 설정 바이트를 fencing 버전으로 삼아 쓰기 직전 비교해야 한다. 창이 ms 수준이고 git 이력에서 복구 가능해 C1 아래."
+    },
+    {
+      "id": "C3",
+      "title": "commons-publish-base-branch — 직렬화되지 않은 Commons 게시가 다른 게시의 publish/<id> 브랜치를 base 로 읽어 PR 에 남의 노트를 섞고 clone 을 엉뚱한 브랜치에 남긴다",
+      "location": "packages/myelin-core/src/myelin_core/commons.py:319-404",
+      "bug_class": "race",
+      "blast_radius": "M",
+      "concurrency": "M",
+      "pattern": "",
+      "rationale": "HubService.commons_publish(service.py:1278-1315)는 @_serialised 가 아니고 FastAPI 스레드풀에서 동시에 돈다. publish_note 는 base=rev-parse --abbrev-ref HEAD 를 읽고 checkout -b publish/<id> 후 finally 에서 base 로 돌아간다. A 가 publish/X 에 있는 동안 B 가 base 를 읽으면 publish/Y 가 X 의 커밋을 포함하고(Y 의 PR 에 X 노트 반출), B 의 finally 가 clone 을 publish/X 에 남겨 이후 모든 게시가 오염된다. Commons 는 조직 공유 저장소지만 PR 리뷰에서 걸러질 여지가 있어 M."
+    },
+    {
+      "id": "C4",
+      "title": "hub-mutation-rollback-clobber — _mutation 실패 복원이 본문 실행 중 다른 프로세스가 쓴 내용을 스냅샷으로 덮는다",
+      "location": "packages/myelin-hub/api/src/myelin_hub_api/service.py:305-339",
+      "bug_class": "lost-update",
+      "blast_radius": "M",
+      "concurrency": "L",
+      "pattern": "",
+      "rationale": "실패 경로에서 snapshot 바이트를 조건 없이 write_bytes 한다. 본문(git commit 등 수백 ms) 도중 CLI·Obsidian 이 myelin.yaml 이나 노트를 바꿨다면 그 쓰기가 사라진다. 실패(커밋 거부 등)와 외부 쓰기가 겹쳐야 하므로 conc. L."
+    },
+    {
+      "id": "C5",
+      "title": "promote-dest-check-then-write — promote 가 dest.exists() 검사 뒤 write_text 로 써서, 그 사이 생긴 같은 이름의 사람 노트를 덮는다",
+      "location": "packages/myelin-hub/api/src/myelin_hub_api/service.py:699-713",
+      "bug_class": "check-then-act",
+      "blast_radius": "M",
+      "concurrency": "L",
+      "pattern": "hitl-approval-gate",
+      "rationale": "dest.exists() → _mutation 스냅샷 → dest.write_text 순서이며 open('x') 같은 원자적 생성이 아니다. Obsidian 에서 같은 파일명 노트를 그 창에 만들면 덮인다(커밋에는 남지 않음). 창이 수 ms 라 L."
+    },
+    {
+      "id": "C6",
+      "title": "index-refresh-signature — 색인 갱신이 (mtime_ns, size) 서명만 비교해 같은 tick·같은 크기 재작성을 놓친다",
+      "location": "packages/myelin-core/src/myelin_core/index.py:303-349",
+      "bug_class": "dataflow-loss",
+      "blast_radius": "M",
+      "concurrency": "L",
+      "pattern": "",
+      "rationale": "classification 같은 frontmatter 값을 같은 길이로 바꾼 재작성이 mtime 해상도 안에서 일어나면 색인은 unchanged 로 판단해 옛 행을 유지한다. MCP search 의 exclude_confidential 필터가 옛 classification 을 볼 수 있다. 파일시스템 해상도·동일 크기 조건이 필요해 L."
+    },
+    {
+      "id": "C7",
+      "title": "reload-drops-index-under-readers — myelin.yaml 이 순간적으로 파싱 불가일 때 reload 가 공유 SQLite 연결을 닫아 동시 질의가 500 으로 끝난다",
+      "location": "packages/myelin-hub/api/src/myelin_hub_api/service.py:235-261",
+      "bug_class": "race",
+      "blast_radius": "L",
+      "concurrency": "L",
+      "pattern": "",
+      "rationale": "다른 프로세스의 truncate→write 사이에 _reload_if_changed 가 걸리면 ConfigError → _drop_index() 가 index.close() 를 호출한다. 다른 스레드의 질의는 닫힌 연결에서 예외. 다음 요청에서 회복되므로 L."
+    },
+    {
+      "id": "C8",
+      "title": "add-domain-rollback-residue — Hub add_domain 실패 롤백이 .obsidian/ 디렉터리 생성을 되돌리지 않는다",
+      "location": "packages/myelin-hub/api/src/myelin_hub_api/service.py:994-1011",
+      "bug_class": "other",
+      "blast_radius": "L",
+      "concurrency": "L",
+      "pattern": "",
+      "rationale": "롤백은 스냅샷 파일·새 템플릿·빈 MOC 디렉터리를 되돌리지만 ensure_obsidian_config 의 mkdir(.obsidian) 은 남는다. 빈 디렉터리일 뿐 데이터 손실·다음 시도 차단은 없다."
+    }
+  ]
+}

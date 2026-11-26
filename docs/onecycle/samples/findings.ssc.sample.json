@@ -1,0 +1,45 @@
+{
+  "schema": "onecycle.findings/v1",
+  "source": {
+    "platform": "ssc",
+    "version": "0.0.0-sample",
+    "run_id": "assess-sample-001",
+    "generated_at": "2026-11-26T09:00:00+09:00"
+  },
+  "subject": {
+    "name": "sample-web-portal",
+    "environment": "demo"
+  },
+  "findings": [
+    {
+      "id": "ssc:assess-sample-001/A.8.5",
+      "title": "관리자 화면에 다중 인증이 없다",
+      "description": "관리자 로그인에 추가 인증 수단이 적용되지 않았다. 가상의 표본이다.",
+      "category": "security",
+      "severity": "high",
+      "status": "open",
+      "simulated": true,
+      "evidence": [
+        {
+          "kind": "scan",
+          "ref": "reports/assess-sample-001/auth.md"
+        }
+      ],
+      "location": {
+        "component": "admin-console"
+      },
+      "recommendation": "관리자 계정에 다중 인증을 적용하고 이행 후 재평가한다.",
+      "links": {
+        "iso27001": [
+          "A.8.5"
+        ],
+        "mitre": [
+          "TA0006"
+        ],
+        "upstream": [
+          "llmops:diag-sample-001/prompt-injection"
+        ]
+      }
+    }
+  ]
+}

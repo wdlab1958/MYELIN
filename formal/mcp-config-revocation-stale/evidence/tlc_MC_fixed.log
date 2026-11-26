@@ -1,0 +1,35 @@
+TLC2 Version 2026.10.28.014557 (rev: 56d37a9)
+Running breadth-first search Model-Checking with fp 84 and seed -8608561080191470745 with 2 workers on 28 cores with 27305MB heap and 64MB offheap memory [pid: 1857919] (Linux 6.14.0-37-generic amd64, Ubuntu 21.0.13.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu-02/.wdproof/work/20261121-115639-myelin/formal/mcp-config-revocation-stale/tla/Properties.tla
+Parsing file /home/ubuntu-02/.wdproof/work/20261121-115639-myelin/formal/mcp-config-revocation-stale/tla/Spec.tla
+Parsing file /tmp/tlc-9153999912344264308/_TLCTrace.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-9153999912344264308/Naturals.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-9153999912344264308/FiniteSets.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-9153999912344264308/Sequences.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-9153999912344264308/TLC.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-9153999912344264308/TLCExt.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Parsing file /tmp/tlc-9153999912344264308/Integers.tla (jar:file:/home/ubuntu-02/.cache/proof-skills/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Semantic processing of module Naturals
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module Spec
+Semantic processing of module TLC
+Semantic processing of module Integers
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module Properties
+Linting of module Spec
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module Properties
+Starting... (2026-11-21 12:12:48)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-21 12:12:48.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 3.2E-14
+1555 states generated, 919 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 15.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 6 and the 95th percentile is 2).
+Finished in 00s at (2026-11-21 12:12:48)

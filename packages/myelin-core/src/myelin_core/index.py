@@ -319,7 +319,10 @@ class VaultIndex:
                 except OSError:
                     continue  # vanished between walk and stat → dropped as "removed" below
                 seen.add(rel)
-                sig = (st.st_mtime_ns, st.st_size)
+                # ctime moves on every content write and cannot be reset by utime(), so a
+                # same-size rewrite that keeps mtime is still seen (formal candidate C6: a stale
+                # row would keep an old classification/status). max() keeps the two-column schema.
+                sig = (max(st.st_mtime_ns, st.st_ctime_ns), st.st_size)
                 if known.get(rel) == sig or known_err.get(rel) == sig:
                     unchanged += 1
                     continue

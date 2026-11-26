@@ -1,3 +1,5 @@
 """MYELIN CLI: init / add-domain / doctor / stats"""
 
-__version__ = "0.1.0a0"
+from myelin_core._version import __version__
+
+__all__ = ["__version__"]

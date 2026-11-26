@@ -1,0 +1,40 @@
+{
+  "schema": "onecycle.findings/v1",
+  "source": {
+    "platform": "proof-skills",
+    "version": "0.0.0-sample",
+    "run_id": "20261126-sample",
+    "generated_at": "2026-11-26T09:00:00+09:00"
+  },
+  "subject": {
+    "name": "sample-project",
+    "commit": "0000000"
+  },
+  "findings": [
+    {
+      "id": "proof-skills:20261126-sample/F1",
+      "title": "설정 철회 뒤에도 옛 권한으로 판정한다",
+      "description": "기동 시 읽은 설정 사본으로 권한을 판정해 철회가 반영되지 않는 check-then-act 결함. 표본이다.",
+      "category": "formal",
+      "severity": "high",
+      "status": "fixed",
+      "simulated": true,
+      "evidence": [
+        {
+          "kind": "tlc_log",
+          "ref": "evidence/tlc_MC_bug.log"
+        },
+        {
+          "kind": "test",
+          "ref": "tests/test_revocation.py"
+        }
+      ],
+      "location": {
+        "file": "service.py",
+        "line": 47,
+        "component": "policy"
+      },
+      "recommendation": "판정 직전에 설정을 다시 읽는다."
+    }
+  ]
+}

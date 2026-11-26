@@ -1,0 +1,18 @@
+{
+  "code_matches": "bug",
+  "fix_toggle": "FIX",
+  "bounds": {"Calls": 2, "Caps": 2},
+  "abstractions": [
+    "A1: myelin.yaml 설정을 권한 2비트로 축약 — write = mcp.write_draft ∧ level≥1, expose = mcp.expose_confidential",
+    "A2: is_local_session() = TRUE 고정 (MYELIN_LLM 은 프로세스 수명 동안 불변)",
+    "A3: 철회(Revoke)는 원자적 1 action; truncate+write 사이의 부분 파일 창은 모델 밖이며 fix 는 ConfigError 시 fail-closed 라고 가정",
+    "A4: 권한은 TRUE→FALSE 단조(재허용 없음)",
+    "A5: 위반 판정은 Begin(락 획득) 시점의 디스크 권한 기준 — Check~Release 사이의 철회는 위반으로 세지 않음",
+    "A6: confidential 노트 분류·경로 고정",
+    "A7: MCP 프로세스 1개, 호출은 _serialized RLock 으로 직렬화(lock 변수)",
+    "A8: Open(재기동)은 lock 이 비어 있을 때 언제든 가능, 공정성 없음",
+    "A9: Release 이후(stdio 응답 이후)는 범위 밖",
+    "A10: 도구를 write / expose 두 종류로 축약; 입력 검증 실패와 Prepare 내부 I/O 는 한 action 으로 묶음"
+  ],
+  "trace_summary": "Open (cache=file={write:TRUE,expose:TRUE}, registered=TRUE) → Revoke(\"write\") (file.write=FALSE, cache.write 는 TRUE 유지) → Begin(c1, kind=write, revokedAtBegin=TRUE) → Check(c1) [FIX=FALSE: cache.write=TRUE 로 허용] → Prepare(c1) → Release(c1) (target.open(\"x\") 로 초안 생성) ⇒ leakedW = 1, Inv_NoDraftAfterRevoke 위반. expose 도 같은 모양으로 Inv_NoConfidentialAfterRevoke 위반(MC_bug_p2.cfg)."
+}

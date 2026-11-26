@@ -1,0 +1,34 @@
+formal/run_all.sh — TLC Version 2026.10.28.014557 · workers=2
+  ok    hub-config-stale-cache     MC           exit 0   expected 0   72 distinct states
+  ok    hub-config-stale-cache     MC_3         exit 0   expected 0   432 distinct states
+  ok    hub-config-stale-cache     MC_bug       exit 12  expected 12  7 distinct states
+  ok    hub-config-stale-cache     MC_bug_p2    exit 12  expected 12  28 distinct states
+  ok    hub-config-stale-cache     MC_partial   exit 12  expected 12  36 distinct states
+  ok    hub-config-stale-cache     MC_sanity    exit 12  expected 12  8 distinct states
+  ok    review-gate-promote-toctou MC           exit 0   expected 0   847 distinct states
+  ok    review-gate-promote-toctou MC_bug       exit 12  expected 12  109 distinct states
+  ok    review-gate-promote-toctou MC_sanity    exit 12  expected 12  61 distinct states
+  ok    review-gate-promote-toctou MC_sanity_refused exit 12  expected 12  102 distinct states
+  ok    review-gate-promote-toctou MC_sanity_reread exit 12  expected 12  80 distinct states
+  ok    hub-pack-save-atomicity    MC           exit 0   expected 0   364 distinct states
+  ok    hub-pack-save-atomicity    MC_bug       exit 12  expected 12  519 distinct states
+  ok    hub-pack-save-atomicity    MC_bug_p4    exit 12  expected 12  996 distinct states
+  ok    hub-pack-save-atomicity    MC_bug_p5    exit 12  expected 12  394 distinct states
+  ok    hub-pack-save-atomicity    MC_bug_p6    exit 12  expected 12  314 distinct states
+  ok    hub-pack-save-atomicity    MC_sanity    exit 12  expected 12  116 distinct states
+  ok    hub-pack-save-atomicity    MC_sanity_rejected exit 12  expected 12  116 distinct states
+  ok    hub-pack-save-atomicity    MC_sanity_both exit 12  expected 12  306 distinct states
+  ok    hub-onboard-atomicity      MC           exit 0   expected 0   19 distinct states
+  ok    hub-onboard-atomicity      MC_nocustom  exit 0   expected 0   19 distinct states
+  ok    hub-onboard-atomicity      MC_bug       exit 12  expected 12  13 distinct states
+  ok    hub-onboard-atomicity      MC_bug_p9    exit 12  expected 12  13 distinct states
+  ok    hub-onboard-atomicity      MC_bug_p10   exit 12  expected 12  13 distinct states
+  ok    hub-onboard-atomicity      MC_sanity    exit 12  expected 12  17 distinct states
+  ok    hub-onboard-atomicity      MC_sanity_retry exit 12  expected 12  18 distinct states
+  ok    mcp-config-revocation-stale MC           exit 0   expected 0   919 distinct states
+  ok    mcp-config-revocation-stale MC_3         exit 0   expected 0   5531 distinct states
+  ok    mcp-config-revocation-stale MC_bug       exit 12  expected 12  133 distinct states
+  ok    mcp-config-revocation-stale MC_bug_p2    exit 12  expected 12  141 distinct states
+  ok    mcp-config-revocation-stale MC_sanity    exit 12  expected 12  159 distinct states
+GATE: all configs behaved as expected
+rc=0

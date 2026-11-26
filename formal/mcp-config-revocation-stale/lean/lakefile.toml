@@ -1,0 +1,6 @@
+name = "McpConfigRevocation"
+version = "0.1.0"
+defaultTargets = ["McpConfigRevocation"]
+
+[[lean_lib]]
+name = "McpConfigRevocation"

@@ -1,0 +1,67 @@
+$ /home/ubuntu-02/ai_project/MYELIN/.venv/bin/python -m pytest -q -p no:cacheprovider --junitxml=/tmp/tmp8b5y1gp5/junit.xml packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py
+[exit 1] 
+
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________________ test_p1_no_draft_after_write_draft_revoked __________________
+
+vault_root = PosixPath('/tmp/pytest-of-ubuntu-02/pytest-102/test_p1_no_draft_after_write_d0/basic')
+
+    def test_p1_no_draft_after_write_draft_revoked(vault_root: Path) -> None:
+        base = (vault_root / "myelin.yaml").read_text(encoding="utf-8")
+        _install_templates(vault_root)
+        _write_policy(vault_root, base, write_draft=True, expose=False)
+    
+        # Open: the MCP server starts with write_draft allowed (write_draft tool registered).
+        svc = VaultService.open(vault_root)
+        assert svc.write_enabled
+    
+        # Revoke("write"): another process commits `mcp.write_draft: false` to disk.
+        _write_policy(vault_root, base, write_draft=False, expose=False)
+    
+        # Begin → Check → Prepare → Release: a tool call that starts after the revocation.
+        title = "철회 후 초안"
+        # Denial (MCPError) is the correct outcome; the property below is what is judged.
+        with contextlib.suppress(MCPError):
+            svc.write_draft(title, "revoked body")
+        target = vault_root / AI_DRAFTS / f"{title}.md"
+>       assert not target.exists(), (
+            "P1 Inv_NoDraftAfterRevoke violated: a write_draft call that started after "
+            "`mcp.write_draft: false` was on disk created " + str(target.relative_to(vault_root))
+        )
+E       AssertionError: P1 Inv_NoDraftAfterRevoke violated: a write_draft call that started after `mcp.write_draft: false` was on disk created 00_Inbox/ai-drafts/철회 후 초안.md
+E       assert not True
+E        +  where True = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-ubuntu-02/pytest-102/test_p1_no_draft_after_write_d0/basic/00_Inbox/ai-drafts/철회 후 초안.md').exists
+
+packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py:65: AssertionError
+_________________ test_p2_no_confidential_after_expose_revoked _________________
+
+vault_root = PosixPath('/tmp/pytest-of-ubuntu-02/pytest-102/test_p2_no_confidential_after_0/basic')
+local_session = None
+
+    def test_p2_no_confidential_after_expose_revoked(vault_root: Path, local_session: None) -> None:
+        base = (vault_root / "myelin.yaml").read_text(encoding="utf-8")
+        _write_policy(vault_root, base, write_draft=False, expose=True)
+    
+        # Open: LOCAL process with expose_confidential allowed (A2).
+        svc = VaultService.open(vault_root)
+        assert svc.expose_confidential
+    
+        # Revoke("expose"): another process commits `mcp.expose_confidential: false` to disk.
+        _write_policy(vault_root, base, write_draft=False, expose=False)
+    
+        # A get_note call that starts after the revocation.
+        n = svc.get_note(CONFIDENTIAL)
+>       assert n["redacted"] is True and "Agentic" not in n["body"], (
+            "P2 Inv_NoConfidentialAfterRevoke violated: get_note started after "
+            "`mcp.expose_confidential: false` was on disk returned the body of " + CONFIDENTIAL
+        )
+E       AssertionError: P2 Inv_NoConfidentialAfterRevoke violated: get_note started after `mcp.expose_confidential: false` was on disk returned the body of 40_IP/candidates/Agentic CAD 검증 루프.md
+E       assert (False is True)
+
+packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py:84: AssertionError
+=========================== short test summary info ============================
+FAILED packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py::test_p1_no_draft_after_write_draft_revoked
+FAILED packages/myelin-mcp/tests/test_formal_mcp_config_revocation.py::test_p2_no_confidential_after_expose_revoked
+2 failed in 0.15s

@@ -45,32 +45,32 @@ Init ==
     /\ retried = FALSE
 
 \* POST /api/onboarding is accepted only when the folder is not a Vault yet (else 409).
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1055-1078 onboard() — 409 when already a Vault (1061-1064)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1138-1161 onboard() — 409 when already a Vault (1061-1064)
 Start ==
     /\ phase \in {"idle", "failed"} /\ ~config
     /\ retried' = (retried \/ phase = "failed")
     /\ phase' = "running" /\ step' = 0
     /\ UNCHANGED <<pack, config, scaffold, repo, committed>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1232-1273 _write_personal_pack()
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1315-1356 _write_personal_pack()
 WritePack ==
     /\ phase = "running" /\ step = 0
     /\ pack' = (pack \/ Custom) /\ step' = 1
     /\ UNCHANGED <<phase, config, scaffold, repo, committed, retried>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1080-1113 _onboard() -> scaffold.init_vault() (1101)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1163-1196 _onboard() -> scaffold.init_vault() (1101)
 InitVault ==
     /\ phase = "running" /\ step = 1
     /\ config' = TRUE /\ step' = 2
     /\ UNCHANGED <<phase, pack, scaffold, repo, committed, retried>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1108-1111 reload(), record_event(), _write_welcome()
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1191-1194 reload(), record_event(), _write_welcome()
 Welcome ==
     /\ phase = "running" /\ step = 2
     /\ scaffold' = TRUE /\ step' = 3
     /\ UNCHANGED <<phase, pack, config, repo, committed, retried>>
 
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:359-384 ensure_git(): git init, hook, add -A, commit
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:368-393 ensure_git(): git init, hook, add -A, commit
 GitCommit ==
     /\ phase = "running" /\ step = 3
     /\ repo' = TRUE /\ committed' = TRUE /\ step' = 4 /\ phase' = "ok"
@@ -80,7 +80,7 @@ GitCommit ==
 \* `git init` (the repository exists) and before the commit.
 \* Before the patch the handler removed only the personal pack (service.py onboard(): "no
 \* half-initialised directory left behind").
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1074-1078 onboard() except-branch -> packages/myelin-hub/api/src/myelin_hub_api/service.py:136-212 _OnboardUndo (files_first, rest)
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1157-1161 onboard() except-branch -> packages/myelin-hub/api/src/myelin_hub_api/service.py:138-214 _OnboardUndo (files_first, rest)
 Fail ==
     /\ phase = "running" /\ step \in 0..3
     /\ phase' = "failed"

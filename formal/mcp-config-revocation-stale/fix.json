@@ -1,0 +1,13 @@
+{
+  "summary": "packages/myelin-mcp/src/myelin_mcp/service.py: VaultService 가 기동 시 적재한 myelin.yaml 바이트(_config_bytes)를 기억하고, _serialized 래퍼가 서비스 락을 잡은 직후(도구 본문 실행 전) _reload_if_changed() 를 호출한다. 디스크 바이트가 마지막 적재본과 다르면 Vault.open 으로 설정을 다시 읽어 self.vault 와 self.index.vault 를 교체한다(Hub F1 _reload_if_changed 와 같은 방식, mtime 이 아닌 바이트 비교). 재적재가 ConfigError(파일 없음·부분 쓰기·잘못된 YAML/스키마)면 이전 권한을 유지하지 않고 MCPError 로 그 호출을 거부하며 _config_bytes 를 None 으로 지워 다음 호출에서도 다시 검사한다(fail-closed, SCOPE A3). 모델의 FIX=TRUE 분기(Check 시 cache' = file 후 디스크 값으로 판정)와 일치하므로 Spec.tla 는 바꾸지 않았다.",
+  "behavior_change_scope": "MCP 서버 기동 후 다른 프로세스(Hub PUT /api/settings, CLI, 편집기)가 myelin.yaml 을 바꾼 경우에만 동작이 달라진다: (1) mcp.write_draft:false 또는 level:0 이 기록된 뒤 시작된 write_draft 호출은 MCPError 로 거부되고 초안 파일을 만들지 않는다; (2) mcp.expose_confidential:false 가 기록된 뒤 시작된 search_notes/get_note/query_frontmatter/역링크는 confidential·40_IP 를 숨기고 본문을 REDACTED 로 돌려준다; (3) 반대로 기동 후 허용/도메인/레벨 변경도 다음 호출부터 반영된다(list_domains·write_draft 도메인 검증 포함, 단 write_draft 도구 등록 목록은 여전히 기동 시 기준); (4) 기동 후 myelin.yaml 이 삭제되거나 무효가 되면 모든 도구 호출이 MCPError 로 거부된다(이전에는 기동 시 사본으로 계속 동작). 파일이 바뀌지 않은 경우의 동작과 공개 함수 시그니처는 그대로이며, 호출마다 myelin.yaml 을 한 번 read_bytes 하는 비용이 추가된다.",
+  "alternatives": [
+    "mtime/size 비교로 재적재 — 같은 tick 안의 편집을 놓칠 수 있어 바이트 비교를 택함(Hub F1 과 동일 근거)",
+    "재적재 실패 시 이전 캐시 유지 — A3 가 금지하는 fail-open, 부분 쓰기 창에서 철회를 무시하게 됨",
+    "재적재 실패 시 권한만 FALSE 로 강등하고 다른 도구는 계속 허용 — 더 가용성이 높지만 config 없는 상태의 의미를 따로 정의해야 해서 전체 거부(fail-closed)를 택함",
+    "inotify/watchdog 파일 감시 — 의존성 추가와 이벤트 지연 창이 남아 호출 진입 시 동기 검사보다 약함",
+    "write_draft 도구 등록 목록도 갱신(tools/list_changed 알림) — ADR-0007 '도구 자체가 없다' 문구와 맞지만 범위 밖(side finding)",
+    "판정 지점(write_enabled/expose_confidential 프로퍼티)에서만 매번 디스크를 읽기 — 한 호출 안에서 판정마다 다른 설정을 볼 수 있어 호출 단위 일관성이 깨짐"
+  ],
+  "non_obvious": true
+}

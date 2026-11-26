@@ -11,7 +11,13 @@ from myelin_core import PackError, discover_packs, load_pack, resolve_packs
 from myelin_core.packs.loader import LoadedPack
 from myelin_core.schema import PackKind
 
-REAL_PACKS = ["myelin.core", "brian.physical-ai", "a3.security-consulting", "a3.incident-response"]
+REAL_PACKS = [
+    "myelin.core",
+    "brian.physical-ai",
+    "a3.security-consulting",
+    "a3.incident-response",
+    "wdlab.onecycle",
+]
 
 
 @pytest.mark.parametrize("name", REAL_PACKS)
@@ -63,14 +69,18 @@ def test_a3_org_pack(packs_dir: Path) -> None:
     d = lp.pack.domains[0]
     assert d.id == "SEC-CONSULT" and d.classification_default.value == "internal"
     assert d.compose_targets == ["진단 보고서 초안", "제안서 섹션", "교육자료"]
-    assert len(lp.template_files["templates"]) == 2
+    stems = {p.stem for p in lp.template_files["templates"]}
+    assert {"assessment-checklist", "lesson-customer-type"} <= stems  # skeleton names kept
+    assert {"finding", "countermeasure", "remediation-record", "retest"} <= stems  # v1.0 (M3)
 
 
 def test_a3_incident_response_pack(packs_dir: Path) -> None:
     lp = load_pack(packs_dir / "a3.incident-response")
     d = lp.pack.domains[0]
     assert d.id == "IR" and d.accent == "magenta" and len(d.sub_mocs) == 6
-    assert {p.stem for p in lp.template_files["templates"]} == {"timeline", "ioc", "post-mortem"}
+    stems = {p.stem for p in lp.template_files["templates"]}
+    assert {"timeline", "ioc", "post-mortem"} <= stems  # skeleton names kept
+    assert {"incident-intake", "containment-checklist", "lessons-learned"} <= stems  # v1.0 (M3)
     assert lp.interview_bank_for("IR") is not None and lp.taxonomy_for("IR") is not None
 
 

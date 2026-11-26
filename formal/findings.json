@@ -3,7 +3,7 @@
   "workflow": "W1",
   "generated_at": "2026-11-18T17:25:00+09:00",
   "repo_commit": "70509a5 (F1) · c29d83f + branch formal/hub-2026-11-18 (F2, F8)",
-  "summary": "FIXED (F1, F2, F8) + CONFIRMED (F3, CLI — outside the 2026-11-18 Hub round): within Doms={d1,d2} (72 distinct states, depth 7) and Doms={d1,d2,d3} (432 states, depth 9) the Hub never decides on a stale myelin.yaml (P1) and a Settings save never drops a Domain added in between (P2). P2 holds for clients that send If-Match (the Hub UI does); a PUT without it is not checked.",
+  "summary": "FIXED (F1, F2, F8; F3 — CLI commit scope, a side finding outside the model — fixed 2026-11-26 and pinned by tests): within Doms={d1,d2} (72 distinct states, depth 7) and Doms={d1,d2,d3} (432 states, depth 9) the Hub never decides on a stale myelin.yaml (P1) and a Settings save never drops a Domain added in between (P2). P2 holds for clients that send If-Match (the Hub UI does); a PUT without it is not checked.",
   "scope": {
     "modeled": [
       "CLI process `myelin add-domain` rewriting <Vault>/myelin.yaml (scaffold.add_domain)",
@@ -208,7 +208,7 @@
       "id": "F3",
       "title": "CLI `myelin add-domain` (and `myelin obsidian setup`) commits the whole working tree with `git add -A`: unrelated user files land in the `[myelin:add-domain]` commit, and an unfinished user note makes the Vault pre-commit device refuse add-domain's own commit",
       "severity": "medium",
-      "status": "confirmed",
+      "status": "fixed",
       "property": "ADR-0009 §4 (docs/adr/0009-hub-write-policy.md:11): staging is limited to touched paths; unrelated user changes never mix into a commit",
       "story": "packages/myelin-cli/src/myelin_cli/app.py:105 `_git_commit_vault` stages with `git add -A` for every caller. Case A: a user's scratch file 30_Resources/wip-notes.txt is recorded under `[myelin:add-domain] D2`. Case B: a frontmatter-less WIP note is staged too, `myelin doctor --staged` (pre-commit hook) rejects it, and add-domain prints `(git commit 생략 …)` leaving its own 7 changes uncommitted. The Hub's `_stage()` (service.py:292-301) already does this correctly.",
       "reproduction": {
@@ -217,13 +217,22 @@
         "result_after_fix": "not-run"
       },
       "fix": {
-        "summary": "PROPOSED (not applied — design choice: `init` intentionally stages the whole scaffold): give `_git_commit_vault(root, message, paths=None)` a `paths` parameter; `add-domain` and `obsidian setup` pass their `touched` lists and the helper runs `git add -- <paths>` (mirroring HubService._stage); `init` keeps `-A`. Add a CLI test asserting `git show --name-only HEAD` == touched.",
-        "model_recheck": "not-run",
-        "mutation_check": "not-run"
+        "outcome": "applied",
+        "files": [
+          "packages/myelin-cli/src/myelin_cli/app.py"
+        ],
+        "summary": "_git_commit_vault(paths=touched): git add of exactly the touched paths + git commit --only; myelin init keeps the whole-tree first commit of the Vault it just created",
+        "tests": [
+          "packages/myelin-cli/tests/test_cli.py::test_add_domain_commits_only_its_own_paths",
+          "packages/myelin-cli/tests/test_cli.py::test_obsidian_setup_commits_only_obsidian_paths"
+        ],
+        "repro": "formal/hub-config-stale-cache/repro/repro_F3_add_domain_commit_scope.py exits 0",
+        "level": "L1 (side finding outside the TLA+ model; fixed and pinned by tests)"
       },
       "evidence": [
         "hub-config-stale-cache/evidence/repro_F3_add_domain_commit_scope.log"
-      ]
+      ],
+      "fixed_on": "2026-11-26"
     },
     {
       "id": "F8",
@@ -325,5 +334,6 @@
       "policy": "fail-closed"
     },
     "module": "myelin-hub"
-  }
+  },
+  "status_updated": "2026-11-26"
 }

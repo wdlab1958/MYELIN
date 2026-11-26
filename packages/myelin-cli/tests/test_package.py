@@ -4,4 +4,4 @@ import myelin_cli
 
 
 def test_version() -> None:
-    assert myelin_cli.__version__.startswith("0.")
+    assert myelin_cli.__version__ == __import__("myelin_core").__version__

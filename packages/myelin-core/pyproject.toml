@@ -1,6 +1,6 @@
 [project]
 name = "myelin-core"
-version = "0.1.0a0"
+version = "1.4.0"
 description = "MYELIN core: schema, note parser, Pack loader, doctor, index (shared by CLI/MCP/Hub)"
 requires-python = ">=3.12"
 dependencies = [

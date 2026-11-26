@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.4.0 — 2026-11-26 (One Cycle 선결 과제 · 보안 기본값 · 인계 수신)
+MYELIN 의 위치: 고객에게 파는 상품이 아니라, One Cycle Dev. Framework 에서 생긴 정보 자산을 개발자·운영자가 관리하는 개인 지식 관리 서비스. 버전 표기를 하나로 맞췄다(이전: CHANGELOG v1.3.2 / README v1.1.0 / 패키지 0.1.0a0).
+- **fix(mcp, formal F1)**: 실행 중인 MCP 서버가 `myelin.yaml` 을 기동 시 한 번만 읽어, Hub Settings 에서 `mcp.write_draft`·`level`·`mcp.expose_confidential` 을 철회한 뒤에도 초안을 만들고 confidential 본문을 내보냈다 → 도구 호출마다 파일 바이트를 비교해 다시 읽는다. 읽을 수 없거나 잘못된 설정이면 호출을 거부한다(옛 권한 유지 안 함). 브랜치 `wdproof/20261121-115639-myelin` 에만 있던 수정·회귀 테스트·TLA+ 모델·Lean 증명을 반영(`formal/mcp-config-revocation-stale/`)
+- **fix(cli, formal F3)**: `myelin add-domain`·`myelin obsidian setup` 이 `git add -A` 로 작업 트리 전체를 커밋하던 것 → 자기가 건드린 경로만 커밋(`git commit --only`). 미추적·수정 중·이미 스테이지된 사용자 파일은 그대로 남는다
+- **fix(hub/core, formal 후보 C2·C3·C5·C6)**: Hub Domain 추가가 그 사이 CLI 가 추가한 Domain 을 지우던 lost update(409 후 재시도) · Commons 게시 직렬화 · 승격/기각이 그 사이 생긴 같은 이름의 노트를 덮어쓰던 창(배타 생성) · 색인이 mtime 을 되돌린 같은 크기 재작성을 놓치던 것(ctime 반영)
+- **feat(hub): Team 모드(선택, ADR-0016)** — `--auth-file`: Bearer 토큰(서버에는 SHA-256 만, 상수 시간 비교), `read`/`write` 역할과 경로 허용 목록(소유자 작업은 채널에 없음), **confidential·`40_IP/**` 는 Team 채널로 나가지 않음**(없는 노트와 같은 404), 접근 기록 `<Vault>/.myelin/hub-access.log`, 인증 파일 변경(토큰 폐기)은 재시작 없이 반영, 실패 제한(429). 비-loopback 바인딩은 인증 + `allowed_hosts` + TLS(또는 `--behind-tls-proxy`)가 모두 있어야 허용. CORS 헤더 없음. `myelin-hub --new-token`. **Personal(loopback) 모드는 그대로**
+- **feat(core): 고객정보 가드(ADR-0017)** — `myelin_core.infoguard`: 자격증명·주민번호·고객명 목록 = 차단, 긴 코드 블록·IP·내부 URL = 사람 확인. Hub 승격·patch 적용, MCP `write_draft`, findings 가져오기, Commons 공개, pre-commit(`doctor --staged`)이 호출한다. `myelin guard scan`. 정책 `90_System/infoguard.yaml`, 고객명 목록 `.myelin/customer-names.txt`(git 제외). 지침 `docs/guides/knowledge-management-policy.md`
+- **feat(onecycle): 인계 수신(ADR-0018)** — `source_platform: llmops|ssc|argus|proof-skills` 초안은 보통의 AI 초안으로 Review Gate 를 지난다(승격 뒤에도 필드 보존). Pack `wdlab.onecycle`(Domain `LLMOPS`·`SSC`·`ARGUS`)과 Domain 없는 초안의 라우팅 규칙. `myelin onecycle import-findings <file.json>` — `onecycle.findings/v1` 의 finding 하나당 초안 하나, 덮어쓰기 없음·멱등·가드 적용·잘못된 파일 거부. 스키마·표본 `docs/onecycle/`, 절차 `docs/onecycle/HANDOFF.md`
+- **packs**: `a3.security-consulting`(용어 37 · 템플릿 9 · 인터뷰 27)·`a3.incident-response`(용어 40 · 템플릿 10 · 인터뷰 26)를 골격에서 v1.0 구조로 — ISO/IEC 27001:2022 Annex A 주제, PTES 단계, NIST SP 800-61 단계, MITRE ATT&CK 전술 이름 등 공개 표준 기반의 일반 내용. **용어는 A3 컨설턴트 확인 전**
+- **chore**: 버전 단일 원천 `myelin_core/_version.py` + `scripts/sync_version.py [--check]`(pyproject 5 · uv.lock · web package · README), 제품 표시 이름 상수 `myelin_core.product.PRODUCT_NAME`(`MYELIN_PRODUCT_NAME` 으로 변경 가능 — 식별자는 그대로)
+- **docs**: `docs/INSTALL.md`(사내·망분리 설치, 백업·복구, 업그레이드) · `docs/RELEASE_READINESS.md` · `THIRD_PARTY_LICENSES.md` · `docs/guides/pilot-kit.md` · ADR-0016~0018 · 위협 모델 T24~T26
+- **동작 변화(재시작 후)**: 자격증명·등록 고객명이 든 초안은 승격·커밋이 거부된다 · 긴 코드 블록/IP 가 든 초안은 승격 때 확인 1회 · `add-domain` 커밋 범위 축소 · Vault 포맷 변경 없음(마이그레이션 불필요)
+- tests: 전체 **1,418 passed · 1 skipped**(이전 1,295) — Team 모드 39 · 고객정보 가드 27 · One Cycle(core) 28 · Hub 가드/인계 10 · formal 후보 4 · MCP 철회/가드 5 · CLI 5 · 버전 3 외. `formal/run_all.sh` 31개 설정 기대값 · Lean 감사 2개 프로젝트 clean · ruff · mypy(strict) 통과. Playwright e2e 와 `make gate` 는 다시 돌리지 않았다
+
 ## v1.3.2 — 2026-11-21 (Hub 에서 Domain 추가)
 - hub: **Domain Packs 카드의 `+ Domain 추가 · <ID>` 버튼** — Pack 에 선언됐지만 Vault 에 없는 Domain 을 클릭 한 번으로 추가(ADR-0015). `POST /api/domains {id, pack?}`(클릭 헤더, 1 commit `[myelin:add-domain] <ID>`, 건드린 경로만 스테이징) — CLI `myelin add-domain` 과 같은 core 경로(MOC · 템플릿 · taxonomy · CLAUDE.md · myelin.yaml · Obsidian 색 그룹). 선언 없음 404 · 이미 설정됨/MOC 존재/모호한 Pack 409 · 잘못된 ID 422, 실패 시 전부 롤백. `GET /api/packs` 의 `domains[].configured`. Pack 저장 뒤 안내 문구가 다음 단계(카드의 버튼)를 가리킨다
 - 도우미: `assistant_kb.md` 의 Domain 추가 절차를 실제 화면(① 개인 Pack 저장 → ② `+ Domain 추가`)으로 정정 — 이전에는 "Domain Packs 화면에서 한다" 뿐이라 로컬 LLM 이 없는 'Add Domain'·'Create' 버튼을 지어냈다

@@ -1,6 +1,6 @@
 [project]
 name = "myelin-workspace"
-version = "0.0.0"
+version = "1.4.0"
 description = "MYELIN — Personal Knowledge OS (uv workspace root; not a distributable package)"
 requires-python = ">=3.12"
 dependencies = [

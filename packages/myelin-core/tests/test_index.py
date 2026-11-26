@@ -199,3 +199,37 @@ def test_path_qualified_links_count_as_backlinks(vault_copy: Vault) -> None:
             idx.stats(date(2026, 10, 19)).orphan_ratio
             == compute_stats(vault_copy, today=date(2026, 10, 19)).orphan_ratio
         )
+
+
+def test_same_size_rewrite_with_restored_mtime_is_reindexed(tmp_path: Path) -> None:
+    """formal candidate C6: the refresh signature was (mtime_ns, size) only — a rewrite that keeps
+    both (same length, mtime put back) left the old frontmatter in the index, so a filter on
+    status/classification answered from a stale row. ctime cannot be put back."""
+    import os
+    import shutil
+
+    from myelin_core.index import open_index
+    from myelin_core.vault import Vault
+
+    root = tmp_path / "v"
+    shutil.copytree(
+        Path(__file__).resolve().parents[3] / "tests/fixtures/vaults/basic",
+        root,
+        ignore=shutil.ignore_patterns(".myelin", ".obsidian"),
+    )
+    note = next(
+        p
+        for p in sorted((root / "10_Domains").rglob("*.md"))
+        if "confidence: high" in p.read_text(encoding="utf-8")
+    )
+    rel = note.relative_to(root).as_posix()
+    idx = open_index(Vault.open(root))
+    assert idx.get(rel) is not None
+    before = note.stat()
+    text = note.read_text(encoding="utf-8")
+    note.write_text(text.replace("confidence: high", "confidence: low ", 1), encoding="utf-8")
+    os.utime(note, ns=(before.st_atime_ns, before.st_mtime_ns))
+    after = note.stat()
+    assert (after.st_mtime_ns, after.st_size) == (before.st_mtime_ns, before.st_size)
+    r = idx.refresh()
+    assert r.updated == 1, "a same-size, same-mtime rewrite was not noticed"

@@ -1,23 +1,118 @@
+# /interview 질문 은행 — NIST SP 800-61 단계 순. 답변에는 고객명·IP·호스트명·계정을 쓰지 않는다.
 questions:
+  # ── 준비 (Preparation)
+  - id: ir-prep-missing-log
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 사고가 난 뒤에야 '이 로그를 미리 모았어야 했다'고 깨달은 것은? 준비 단계 점검표에 무엇을 추가했나?
+    yields: checklist
+  - id: ir-prep-contact-chain
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 연락 체계가 실제 사고에서 작동하지 않았던 지점은(야간, 휴일, 권한자 부재)? 지금은 어떻게 해 두나?
+  - id: ir-prep-exercise
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 모의 훈련에서는 됐는데 실제 사고에서는 안 된 절차가 있나? 훈련을 어떻게 바꿨나?
+  # ── 탐지·분석 (Detection & Analysis)
   - id: ir-triage-wrong-call
     domain: IR
     sub_moc: 초동 대응
     prompt: 초동 대응에서 심각도를 잘못 판단한 사고가 있었나? 어떤 신호를 놓쳤고, 이제는 무엇을 먼저 보나?
+  - id: ir-detect-source
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 사고를 처음 알린 것은 내부 탐지였나, 외부 통보였나? 내부에서 먼저 잡으려면 무엇이 필요했나?
+  - id: ir-scope-underestimate
+    domain: IR
+    sub_moc: 초동 대응
+    prompt: 사고 범위를 처음에 좁게 잡았다가 넓어진 경우, 범위 확정을 위해 지금은 어떤 질문부터 던지나?
+    yields: checklist
   - id: ir-timeline-gap
     domain: IR
     sub_moc: Timeline
     prompt: 타임라인을 재구성할 때 가장 메우기 어려웠던 공백은? 어떤 로그가 있었으면 됐을까?
     yields: checklist
+  - id: ir-timeline-clock
+    domain: IR
+    sub_moc: Timeline
+    prompt: 시각 불일치(시간대, 동기화 안 된 시계) 때문에 순서를 잘못 읽은 적이 있나? 타임라인 작성 규칙으로 무엇을 정했나?
+  - id: ir-timeline-fact-vs-guess
+    domain: IR
+    sub_moc: Timeline
+    prompt: 추정을 사실처럼 적어 판단이 틀어진 경우가 있었나? 사실과 추정을 구분해 적는 본인의 방식은?
   - id: ir-ioc-reuse
     domain: IR
     sub_moc: IoC·위협 인텔
     prompt: 다른 사고에서 재사용한 IoC 나 패턴이 있나? 고객 식별자 없이 어떻게 일반화했나?
+  - id: ir-ioc-decay
+    domain: IR
+    sub_moc: IoC·위협 인텔
+    prompt: 금방 쓸모없어진 IoC 와 오래 유효했던 TTP 의 차이를 체감한 사례는? 탐지 규칙을 어느 쪽에 걸었나?
+  - id: ir-attack-mapping
+    domain: IR
+    sub_moc: IoC·위협 인텔
+    prompt: 사고를 ATT&CK 전술에 대응시켰을 때 증거가 비어 있던 전술은(예 초기 침투, 유출)? 그 공백을 어떻게 보고했나?
+  - id: ir-intel-false-lead
+    domain: IR
+    sub_moc: IoC·위협 인텔
+    prompt: 외부 위협 정보를 따라갔다가 헛걸음한 경우, 정보의 신뢰도를 어떻게 걸러야 했나?
+  - id: ir-forensic-volatility
+    domain: IR
+    sub_moc: 포렌식 절차
+    prompt: 휘발성 자료를 수집하기 전에 재부팅·종료가 일어나 잃은 증거가 있나? 현장 첫 지시로 무엇을 말하나?
+    yields: checklist
+  - id: ir-forensic-custody
+    domain: IR
+    sub_moc: 포렌식 절차
+    prompt: 증거 보관 연속성 기록에서 빠지기 쉬운 항목은? 그 누락이 문제 될 뻔한 상황은?
+    yields: checklist
+  - id: ir-forensic-tool-limit
+    domain: IR
+    sub_moc: 포렌식 절차
+    prompt: 도구 결과를 그대로 믿었다가 틀린 분석이 있었나? 교차 검증은 어떻게 하나?
+  # ── 봉쇄·근절·복구 (Containment, Eradication & Recovery)
   - id: ir-containment-tradeoff
     domain: IR
     sub_moc: 봉쇄·복구
     prompt: 봉쇄 때문에 서비스를 멈춰야 했던 결정 — 누가, 어떤 근거로, 얼마나 빨리 내렸나?
     yields: adr
+  - id: ir-containment-tipoff
+    domain: IR
+    sub_moc: 봉쇄·복구
+    prompt: 성급한 봉쇄로 공격자가 눈치채 흔적을 지우거나 다른 경로로 옮긴 적이 있나? 봉쇄 시점을 어떻게 정하나?
+    yields: adr
+  - id: ir-eradication-incomplete
+    domain: IR
+    sub_moc: 봉쇄·복구
+    prompt: 근절이 끝났다고 봤는데 지속 수단이 남아 재침해된 경우, 무엇을 확인하지 않았나?
+    yields: checklist
+  - id: ir-recovery-validation
+    domain: IR
+    sub_moc: 봉쇄·복구
+    prompt: 복구한 시스템을 '깨끗하다'고 판정한 근거는? 백업 자체가 오염됐던 경우는 어떻게 다뤘나?
+  - id: ir-recovery-monitoring
+    domain: IR
+    sub_moc: 봉쇄·복구
+    prompt: 복구 후 강화 모니터링을 얼마나, 무엇을 기준으로 유지했나? 종료 판단은 누가 했나?
+  # ── 사후 활동 (Post-Incident Activity)
   - id: ir-postmortem-lesson
     domain: IR
     sub_moc: Post-mortem
     prompt: 포스트모템에서 나온 교훈 중 다음 사고에서 실제로 작동한 것 하나를 말해라.
+  - id: ir-postmortem-not-done
+    domain: IR
+    sub_moc: Post-mortem
+    prompt: 교훈 회의에서 합의했지만 실행되지 않은 조치는? 왜 안 됐고, 실행되게 하려면 무엇이 달라야 했나?
+  - id: ir-postmortem-blameless
+    domain: IR
+    sub_moc: Post-mortem
+    prompt: 비난 없는 회고가 무너졌던 순간이 있었나? 진행자로서 어떻게 되돌렸나?
+  - id: ir-postmortem-metrics
+    domain: IR
+    sub_moc: Post-mortem
+    prompt: 체류 시간·탐지 시간·대응 시간 중 실제 개선 판단에 쓸모 있었던 지표와 그렇지 않았던 지표는?
+  - id: ir-detection-rule-feedback
+    domain: IR
+    sub_moc: Post-mortem
+    prompt: 사고에서 나온 탐지 규칙이 운영에서 오탐 때문에 꺼진 적이 있나? 규칙을 살리려면 무엇을 함께 넘겨야 했나?

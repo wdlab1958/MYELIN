@@ -71,7 +71,7 @@ Release(r) == lock' = IF Serialised THEN NoReq ELSE lock
 
 ----------------------------------------------------------------------------
 \* tmp = pdir / "pack.yaml.tmp"; tmp.write_text(text)   (the request holds _write_lock: `@_serialised`, 938)
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:938-988 save_pack() — 974
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1011-1071 save_pack() — 974
 WriteTmp(r) ==
     /\ pc[r] = "start"
     /\ IF Serialised THEN lock = NoReq /\ lock' = r ELSE UNCHANGED lock
@@ -80,7 +80,7 @@ WriteTmp(r) ==
     /\ UNCHANGED <<content, good, final, backup, head, resp, saved, raceError>>
 
 \* backup = final.read_bytes() if final.is_file() else None
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:938-988 save_pack() — 966
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1011-1071 save_pack() — 966
 ReadBackup(r) ==
     /\ pc[r] = "wrote"
     /\ backup' = [backup EXCEPT ![r] = final]
@@ -88,8 +88,8 @@ ReadBackup(r) ==
     /\ UNCHANGED <<content, good, lock, tmp, final, head, resp, saved, raceError>>
 
 \* shutil.move(tmp, final) — raises FileNotFoundError when the other request already moved the temp file
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:938-988 save_pack() — 975
-\*      packages/myelin-hub/api/src/myelin_hub_api/app.py:157-162 (OSError -> 500 "filesystem error")
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1011-1071 save_pack() — 975
+\*      packages/myelin-hub/api/src/myelin_hub_api/app.py:252-306 (OSError -> 500 "filesystem error")
 Move(r) ==
     /\ pc[r] = "backed"
     /\ IF tmp = NoText
@@ -105,9 +105,9 @@ Move(r) ==
 
 \* load_pack(pdir): rejected -> restore the backup, 422; accepted -> git commit, 200
 \* (or the commit is refused -> 500; with Rollback the file is restored first)
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:938-988 save_pack() — load_pack (977), _commit (980-984), _undo_pack_write on any failure (985-987)
-\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:990-1034 _undo_pack_write()
-\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:386-390 _commit()
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:1011-1071 save_pack() — load_pack (977), _commit (980-984), _undo_pack_write on any failure (985-987)
+\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:1073-1117 _undo_pack_write()
+\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:395-399 _commit()
 LoadRejected(r) ==
     /\ pc[r] = "moved" /\ final \notin good
     /\ final' = backup[r]

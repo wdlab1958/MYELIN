@@ -1,0 +1,6 @@
+McpConfigRevocation.P1_noDraftAfterRevoke
+McpConfigRevocation.P2_noConfidentialAfterRevoke
+McpConfigRevocation.inv_step
+McpConfigRevocation.inv_init
+McpConfigRevocation.inv_reachable
+McpConfigRevocation.bug_P2_violated

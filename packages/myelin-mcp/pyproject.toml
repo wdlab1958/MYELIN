@@ -1,6 +1,6 @@
 [project]
 name = "myelin-mcp"
-version = "0.1.0a0"
+version = "1.4.0"
 description = "MYELIN MCP server: read-only Vault search/query over stdio"
 requires-python = ">=3.12"
 dependencies = [

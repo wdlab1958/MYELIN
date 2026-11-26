@@ -1,4 +1,5 @@
-# A3 Org Pack — 침해사고 대응 (정본 §5.6). Timeline 템플릿, IoC 노트(비식별 규칙 포함), Post-mortem.
+# A3 Org Pack v1.0 — 침해사고 대응 (정본 §5.6). NIST SP 800-61 단계별 템플릿·체크리스트, IoC 노트(비식별 규칙 포함), ATT&CK 전술 매핑, Post-mortem.
+# 용어·Sub-MOC 는 A3 컨설턴트 확인 전이다 (WBS 2.5.3) — 공개 표준(NIST SP 800-61, MITRE ATT&CK) 기반의 일반 내용만 담는다.
 pack: a3.incident-response
 version: 1.0.0
 kind: org
@@ -11,7 +12,7 @@ domains:
     accent: magenta
     description: 사고 접수부터 종결까지의 절차·판단·교훈. 고객명·IP·호스트명은 기록하지 않는다 (deid.yaml).
     sub_mocs: [초동 대응, Timeline, IoC·위협 인텔, 포렌식 절차, 봉쇄·복구, Post-mortem]
-    note_types: [evergreen, lesson, checklist, adr, literature]
+    note_types: [evergreen, lesson, checklist, adr, literature, experiment]
     taxonomy_seed: taxonomy.yaml
     templates: templates
     interview_bank: interviews.yaml

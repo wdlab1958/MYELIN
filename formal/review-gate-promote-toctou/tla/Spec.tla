@@ -59,22 +59,22 @@ WriterRewrite(n) ==
 
 \* "내용 읽기": GET /api/notes/<path> — the page now shows the current content.
 \* src: packages/myelin-hub/web/src/pages/Review.tsx:16-20 openBody()
-\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:578-597 note() — body and digest from the same bytes
+\*      packages/myelin-hub/api/src/myelin_hub_api/service.py:587-606 note() — body and digest from the same bytes
 BrowserRead(n) ==
     /\ draft[n] # None
     /\ shown' = [shown EXCEPT ![n] = draft[n]]
     /\ UNCHANGED <<draft, pending, verified, approved, refused>>
 
 \* The human clicks Promote (enabled only after the body was opened).
-\* src: packages/myelin-hub/web/src/pages/Review.tsx:68 (Promote button: disabled until bodies[d.path] is set; sends { digest: digests[d.path] })
+\* src: packages/myelin-hub/web/src/pages/Review.tsx:79 (Promote button: disabled until bodies[d.path] is set; sends { digest: digests[d.path] })
 HumanClick(n) ==
     /\ shown[n] # None /\ pending[n] = None
     /\ pending' = [pending EXCEPT ![n] = shown[n]]
     /\ UNCHANGED <<draft, shown, verified, approved, refused>>
 
 \* POST /api/review/promote/<path>: the Hub reads the draft file as it is now and verifies it.
-\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:645-715 promote() — `raw_bytes = src.read_bytes()` (663), digest check -> 409 (664-668)
-\*      packages/myelin-hub/api/src/myelin_hub_api/app.py:289-292
+\* src: packages/myelin-hub/api/src/myelin_hub_api/service.py:662-768 promote() — `raw_bytes = src.read_bytes()` (663), digest check -> 409 (664-668)
+\*      packages/myelin-hub/api/src/myelin_hub_api/app.py:472-475
 HubPromote(n) ==
     /\ pending[n] # None
     /\ pending' = [pending EXCEPT ![n] = None]

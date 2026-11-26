@@ -41,6 +41,7 @@ from myelin_core.commons import (
 from myelin_core.config import CONFIG_FILE, ConfigError, MyelinConfig, dump_config
 from myelin_core.doctor import run_doctor
 from myelin_core.index import VaultIndex, open_index
+from myelin_core.infoguard import GuardError, GuardPolicy, GuardReport, scan_text
 from myelin_core.levels import skill_table
 from myelin_core.metrics import (
     events,
@@ -51,6 +52,7 @@ from myelin_core.metrics import (
 )
 from myelin_core.note import NoteParseError, dump_note, parse_note, read_note
 from myelin_core.obsidian import ensure_obsidian_config, obsidian_status
+from myelin_core.onecycle import SOURCE_PLATFORM_KEY, route_domain
 from myelin_core.packs.loader import PackError, discover_packs, load_pack
 from myelin_core.patches import (
     APPLIED_DIR,
@@ -338,6 +340,13 @@ class HubService:
                         )
                 raise
 
+    def _guard(self, text: str) -> GuardReport:
+        """고객정보 가드 (ADR-0017). An unreadable policy refuses the write (fail-closed)."""
+        try:
+            return scan_text(text, GuardPolicy.load(self._v().root))
+        except GuardError as exc:
+            raise HubError(f"고객정보 가드 정책을 읽을 수 없다 — 쓰지 않는다: {exc}", 409) from None
+
     def _rel(self, ref: str) -> str:
         """Vault-relative posix path for a client ref (relative) or an internal absolute path."""
         v = self._v()
@@ -598,6 +607,14 @@ class HubService:
             d["body"] = idx.body(n.path) or ""
         d["digest"] = content_digest(raw)
         d["backlinks"] = idx.backlinks(Path(n.path).stem)
+        if n.path.startswith(AI_DRAFTS + "/"):
+            # what Promote will decide on, so the reader sees it next to the text (ADR-0017)
+            try:
+                d["guard"] = scan_text(
+                    _decode_note(raw, path), GuardPolicy.load(self._v().root)
+                ).to_dict()
+            except (GuardError, HubError) as exc:
+                d["guard"] = {"blocked": True, "flagged": False, "hits": [], "error": str(exc)}
         return d
 
     def review_queue(self) -> dict[str, list[dict[str, Any]]]:
@@ -653,10 +670,15 @@ class HubService:
         domain: str | None = None,
         today: date | None = None,
         digest: str | None = None,
+        guard_ack: bool = False,
     ) -> dict[str, Any]:
         """`digest` is the one GET /api/notes/<draft> returned with the body the human read.
         When given, a draft whose bytes changed since then is refused (409) instead of being
-        verified unread — formal/review-gate-promote-toctou (F4, property P3)."""
+        verified unread — formal/review-gate-promote-toctou (F4, property P3).
+
+        고객정보 가드 (ADR-0017): a draft with a credential / resident number / denylisted customer
+        name is never promoted (422). One with review flags (long code block, IP, internal URL)
+        needs `guard_ack` — the reviewer's explicit "I looked at these" (409 without it)."""
         v = self._v()
         rel = self._rel(ref)
         if not rel.startswith(AI_DRAFTS + "/"):
@@ -676,8 +698,26 @@ class HubService:
             raise HubError(
                 f"draft fails frontmatter validation — fix it first: {exc}", 422
             ) from None
+        report = self._guard(_decode_note(raw_bytes, src))
+        if report.blocked:
+            raise HubError(
+                "고객정보 가드가 막았다 — 자격증명·주민번호·고객명을 지운 뒤 다시 승격한다: "
+                + GuardReport(report.blocks).summary(),
+                422,
+            )
+        if report.flagged and not guard_ack:
+            raise HubError(
+                "고객정보 가드 표시가 있다 — 고객 코드·식별자가 아닌지 확인하고 다시 승격한다 "
+                "(guard_ack): " + GuardReport(report.flags).summary(),
+                409,
+            )
         fm = note.frontmatter
-        target_domain = domain or (fm.domain[0] if fm.domain else None)
+        target_domain = (
+            domain
+            or (fm.domain[0] if fm.domain else None)
+            # One Cycle routing rule (ADR-0018): a draft another platform dropped without a Domain
+            or route_domain(fm.extra_fields.get(SOURCE_PLATFORM_KEY), v.config.domains.all_ids)
+        )
         if target_domain is None:
             raise HubError("draft has no domain — choose one to promote into", 422)
         if target_domain not in v.config.domains.all_ids:
@@ -701,13 +741,26 @@ class HubService:
         dest_rel = f"{DOMAINS}/{target_domain}/{src.name}"
         if dest.exists():
             raise HubError(f"{dest_rel} already exists — rename the draft first", 409)
+        clash = False
+        commit = ""
         with self._mutation([rel, dest_rel]):
             dest_dir.mkdir(parents=True, exist_ok=True)
-            dest.write_text(dump_note(note), encoding="utf-8")
-            src.unlink()
-            commit = self._commit(
-                [rel, dest_rel], f"[myelin:review] promote {src.stem} → {target_domain}"
-            )
+            text = dump_note(note)
+            try:
+                # exclusive create: a note that appeared after the `exists()` check above (Obsidian,
+                # another tool) is never overwritten — formal candidate C5. The clash leaves the
+                # block normally so the rollback does not delete the other writer's file.
+                with dest.open("x", encoding="utf-8") as fh:
+                    fh.write(text)
+            except FileExistsError:
+                clash = True
+            else:
+                src.unlink()
+                commit = self._commit(
+                    [rel, dest_rel], f"[myelin:review] promote {src.stem} → {target_domain}"
+                )
+        if clash:
+            raise HubError(f"{dest_rel} already exists — rename the draft first", 409)
         if not any(e.get("event") == "first_promote" for e in events(v.root)):
             record_event(v.root, "first_promote", via="hub")
         self._idx()
@@ -739,11 +792,20 @@ class HubService:
         except NoteParseError:
             payload = src.read_bytes()  # unparseable (even binary) drafts are archived verbatim
         msg = f"[myelin:review] reject {src.stem}" + (f" — {reason[:80]}" if reason else "")
+        clash = False
+        commit = ""
         with self._mutation([rel, dest_rel]):
             dest_dir.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(payload)
-            src.unlink()
-            commit = self._commit([rel, dest_rel], msg)
+            try:
+                with dest.open("xb") as fh:  # never overwrite an archive entry (candidate C5)
+                    fh.write(payload)
+            except FileExistsError:
+                clash = True
+            else:
+                src.unlink()
+                commit = self._commit([rel, dest_rel], msg)
+        if clash:
+            raise HubError(f"{dest_rel} already exists — try again", 409)
         self._idx()
         return {"path": dest_rel, "commit": commit, "status": "deprecated"}
 
@@ -768,6 +830,17 @@ class HubService:
             raise HubError(
                 "화면의 patch 와 파일이 다릅니다 — 새로고침 후 다시 확인하세요 (digest mismatch)",
                 409,
+            )
+        # 고객정보 가드 (ADR-0017): only what the patch adds is judged — the note's existing text
+        # was reviewed when it was promoted.
+        old_lines = set(plan.original.splitlines())
+        added = "\n".join(ln for ln in plan.result.splitlines() if ln not in old_lines)
+        report = self._guard(added)
+        if report.blocked:
+            raise HubError(
+                "고객정보 가드가 막았다 — patch 가 자격증명·주민번호·고객명을 넣는다: "
+                + GuardReport(report.blocks).summary(),
+                422,
             )
         history = history_dest(v.root, APPLIED_DIR, name).relative_to(v.root).as_posix()
         with self._mutation([plan.target, f"{PATCHES}/{name}", history]):
@@ -974,6 +1047,16 @@ class HubService:
         ]
         try:
             with self._mutation(rels):
+                # `_mutation` re-read myelin.yaml and snapshotted it. The registry scan above
+                # takes time; if another process (CLI `myelin add-domain`, an editor) rewrote the
+                # file meanwhile, `v` is stale and the core routine would write the old Domain
+                # list back (lost update — formal candidate C2). Decide on the current view only.
+                cur = self.vault
+                if cur is None or self._read_config_bytes() != self._config_bytes:
+                    raise HubError("myelin.yaml 이 방금 바뀌었다 — 다시 시도한다", 409)
+                if domain_id in cur.config.domains.all_ids:
+                    raise HubError(f"Domain {domain_id} 은(는) 이미 Vault 에 있다", 409)
+                v = cur
                 try:
                     touched = add_domain(
                         v,
@@ -1275,6 +1358,7 @@ class HubService:
             out.append(d)
         return out
 
+    @_serialised  # one publish at a time: publish_note switches branches in the shared clone (C3)
     def commons_publish(
         self, ref: str, confirmed: bool, push: bool = False, pr: bool = False
     ) -> dict[str, Any]:
